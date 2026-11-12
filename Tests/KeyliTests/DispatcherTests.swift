@@ -1,5 +1,7 @@
 import Testing
 import Foundation
+import ServiceManagement
+import IOKit.hid
 @testable import Keyli
 
 @Suite("Input Dispatcher & State Tests", .serialized)
@@ -121,5 +123,46 @@ struct DispatcherTests {
         #expect(PermissionStatus.resolve(isGranted: true, wasGrantedBefore: true) == .granted)
         #expect(PermissionStatus.resolve(isGranted: false, wasGrantedBefore: false) == .notGranted)
         #expect(PermissionStatus.resolve(isGranted: false, wasGrantedBefore: true) == .needsRepair)
+    }
+
+    @Test("Media And System Keys Work Without A Target App")
+    func testSystemKeysNeedNoTarget() {
+        let plan = KeyboardInputDispatcher.plan
+        #expect(plan(.system(.mute), true, false, true, false) == .send)
+        #expect(plan(.system(.volumeUp), true, true, false, false) == .send)
+        #expect(plan(.system(.missionControl), false, false, true, false) == .send)
+        #expect(plan(.system(.mute), false, false, false, true) == .refuse(.missingPermission))
+    }
+
+    @Test("Typing Refuses Or Refocuses Safely")
+    func testTypingPlan() {
+        let plan = KeyboardInputDispatcher.plan
+        let text = KeyDispatchAction.text("a", keyCode: 0)
+        #expect(plan(text, true, false, false, true) == .send)
+        #expect(plan(text, false, false, false, true) == .refuse(.missingPermission))
+        #expect(plan(text, true, true, false, true) == .refuse(.secureInput))
+        #expect(plan(text, true, false, false, false) == .refuse(.noTarget))
+        #expect(plan(text, true, false, true, true) == .activateTargetThenSend)
+        #expect(plan(text, true, false, true, false) == .refuse(.noTarget))
+        #expect(plan(.keyCode(36), true, false, true, true) == .activateTargetThenSend)
+    }
+
+    @Test("Live Permission Status Mapping")
+    func testLivePermissionStatus() {
+        #expect(PermissionStatus.accessibility(trusted: true, wasGrantedBefore: false, isWaiting: true) == .granted)
+        #expect(PermissionStatus.accessibility(trusted: false, wasGrantedBefore: false, isWaiting: true) == .waiting)
+        #expect(PermissionStatus.accessibility(trusted: false, wasGrantedBefore: true, isWaiting: false) == .needsRepair)
+
+        #expect(PermissionStatus.inputMonitoring(access: kIOHIDAccessTypeGranted, tapNeeded: true, tapRunning: true, wasGrantedBefore: false, isWaiting: false) == .granted)
+        #expect(PermissionStatus.inputMonitoring(access: kIOHIDAccessTypeGranted, tapNeeded: false, tapRunning: false, wasGrantedBefore: false, isWaiting: false) == .granted)
+        #expect(PermissionStatus.inputMonitoring(access: kIOHIDAccessTypeGranted, tapNeeded: true, tapRunning: false, wasGrantedBefore: true, isWaiting: false) == .needsRelaunch)
+        #expect(PermissionStatus.inputMonitoring(access: kIOHIDAccessTypeDenied, tapNeeded: true, tapRunning: false, wasGrantedBefore: false, isWaiting: false) == .denied)
+        #expect(PermissionStatus.inputMonitoring(access: kIOHIDAccessTypeDenied, tapNeeded: true, tapRunning: false, wasGrantedBefore: true, isWaiting: false) == .needsRepair)
+        #expect(PermissionStatus.inputMonitoring(access: kIOHIDAccessTypeUnknown, tapNeeded: true, tapRunning: false, wasGrantedBefore: false, isWaiting: true) == .waiting)
+
+        #expect(PermissionStatus.loginItem(.enabled, wanted: false) == .granted)
+        #expect(PermissionStatus.loginItem(.requiresApproval, wanted: true) == .requiresApproval)
+        #expect(PermissionStatus.loginItem(.notRegistered, wanted: false) == .off)
+        #expect(PermissionStatus.loginItem(.notRegistered, wanted: true) == .notGranted)
     }
 }

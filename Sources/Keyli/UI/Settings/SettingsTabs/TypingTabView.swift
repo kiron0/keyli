@@ -42,9 +42,9 @@ public struct TypingTabView: View {
                 isOn: $configStore.config.isPhysicalMonitoringEnabled
             )
 
-            if configStore.config.isPhysicalMonitoringEnabled && !permissionsManager.hasInputMonitoringPermission {
+            if permissionsManager.needsAttention(.inputMonitoring) {
                 SettingsRow {
-                    Label("Input Monitoring is off for Keyli.", systemImage: "exclamationmark.triangle.fill")
+                    Label(permissionsManager.status(of: .inputMonitoring).label + ": Input Monitoring", systemImage: "exclamationmark.triangle.fill")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(Color.orange)
 

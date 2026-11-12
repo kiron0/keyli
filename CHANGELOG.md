@@ -5,6 +5,10 @@ All notable changes to Keyli will be documented in this file.
 ## Unreleased
 
 ### Changed
+- Brightness, volume, media and Mission Control keys work even when no other app is focused.
+- Typing while a Keyli window is frontmost switches back to the last app and types there instead of refusing.
+- Permissions page lists Accessibility, Input Monitoring and Open at Login with live status (Waiting, Denied, Needs Repair, Relaunch Needed, Needs Approval) and refreshes when you return from System Settings.
+- Theme Studio preview keys no longer type into other apps.
 - Menu bar icon toggles the floating keyboard (click to show, click to hide); the separate menu bar keyboard is gone.
 - Theme Studio uses the same glass window style as Settings, with theme search.
 - 24 new theme presets (31 built-in).

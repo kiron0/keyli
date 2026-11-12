@@ -19,6 +19,7 @@ public struct PermissionsTabView: View {
 
             SettingsSectionHeader(title: "Optional", symbol: "slider.horizontal.3")
             permissionCard(.inputMonitoring)
+            permissionCard(.loginItem)
 
             HStack(spacing: 10) {
                 Button("Show Keyli in Finder") {
@@ -39,7 +40,6 @@ public struct PermissionsTabView: View {
         }
         .onAppear {
             permissionsManager.checkPermissions()
-            permissionsManager.startPollingForPermissions()
         }
     }
 
@@ -47,9 +47,7 @@ public struct PermissionsTabView: View {
     private func permissionCard(_ kind: PermissionKind) -> some View {
         let status = permissionsManager.status(of: kind)
         let isBusy = permissionsManager.busy.contains(kind)
-        let needsAttention = status == .needsRepair
-            || (kind == .accessibility && status != .granted)
-            || (kind == .inputMonitoring && status != .granted && configStore.config.isPhysicalMonitoringEnabled)
+        let needsAttention = permissionsManager.needsAttention(kind)
 
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: kind.symbol)
@@ -86,24 +84,7 @@ public struct PermissionsTabView: View {
                 if isBusy {
                     ProgressView().controlSize(.small)
                 } else {
-                    switch status {
-                    case .granted:
-                        Button("Manage") { permissionsManager.openSettings(kind) }
-                            .buttonStyle(SettingsSecondaryButtonStyle())
-                            .help("Opens the \(kind.title) list in System Settings.")
-                    case .notGranted:
-                        Button("Allow") { permissionsManager.request(kind) }
-                            .buttonStyle(SettingsPrimaryButtonStyle())
-                        Button("Settings") { permissionsManager.openSettings(kind) }
-                            .buttonStyle(SettingsSecondaryButtonStyle())
-                            .help("Opens the \(kind.title) list in System Settings.")
-                    case .needsRepair:
-                        Button("Repair") { permissionsManager.repair(kind) }
-                            .buttonStyle(SettingsPrimaryButtonStyle())
-                            .help("Clears the old macOS entry for Keyli and asks again.")
-                        Button("Settings") { permissionsManager.openSettings(kind) }
-                            .buttonStyle(SettingsSecondaryButtonStyle())
-                    }
+                    actions(for: kind, status: status)
                 }
             }
         }
@@ -117,25 +98,92 @@ public struct PermissionsTabView: View {
         .accessibilityLabel("\(kind.title), \(status.label)")
     }
 
+    @ViewBuilder
+    private func actions(for kind: PermissionKind, status: PermissionStatus) -> some View {
+        switch status {
+        case .granted:
+            if kind == .loginItem {
+                Button("Turn Off") { permissionsManager.turnOffLoginItem() }
+                    .buttonStyle(SettingsSecondaryButtonStyle())
+            } else {
+                Button("Manage") { permissionsManager.openSettings(kind) }
+                    .buttonStyle(SettingsSecondaryButtonStyle())
+                    .help("Opens the \(kind.title) list in System Settings.")
+            }
+        case .notGranted, .off:
+            Button(kind == .loginItem ? "Turn On" : "Allow") { permissionsManager.request(kind) }
+                .buttonStyle(SettingsPrimaryButtonStyle())
+            if kind != .loginItem {
+                Button("Settings") { permissionsManager.openSettings(kind) }
+                    .buttonStyle(SettingsSecondaryButtonStyle())
+            }
+        case .waiting:
+            Button("Open System Settings") { permissionsManager.openSettings(kind) }
+                .buttonStyle(SettingsPrimaryButtonStyle())
+        case .denied, .requiresApproval:
+            Button("Open System Settings") { permissionsManager.openSettings(kind) }
+                .buttonStyle(SettingsPrimaryButtonStyle())
+            if status == .denied {
+                Button("Reset") { permissionsManager.repair(kind) }
+                    .buttonStyle(SettingsSecondaryButtonStyle())
+                    .help("Clears the macOS decision for Keyli and asks again.")
+            }
+        case .needsRepair:
+            Button("Repair") { permissionsManager.repair(kind) }
+                .buttonStyle(SettingsPrimaryButtonStyle())
+                .help("Clears the old macOS entry for Keyli and asks again.")
+            Button("Settings") { permissionsManager.openSettings(kind) }
+                .buttonStyle(SettingsSecondaryButtonStyle())
+        case .needsRelaunch:
+            Button("Relaunch Keyli") { permissionsManager.relaunch() }
+                .buttonStyle(SettingsPrimaryButtonStyle())
+        }
+    }
+
     private func hint(for kind: PermissionKind, status: PermissionStatus) -> String? {
         switch (kind, status) {
-        case (_, .granted):
+        case (_, .granted), (_, .off):
             return nil
-        case (.accessibility, .needsRepair):
+        case (_, .waiting):
+            return "Turn on Keyli in System Settings. This page updates by itself when you do."
+        case (_, .needsRelaunch):
+            return "Access is on. macOS applies it to the keyboard monitor after Keyli restarts."
+        case (_, .needsRepair):
             return "macOS dropped Keyli’s access, usually after an update. Repair clears the old entry, then turn Keyli on again."
-        case (.accessibility, .notGranted):
+        case (_, .denied):
+            return "Turn on Keyli in System Settings, or Reset to be asked again."
+        case (.loginItem, .requiresApproval):
+            return "Turn on Keyli under Login Items & Extensions."
+        case (.accessibility, _):
             return "Turn on Keyli in the Accessibility list. If it’s missing, drag Keyli in from Finder."
-        case (.inputMonitoring, .needsRepair):
-            return "Repair clears the old entry, then turn Keyli on again and relaunch."
-        case (.inputMonitoring, .notGranted):
-            return "After turning Keyli on in the list, relaunch Keyli."
+        case (.inputMonitoring, _):
+            return "Needed only to highlight physical keys."
+        case (.loginItem, _):
+            return nil
         }
     }
 
     @ViewBuilder
     private func statusBadge(_ status: PermissionStatus) -> some View {
-        let color: Color = status == .granted ? .green : (status == .needsRepair ? .orange : .secondary)
-        let symbol = status == .granted ? "checkmark.circle.fill" : (status == .needsRepair ? "exclamationmark.triangle.fill" : "circle.dashed")
+        let color: Color = {
+            switch status {
+            case .granted: return .green
+            case .denied: return .red
+            case .needsRepair, .needsRelaunch, .requiresApproval: return .orange
+            case .waiting: return .blue
+            case .notGranted, .off: return .secondary
+            }
+        }()
+        let symbol: String = {
+            switch status {
+            case .granted: return "checkmark.circle.fill"
+            case .denied: return "xmark.circle.fill"
+            case .needsRepair, .needsRelaunch, .requiresApproval: return "exclamationmark.triangle.fill"
+            case .waiting: return "clock"
+            case .notGranted: return "circle.dashed"
+            case .off: return "minus.circle"
+            }
+        }()
         Label(status.label, systemImage: symbol)
             .font(.system(size: 10, weight: .semibold))
             .foregroundStyle(color)

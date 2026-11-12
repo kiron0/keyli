@@ -292,7 +292,7 @@ public struct ThemeStudioView: View {
                         .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
                 )
 
-            KeyboardView(state: keyboardState, showStatusBar: false)
+            KeyboardView(state: keyboardState, showStatusBar: false, isInteractive: false)
                 .padding(12)
                 .frame(width: previewWidth, height: keyboardHeight)
                 .background(KeyboardBackdrop(theme: keyboardState.currentTheme))

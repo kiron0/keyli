@@ -24,7 +24,7 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
         case .general: return "Startup, menu bar and the floating keyboard window."
         case .typing: return "How clicked keys are sent to the app you’re using."
         case .appearance: return "Keyboard layout and theme."
-        case .permissions: return "What macOS lets Keyli do, and why."
+        case .permissions: return "What macOS lets Keyli do, and why. Updates live."
         case .about: return "Version and links."
         }
     }

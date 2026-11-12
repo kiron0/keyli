@@ -23,6 +23,7 @@ public struct GeneralTabView: View {
                     if !succeeded {
                         uiState.showLoginItemError = true
                     }
+                    PermissionsManager.shared.checkPermissions()
                 }
             ))
 

@@ -21,6 +21,7 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
     private init() {}
 
     public func refresh() {
+        let oldIsRunningForRefresh = isRunning
         let shouldRun = ConfigStore.shared.config.isPhysicalMonitoringEnabled
             && hasVisibleKeyboard
 
@@ -28,6 +29,11 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
             start()
         } else {
             stop()
+        }
+        if oldIsRunningForRefresh != isRunning {
+            DispatchQueue.main.async {
+                PermissionsManager.shared.checkPermissions()
+            }
         }
     }
 

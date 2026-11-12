@@ -1,10 +1,13 @@
 import Foundation
 import ApplicationServices
 import AppKit
+import IOKit.hid
+import ServiceManagement
 
 public enum PermissionKind: String, CaseIterable, Identifiable {
     case accessibility
     case inputMonitoring
+    case loginItem
 
     public var id: String { rawValue }
 
@@ -12,6 +15,7 @@ public enum PermissionKind: String, CaseIterable, Identifiable {
         switch self {
         case .accessibility: return "Accessibility"
         case .inputMonitoring: return "Input Monitoring"
+        case .loginItem: return "Open at Login"
         }
     }
 
@@ -19,20 +23,26 @@ public enum PermissionKind: String, CaseIterable, Identifiable {
         switch self {
         case .accessibility: return "accessibility"
         case .inputMonitoring: return "keyboard"
+        case .loginItem: return "power"
         }
     }
 
     public var purpose: String {
         switch self {
-        case .accessibility: return "Lets Keyli type into the app you’re using when you click a key."
-        case .inputMonitoring: return "Lets Keyli light up keys you press on the physical keyboard. Nothing is recorded."
+        case .accessibility:
+            return "Lets Keyli type into the app you’re using and send brightness, volume and media keys."
+        case .inputMonitoring:
+            return "Lets Keyli light up keys you press on the physical keyboard. Nothing is recorded."
+        case .loginItem:
+            return "Starts Keyli when you log in so the keyboard is ready in the menu bar."
         }
     }
 
     public var usedBy: String {
         switch self {
-        case .accessibility: return "Typing from the on-screen keyboard"
+        case .accessibility: return "Typing, shortcuts, function and media keys"
         case .inputMonitoring: return "Highlight physical keys"
+        case .loginItem: return "Launch Keyli at login"
         }
     }
 
@@ -40,10 +50,11 @@ public enum PermissionKind: String, CaseIterable, Identifiable {
         self == .accessibility
     }
 
-    public var tccService: String {
+    public var tccServices: [String] {
         switch self {
-        case .accessibility: return "Accessibility"
-        case .inputMonitoring: return "ListenEvent"
+        case .accessibility: return ["Accessibility", "PostEvent"]
+        case .inputMonitoring: return ["ListenEvent"]
+        case .loginItem: return []
         }
     }
 
@@ -53,6 +64,8 @@ public enum PermissionKind: String, CaseIterable, Identifiable {
             return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
         case .inputMonitoring:
             return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")
+        case .loginItem:
+            return URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension")
         }
     }
 }
@@ -60,129 +73,210 @@ public enum PermissionKind: String, CaseIterable, Identifiable {
 public enum PermissionStatus: Equatable {
     case granted
     case notGranted
+    case waiting
+    case denied
     case needsRepair
+    case needsRelaunch
+    case requiresApproval
+    case off
 
     public var label: String {
         switch self {
         case .granted: return "Allowed"
         case .notGranted: return "Not Allowed"
+        case .waiting: return "Waiting…"
+        case .denied: return "Denied"
         case .needsRepair: return "Needs Repair"
+        case .needsRelaunch: return "Relaunch Needed"
+        case .requiresApproval: return "Needs Approval"
+        case .off: return "Off"
         }
+    }
+
+    public var isGranted: Bool {
+        self == .granted
     }
 
     public static func resolve(isGranted: Bool, wasGrantedBefore: Bool) -> PermissionStatus {
         if isGranted { return .granted }
         return wasGrantedBefore ? .needsRepair : .notGranted
     }
+
+    public static func accessibility(trusted: Bool, wasGrantedBefore: Bool, isWaiting: Bool) -> PermissionStatus {
+        if trusted { return .granted }
+        if wasGrantedBefore { return .needsRepair }
+        return isWaiting ? .waiting : .notGranted
+    }
+
+    public static func inputMonitoring(
+        access: IOHIDAccessType,
+        tapNeeded: Bool,
+        tapRunning: Bool,
+        wasGrantedBefore: Bool,
+        isWaiting: Bool
+    ) -> PermissionStatus {
+        if access == kIOHIDAccessTypeGranted {
+            return (tapNeeded && !tapRunning) ? .needsRelaunch : .granted
+        }
+        if access == kIOHIDAccessTypeDenied {
+            return wasGrantedBefore ? .needsRepair : .denied
+        }
+        return isWaiting ? .waiting : .notGranted
+    }
+
+    public static func loginItem(_ status: SMAppService.Status, wanted: Bool) -> PermissionStatus {
+        switch status {
+        case .enabled: return .granted
+        case .requiresApproval: return .requiresApproval
+        default: return wanted ? .notGranted : .off
+        }
+    }
 }
 
 public final class PermissionsManager: ObservableObject {
     public static let shared = PermissionsManager()
 
-    @Published public private(set) var hasAccessibilityPermission: Bool = false
-    @Published public private(set) var hasInputMonitoringPermission: Bool = false
-    @Published public private(set) var hasPostEventPermission: Bool = false
+    @Published public private(set) var statuses: [PermissionKind: PermissionStatus] = [:]
     @Published public private(set) var busy: Set<PermissionKind> = []
 
+    private var waiting: Set<PermissionKind> = []
     private var pollTimer: Timer?
     private var pollDeadline: Date = .distantPast
+    private var activationObserver: NSObjectProtocol?
     private let defaults = UserDefaults.standard
 
     private init() {
         checkPermissions()
+        activationObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.checkPermissions()
+        }
     }
 
     public static var canTypeNow: Bool {
         AXIsProcessTrusted() || CGPreflightPostEventAccess()
     }
 
-    public var canType: Bool {
-        hasAccessibilityPermission || hasPostEventPermission
-    }
-
-    public func isGranted(_ kind: PermissionKind) -> Bool {
-        switch kind {
-        case .accessibility: return canType
-        case .inputMonitoring: return hasInputMonitoringPermission
-        }
+    public static var inputMonitoringAccess: IOHIDAccessType {
+        IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
     }
 
     public func status(of kind: PermissionKind) -> PermissionStatus {
-        PermissionStatus.resolve(isGranted: isGranted(kind), wasGrantedBefore: defaults.bool(forKey: grantedKey(kind)))
+        statuses[kind] ?? .notGranted
+    }
+
+    public var canType: Bool {
+        status(of: .accessibility) == .granted
+    }
+
+    public var hasInputMonitoringPermission: Bool {
+        PermissionsManager.inputMonitoringAccess == kIOHIDAccessTypeGranted
+    }
+
+    public func needsAttention(_ kind: PermissionKind) -> Bool {
+        let status = status(of: kind)
+        switch kind {
+        case .accessibility:
+            return status != .granted
+        case .inputMonitoring:
+            return ConfigStore.shared.config.isPhysicalMonitoringEnabled && status != .granted
+        case .loginItem:
+            return status == .requiresApproval || (ConfigStore.shared.config.launchAtLogin && status != .granted)
+        }
     }
 
     public var attentionCount: Int {
-        var count = 0
-        if !canType { count += 1 }
-        if ConfigStore.shared.config.isPhysicalMonitoringEnabled && !hasInputMonitoringPermission { count += 1 }
-        return count
+        PermissionKind.allCases.filter { needsAttention($0) }.count
     }
 
     public var grantedCount: Int {
-        PermissionKind.allCases.filter { isGranted($0) }.count
+        PermissionKind.allCases.filter { status(of: $0) == .granted }.count
     }
 
     private func grantedKey(_ kind: PermissionKind) -> String {
         "io.coreify.keyli.permission.\(kind.rawValue).wasGranted"
     }
 
-    private func promptedKey(_ kind: PermissionKind) -> String {
-        "io.coreify.keyli.permission.\(kind.rawValue).wasPrompted"
-    }
-
     public func checkPermissions() {
-        let accessibility = AXIsProcessTrusted()
-        let postEvent = CGPreflightPostEventAccess()
         let monitor = PhysicalKeyboardMonitor.shared
-        let listen = CGPreflightListenEventAccess() || monitor.isRunning
+        let config = ConfigStore.shared.config
 
-        if hasAccessibilityPermission != accessibility {
-            hasAccessibilityPermission = accessibility
-        }
-        if hasPostEventPermission != postEvent {
-            hasPostEventPermission = postEvent
-        }
-        if canType {
-            if !defaults.bool(forKey: grantedKey(.accessibility)) {
-                defaults.set(true, forKey: grantedKey(.accessibility))
-            }
+        let trusted = PermissionsManager.canTypeNow
+        if trusted {
+            waiting.remove(.accessibility)
+            defaults.set(true, forKey: grantedKey(.accessibility))
             if KeyboardState.shared.dispatchIssue == .missingPermission {
                 KeyboardState.shared.dispatchIssue = nil
             }
         }
-        if hasInputMonitoringPermission != listen {
-            hasInputMonitoringPermission = listen
-        }
-        if listen && !defaults.bool(forKey: grantedKey(.inputMonitoring)) {
+        let accessibilityStatus = PermissionStatus.accessibility(
+            trusted: trusted,
+            wasGrantedBefore: defaults.bool(forKey: grantedKey(.accessibility)),
+            isWaiting: waiting.contains(.accessibility)
+        )
+
+        let access = PermissionsManager.inputMonitoringAccess
+        let tapNeeded = config.isPhysicalMonitoringEnabled && monitor.hasVisibleKeyboard
+        if access == kIOHIDAccessTypeGranted {
+            waiting.remove(.inputMonitoring)
             defaults.set(true, forKey: grantedKey(.inputMonitoring))
-        }
-        if ConfigStore.shared.config.isPhysicalMonitoringEnabled && monitor.hasVisibleKeyboard && !monitor.isRunning {
-            if listen || defaults.bool(forKey: promptedKey(.inputMonitoring)) {
+            if tapNeeded && !monitor.isRunning {
                 monitor.refresh()
-                if monitor.isRunning && !hasInputMonitoringPermission {
-                    hasInputMonitoringPermission = true
-                }
             }
+        }
+        let inputStatus = PermissionStatus.inputMonitoring(
+            access: access,
+            tapNeeded: tapNeeded,
+            tapRunning: monitor.isRunning,
+            wasGrantedBefore: defaults.bool(forKey: grantedKey(.inputMonitoring)),
+            isWaiting: waiting.contains(.inputMonitoring)
+        )
+
+        let loginStatus: PermissionStatus
+        if Bundle.main.bundleURL.pathExtension == "app" {
+            loginStatus = PermissionStatus.loginItem(SMAppService.mainApp.status, wanted: config.launchAtLogin)
+        } else {
+            loginStatus = .off
+        }
+        if loginStatus == .granted {
+            waiting.remove(.loginItem)
+        }
+
+        let updated: [PermissionKind: PermissionStatus] = [
+            .accessibility: accessibilityStatus,
+            .inputMonitoring: inputStatus,
+            .loginItem: loginStatus
+        ]
+        if statuses != updated {
+            statuses = updated
         }
     }
 
     public func request(_ kind: PermissionKind) {
-        let alreadyPrompted = defaults.bool(forKey: promptedKey(kind))
-        defaults.set(true, forKey: promptedKey(kind))
-
+        waiting.insert(kind)
         switch kind {
         case .accessibility:
-            if alreadyPrompted {
-                openSettings(kind)
-            } else {
-                let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-                _ = AXIsProcessTrustedWithOptions(options)
+            let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+            if !AXIsProcessTrustedWithOptions(options) {
+                _ = CGRequestPostEventAccess()
             }
         case .inputMonitoring:
-            if alreadyPrompted {
+            switch PermissionsManager.inputMonitoringAccess {
+            case kIOHIDAccessTypeDenied:
                 openSettings(kind)
-            } else if !CGRequestListenEventAccess() {
-                PhysicalKeyboardMonitor.shared.refresh()
+            default:
+                if !IOHIDRequestAccess(kIOHIDRequestTypeListenEvent) {
+                    openSettings(kind)
+                }
+            }
+        case .loginItem:
+            ConfigStore.shared.config.launchAtLogin = true
+            LaunchAtLoginService.shared.setEnabled(true)
+            if SMAppService.mainApp.status == .requiresApproval {
+                openSettings(kind)
             }
         }
         checkPermissions()
@@ -197,10 +291,20 @@ public final class PermissionsManager: ObservableObject {
         request(.inputMonitoring)
     }
 
+    public func turnOffLoginItem() {
+        ConfigStore.shared.config.launchAtLogin = false
+        LaunchAtLoginService.shared.setEnabled(false)
+        checkPermissions()
+    }
+
     public func openSettings(_ kind: PermissionKind) {
-        if let url = kind.settingsURL {
+        if kind == .loginItem {
+            SMAppService.openSystemSettingsLoginItems()
+        } else if let url = kind.settingsURL {
             NSWorkspace.shared.open(url)
         }
+        waiting.insert(kind)
+        checkPermissions()
         startPollingForPermissions()
     }
 
@@ -213,10 +317,13 @@ public final class PermissionsManager: ObservableObject {
     }
 
     public func repair(_ kind: PermissionKind) {
-        guard !busy.contains(kind) else { return }
+        let services = kind.tccServices
+        guard !services.isEmpty, !busy.contains(kind) else {
+            openSettings(kind)
+            return
+        }
         busy.insert(kind)
         let bundleId = Bundle.main.bundleIdentifier ?? KeyliConstants.bundleIdentifier
-        let services = kind == .accessibility ? [kind.tccService, "PostEvent"] : [kind.tccService]
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             for service in services {
@@ -231,7 +338,6 @@ public final class PermissionsManager: ObservableObject {
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.defaults.set(false, forKey: self.grantedKey(kind))
-                self.defaults.set(false, forKey: self.promptedKey(kind))
                 self.busy.remove(kind)
                 self.request(kind)
             }
@@ -253,21 +359,19 @@ public final class PermissionsManager: ObservableObject {
         NSApp.terminate(nil)
     }
 
-    private var isEverythingNeededGranted: Bool {
-        let monitoringSatisfied = hasInputMonitoringPermission || !ConfigStore.shared.config.isPhysicalMonitoringEnabled
-        return canType && monitoringSatisfied
-    }
-
     public func startPollingForPermissions() {
         pollDeadline = Date().addingTimeInterval(300)
         guard pollTimer == nil else { return }
-        let timer = Timer(timeInterval: 1.5, repeats: true) { [weak self] timer in
+        let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] timer in
             guard let self = self else {
                 timer.invalidate()
                 return
             }
             self.checkPermissions()
-            if self.isEverythingNeededGranted || Date() > self.pollDeadline {
+            let needed = PermissionKind.allCases.filter { self.needsAttention($0) || self.waiting.contains($0) }
+            if needed.isEmpty || Date() > self.pollDeadline {
+                self.waiting.removeAll()
+                self.checkPermissions()
                 timer.invalidate()
                 self.pollTimer = nil
             }

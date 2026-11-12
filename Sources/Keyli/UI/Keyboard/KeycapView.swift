@@ -33,10 +33,13 @@ public struct KeycapView: View {
     @ObservedObject public var state: KeyboardState
     @StateObject private var uiState = KeycapUIState()
 
-    public init(key: KeyboardKey, theme: KeyboardTheme, state: KeyboardState) {
+    public let isInteractive: Bool
+
+    public init(key: KeyboardKey, theme: KeyboardTheme, state: KeyboardState, isInteractive: Bool = true) {
         self.key = key
         self.theme = theme
         self.state = state
+        self.isInteractive = isInteractive
     }
 
     private var isPhysicallyPressed: Bool {
@@ -92,6 +95,7 @@ public struct KeycapView: View {
                 .onChanged { _ in
                     if !uiState.isLocalPressed {
                         uiState.isLocalPressed = true
+                        guard isInteractive else { return }
                         state.virtualPressedKeyId = key.id
                         let issue = KeyboardInputDispatcher.shared.dispatchKey(key, state: state)
                         if issue == nil && isRepeatable {

@@ -54,20 +54,52 @@ public final class KeyboardInputDispatcher {
         }
     }
 
-    public func currentIssue() -> KeyDispatchIssue? {
-        if NSRunningApplication.current.isActive {
-            return .noTarget
+    public enum DispatchPlan: Equatable {
+        case send
+        case activateTargetThenSend
+        case refuse(KeyDispatchIssue)
+    }
+
+    public static func needsTargetApp(_ action: KeyDispatchAction) -> Bool {
+        switch action {
+        case .text, .keyCode:
+            return true
+        case .system, .none, .toggleModifier:
+            return false
         }
-        if !PermissionsManager.canTypeNow {
-            return .missingPermission
+    }
+
+    public static func needsEventPermission(_ action: KeyDispatchAction) -> Bool {
+        switch action {
+        case .system(.missionControl):
+            return false
+        case .text, .keyCode, .system:
+            return true
+        case .none, .toggleModifier:
+            return false
         }
-        if IsSecureEventInputEnabled() {
-            return .secureInput
+    }
+
+    public static func plan(
+        for action: KeyDispatchAction,
+        canPostEvents: Bool,
+        secureInput: Bool,
+        keyliIsActive: Bool,
+        hasTarget: Bool
+    ) -> DispatchPlan {
+        if needsEventPermission(action) && !canPostEvents {
+            return .refuse(.missingPermission)
         }
-        if !FocusManager.shared.isTargetValid {
-            return .noTarget
+        guard needsTargetApp(action) else {
+            return .send
         }
-        return nil
+        if secureInput {
+            return .refuse(.secureInput)
+        }
+        if keyliIsActive {
+            return hasTarget ? .activateTargetThenSend : .refuse(.noTarget)
+        }
+        return hasTarget ? .send : .refuse(.noTarget)
     }
 
     /// Dispatches a virtual key press into the active system application
@@ -86,14 +118,44 @@ public final class KeyboardInputDispatcher {
             break
         }
 
-        if let issue = currentIssue() {
+        let plan = KeyboardInputDispatcher.plan(
+            for: action,
+            canPostEvents: PermissionsManager.canTypeNow,
+            secureInput: IsSecureEventInputEnabled(),
+            keyliIsActive: NSRunningApplication.current.isActive,
+            hasTarget: FocusManager.shared.isTargetValid
+        )
+
+        switch plan {
+        case .refuse(let issue):
             state.dispatchIssue = issue
             if issue == .missingPermission {
                 PermissionsManager.shared.startPollingForPermissions()
             }
             return issue
-        }
 
+        case .activateTargetThenSend:
+            guard let target = FocusManager.shared.targetApplication else {
+                state.dispatchIssue = .noTarget
+                return .noTarget
+            }
+            target.activate()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) { [weak self] in
+                guard target.isActive, !target.isTerminated else {
+                    state.dispatchIssue = .noTarget
+                    return
+                }
+                self?.perform(action, state: state)
+            }
+            return nil
+
+        case .send:
+            perform(action, state: state)
+            return nil
+        }
+    }
+
+    private func perform(_ action: KeyDispatchAction, state: KeyboardState) {
         if state.dispatchIssue != nil {
             state.dispatchIssue = nil
         }
@@ -111,7 +173,6 @@ public final class KeyboardInputDispatcher {
         }
 
         handlePostTypingModifiers(state: state)
-        return nil
     }
 
     /// Injects Unicode text into the target application

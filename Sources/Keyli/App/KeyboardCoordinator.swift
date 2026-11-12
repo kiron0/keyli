@@ -97,14 +97,17 @@ public final class KeyboardCoordinator {
             }
         }
 
+        if previous.launchAtLogin != config.launchAtLogin {
+            PermissionsManager.shared.checkPermissions()
+        }
+
         if previous.showMenuBarIcon != config.showMenuBarIcon {
             StatusItemController.shared.applyVisibility(config.showMenuBarIcon)
         }
 
         if previous.isPhysicalMonitoringEnabled != config.isPhysicalMonitoringEnabled {
             PhysicalKeyboardMonitor.shared.refresh()
-            if config.isPhysicalMonitoringEnabled && !PhysicalKeyboardMonitor.shared.isRunning
-                && !PermissionsManager.shared.hasInputMonitoringPermission {
+            if config.isPhysicalMonitoringEnabled && !PermissionsManager.shared.hasInputMonitoringPermission {
                 PermissionsManager.shared.requestInputMonitoring()
             }
             PermissionsManager.shared.checkPermissions()

@@ -3,10 +3,12 @@ import SwiftUI
 public struct KeyboardView: View {
     @ObservedObject public var state: KeyboardState
     public var showStatusBar: Bool
+    public var isInteractive: Bool
 
-    public init(state: KeyboardState = .shared, showStatusBar: Bool = false) {
+    public init(state: KeyboardState = .shared, showStatusBar: Bool = false, isInteractive: Bool = true) {
         self.state = state
         self.showStatusBar = showStatusBar
+        self.isInteractive = isInteractive
     }
 
     public var body: some View {
@@ -30,7 +32,7 @@ public struct KeyboardView: View {
                         let w = max(8, cellW - spacing)
                         let h = max(8, cellH - spacing)
 
-                        KeycapView(key: key, theme: theme, state: state)
+                        KeycapView(key: key, theme: theme, state: state, isInteractive: isInteractive)
                             .frame(width: w, height: h)
                             .position(x: x + cellW / 2, y: y + cellH / 2)
                     }
