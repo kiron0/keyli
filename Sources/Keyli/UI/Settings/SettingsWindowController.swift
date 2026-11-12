@@ -89,15 +89,24 @@ public final class ThemeStudioWindowController: NSObject, NSWindowDelegate {
         }
 
         let host = NSHostingController(rootView: ThemeStudioView())
-        host.sceneBridgingOptions = [.toolbars, .title]
-
+        host.sizingOptions = []
         let window = NSWindow(contentViewController: host)
-        window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
-        window.toolbarStyle = .unified
-        window.title = "Theme Studio"
-        window.setContentSize(NSSize(width: 1040, height: 620))
-        window.minSize = NSSize(width: 920, height: 540)
+        window.title = "Keyli Theme Studio"
+        window.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
+        window.titlebarAppearsTransparent = true
+        window.titlebarSeparatorStyle = .none
+        window.titleVisibility = .hidden
+        window.setContentSize(ThemeStudioLayout.windowSize)
+        window.minSize = window.frame.size
+        window.maxSize = window.frame.size
+        window.collectionBehavior = [.fullScreenNone]
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.hidesOnDeactivate = false
         window.isReleasedWhenClosed = false
+        window.isMovableByWindowBackground = true
+        window.tabbingMode = .disallowed
+        window.standardWindowButton(.zoomButton)?.isEnabled = false
         window.delegate = self
         window.center()
 

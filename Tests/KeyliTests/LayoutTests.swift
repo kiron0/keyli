@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import AppKit
 @testable import Keyli
 
 @Suite("Keyboard Layout Tests", .serialized)
@@ -113,6 +114,31 @@ struct LayoutTests {
                 #expect(abs(KeyliConstants.panelWidth(forHeight: height, layout: layout) - width) <= 2)
             }
         }
+    }
+
+    @Test("Floating Panel Resize Stays Proportional And Stable")
+    func testProportionalResize() {
+        let layout = KeyboardLayoutManager.shared.generateLayout(geometry: .ansi)
+        let current = NSSize(width: 820, height: KeyliConstants.panelHeight(forWidth: 820, layout: layout))
+        let screen = NSSize(width: 1680, height: 1000)
+
+        let wider = PanelManager.proportionalSize(proposed: NSSize(width: 1000, height: current.height), drivenByHeight: false, layout: layout, maxSize: screen)
+        #expect(wider.width == 1000)
+        #expect(wider.height == KeyliConstants.panelHeight(forWidth: 1000, layout: layout))
+
+        let taller = PanelManager.proportionalSize(proposed: NSSize(width: current.width, height: 500), drivenByHeight: true, layout: layout, maxSize: screen)
+        #expect(abs(taller.height - 500) <= 2)
+        #expect(taller.width > current.width)
+
+        let corner1 = PanelManager.proportionalSize(proposed: NSSize(width: 900, height: 300), drivenByHeight: false, layout: layout, maxSize: screen)
+        let corner2 = PanelManager.proportionalSize(proposed: NSSize(width: 900, height: 900), drivenByHeight: false, layout: layout, maxSize: screen)
+        #expect(corner1 == corner2)
+
+        let tiny = PanelManager.proportionalSize(proposed: NSSize(width: 100, height: 50), drivenByHeight: false, layout: layout, maxSize: screen)
+        #expect(tiny.width == KeyliConstants.minFloatingWidth)
+
+        let huge = PanelManager.proportionalSize(proposed: NSSize(width: 4000, height: current.height), drivenByHeight: false, layout: layout, maxSize: screen)
+        #expect(huge.height <= screen.height + 1)
     }
 
     @Test("Key IDs Are Unique")

@@ -5,6 +5,10 @@ All notable changes to Keyli will be documented in this file.
 ## Unreleased
 
 ### Changed
+- Menu bar icon toggles the floating keyboard (click to show, click to hide); the separate menu bar keyboard is gone.
+- Theme Studio uses the same glass window style as Settings, with theme search.
+- 24 new theme presets (31 built-in).
+- Smooth, flicker-free proportional resizing from any edge or corner.
 - Settings window rebuilt as a glass sidebar window in the QuitX style, with permission cards (Allow, Settings, Repair, Relaunch).
 - Keyboards keep their proportions: resizing the floating keyboard is ratio-locked and keys never stretch.
 - Builds are signed with a stable requirement so macOS permissions survive updates.

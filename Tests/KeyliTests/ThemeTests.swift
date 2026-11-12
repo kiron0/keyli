@@ -7,7 +7,16 @@ import SwiftUI
 struct ThemeTests {
     @Test("Built-in Themes Count and Presence")
     func testBuiltInThemesExist() {
-        #expect(KeyboardTheme.builtInThemes.count == 7)
+        #expect(KeyboardTheme.builtInThemes.count == 31)
+        #expect(Set(KeyboardTheme.builtInThemes.map { $0.id }).count == KeyboardTheme.builtInThemes.count)
+        #expect(Set(KeyboardTheme.builtInThemes.map { $0.name }).count == KeyboardTheme.builtInThemes.count)
+        for theme in KeyboardTheme.builtInThemes {
+            #expect(theme.isBuiltIn)
+            for hex in [theme.backgroundColorHex, theme.keycapBaseColorHex, theme.keycapActiveColorHex,
+                        theme.keycapTextColorHex, theme.accentColorHex, theme.modifierKeyColorHex, theme.borderColorHex] {
+                #expect(KeyboardTheme.rgbComponents(hex: hex) != nil, "\(theme.id) has invalid color \(hex)")
+            }
+        }
         let ids = KeyboardTheme.builtInThemes.map { $0.id }
         #expect(ids.contains("apple_native"))
         #expect(ids.contains("dark_mechanical"))

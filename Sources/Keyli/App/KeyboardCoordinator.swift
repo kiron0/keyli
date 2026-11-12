@@ -36,7 +36,6 @@ public final class KeyboardCoordinator {
             object: nil,
             queue: .main
         ) { _ in
-            PanelManager.shared.hideQuickPanel()
             SettingsWindowController.shared.showSettings()
         }
 
@@ -45,7 +44,6 @@ public final class KeyboardCoordinator {
             object: nil,
             queue: .main
         ) { _ in
-            PanelManager.shared.hideQuickPanel()
             ThemeStudioWindowController.shared.showThemeStudio()
         }
 

@@ -6,6 +6,8 @@ final class ThemeStudioUIState: ObservableObject {
     @Published var showDeleteConfirmation: Bool = false
     @Published var showImportError: Bool = false
     @Published var statusMessage: String? = nil
+    @Published var hoveredThemeId: String? = nil
+    @Published var searchText: String = ""
 
     func showStatus(_ message: String) {
         statusMessage = message
@@ -17,10 +19,19 @@ final class ThemeStudioUIState: ObservableObject {
     }
 }
 
+public enum ThemeStudioLayout {
+    public static let windowSize = NSSize(width: 1060, height: 720)
+    public static let sidebarWidth: CGFloat = 220
+    public static let detailWidth: CGFloat = windowSize.width - sidebarWidth
+    public static let detailHorizontalPadding: CGFloat = 28
+    public static let contentWidth: CGFloat = detailWidth - detailHorizontalPadding * 2
+    public static let columnSpacing: CGFloat = 18
+    public static let columnWidth: CGFloat = (contentWidth - columnSpacing * 2) / 3
+}
+
 public struct ThemeStudioView: View {
     @ObservedObject public var themeManager: ThemeManager = .shared
     @ObservedObject public var keyboardState: KeyboardState = .shared
-
     @StateObject private var uiState = ThemeStudioUIState()
 
     public init() {}
@@ -37,57 +48,25 @@ public struct ThemeStudioView: View {
         !selectedTheme.isBuiltIn
     }
 
+    private var trimmedQuery: String {
+        uiState.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func matches(_ theme: KeyboardTheme) -> Bool {
+        trimmedQuery.isEmpty || theme.name.localizedCaseInsensitiveContains(trimmedQuery)
+    }
+
     public var body: some View {
-        NavigationSplitView {
+        HStack(spacing: 0) {
             sidebar
-                .navigationSplitViewColumnWidth(min: 190, ideal: 210, max: 280)
-        } detail: {
-            HStack(spacing: 0) {
-                previewPane
-                Divider()
-                inspector
-                    .frame(width: 310)
-            }
+            detail
         }
-        .navigationTitle("Theme Studio")
-        .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
-                Button {
-                    themeManager.duplicateTheme(selectedTheme)
-                } label: {
-                    Label("Duplicate", systemImage: "plus.square.on.square")
-                }
-                .help("Duplicate the selected theme")
-
-                Button {
-                    importTheme()
-                } label: {
-                    Label("Import", systemImage: "square.and.arrow.down")
-                }
-                .help("Import a theme from a JSON file")
-
-                Menu {
-                    Button("Export to File…") {
-                        exportTheme()
-                    }
-                    Button("Copy as JSON") {
-                        copyJson()
-                    }
-                } label: {
-                    Label("Export", systemImage: "square.and.arrow.up")
-                }
-                .help("Export the selected theme")
-
-                Button {
-                    uiState.showDeleteConfirmation = true
-                } label: {
-                    Label("Delete", systemImage: "trash")
-                }
-                .disabled(!isEditable)
-                .help("Delete the selected theme")
-            }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background {
+            GlassFill(shape: Rectangle())
+                .ignoresSafeArea()
         }
-        .frame(minWidth: 900, minHeight: 520)
+        .ignoresSafeArea()
         .confirmationDialog(
             "Delete “\(selectedTheme.name)”?",
             isPresented: $uiState.showDeleteConfirmation
@@ -109,102 +88,225 @@ public struct ThemeStudioView: View {
     // MARK: - Sidebar
 
     private var sidebar: some View {
-        List(selection: Binding<String?>(
-            get: { themeManager.currentTheme.id },
-            set: { id in
-                if let id = id {
-                    themeManager.selectTheme(byId: id)
-                }
+        VStack(spacing: 0) {
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.secondary)
+                TextField("Search themes…", text: $uiState.searchText)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12))
             }
-        )) {
-            Section("Built-in") {
-                ForEach(themeManager.availableThemes.filter { $0.isBuiltIn }) { theme in
-                    themeRow(themeManager.resolved(theme))
-                        .tag(theme.id)
-                }
-            }
+            .padding(.horizontal, 8)
+            .frame(height: 28)
+            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .stroke(Color.primary.opacity(0.1), lineWidth: 0.5)
+            )
+            .padding(.horizontal, 10)
+            .padding(.top, 40)
+            .padding(.bottom, 8)
 
-            if !themeManager.customThemes.isEmpty {
-                Section("My Themes") {
-                    ForEach(themeManager.customThemes) { theme in
-                        themeRow(theme)
-                            .tag(theme.id)
-                            .contextMenu {
-                                Button("Duplicate") {
-                                    themeManager.duplicateTheme(theme)
-                                }
-                                Button("Delete", role: .destructive) {
-                                    themeManager.deleteCustomTheme(theme)
-                                }
+            Divider().opacity(0.35)
+
+            ScrollView(.vertical, showsIndicators: false) {
+                LazyVStack(alignment: .leading, spacing: 14) {
+                    let custom = themeManager.customThemes.filter(matches)
+                    if !custom.isEmpty {
+                        VStack(alignment: .leading, spacing: 2) {
+                            sectionTitle("My Themes")
+                            ForEach(custom) { theme in
+                                sidebarRow(theme)
                             }
+                        }
+                    }
+
+                    let builtIn = themeManager.availableThemes.filter { $0.isBuiltIn && matches($0) }
+                    if !builtIn.isEmpty {
+                        VStack(alignment: .leading, spacing: 2) {
+                            sectionTitle("Built-in (\(builtIn.count))")
+                            ForEach(builtIn) { theme in
+                                sidebarRow(theme)
+                            }
+                        }
+                    }
+
+                    if custom.isEmpty && builtIn.isEmpty {
+                        Text("No matching themes")
+                            .font(.system(size: 11.5, weight: .medium))
+                            .foregroundStyle(Color.secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 24)
                     }
                 }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 8)
             }
         }
-        .listStyle(.sidebar)
+        .frame(width: ThemeStudioLayout.sidebarWidth)
+        .frame(maxHeight: .infinity)
+        .background(KeyliChrome.cardBackground)
     }
 
-    @ViewBuilder
-    private func themeRow(_ theme: KeyboardTheme) -> some View {
-        HStack(spacing: 8) {
-            ThemeSwatchView(theme: theme, size: CGSize(width: 30, height: 20))
-            Text(theme.name)
-                .lineLimit(1)
+    private func sectionTitle(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(Color.secondary)
+            .padding(.horizontal, 10)
+            .padding(.bottom, 2)
+    }
+
+    private func sidebarRow(_ theme: KeyboardTheme) -> some View {
+        let isSelected = selectedTheme.id == theme.id
+        let shown = themeManager.resolved(theme)
+        return Button {
+            themeManager.selectTheme(theme)
+        } label: {
+            HStack(spacing: 8) {
+                ThemeSwatchView(theme: shown, size: CGSize(width: 28, height: 18))
+                Text(theme.name)
+                    .font(.system(size: 13, weight: isSelected ? .medium : .regular))
+                    .foregroundStyle(Color.primary)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isSelected ? KeyliChrome.accent.opacity(0.18) : (uiState.hoveredThemeId == theme.id ? Color.primary.opacity(0.05) : Color.clear))
+            )
+            .contentShape(Rectangle())
         }
-        .padding(.vertical, 2)
+        .buttonStyle(.plain)
+        .accessibilityLabel(theme.name)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .onHover { hovering in
+            if hovering {
+                uiState.hoveredThemeId = theme.id
+            } else if uiState.hoveredThemeId == theme.id {
+                uiState.hoveredThemeId = nil
+            }
+        }
+        .contextMenu {
+            Button("Duplicate") {
+                themeManager.duplicateTheme(theme)
+            }
+            if !theme.isBuiltIn {
+                Button("Delete", role: .destructive) {
+                    themeManager.deleteCustomTheme(theme)
+                }
+            }
+        }
     }
 
-    // MARK: - Preview
+    // MARK: - Detail
 
-    private var previewPane: some View {
+    private var detail: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            header
+            preview
+            if !isEditable {
+                SettingsInlineNote(
+                    symbol: "lock.fill",
+                    title: "Built-in themes can’t be changed",
+                    detail: "Duplicate this theme to customize colors, keys and background."
+                )
+            }
+            ScrollView(.vertical, showsIndicators: true) {
+                inspector
+                    .padding(.bottom, 24)
+                    .frame(width: ThemeStudioLayout.contentWidth, alignment: .topLeading)
+            }
+        }
+        .padding(.horizontal, ThemeStudioLayout.detailHorizontalPadding)
+        .padding(.top, 40)
+        .frame(width: ThemeStudioLayout.detailWidth, alignment: .topLeading)
+        .frame(maxHeight: .infinity, alignment: .top)
+    }
+
+    private var header: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                if isEditable {
+                    TextField("Theme name", text: binding(\.name))
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 20, weight: .bold))
+                        .accessibilityLabel("Theme name")
+                } else {
+                    Text(selectedTheme.name)
+                        .font(.system(size: 20, weight: .bold))
+                }
+                Text(uiState.statusMessage ?? (isEditable ? "Custom theme. Changes apply to every keyboard right away." : "Built-in theme."))
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Color.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 16)
+
+            HStack(spacing: 8) {
+                Button("Duplicate") {
+                    themeManager.duplicateTheme(selectedTheme)
+                }
+                .buttonStyle(SettingsPrimaryButtonStyle())
+
+                Button("Import…") {
+                    importTheme()
+                }
+                .buttonStyle(SettingsSecondaryButtonStyle())
+
+                Button("Export…") {
+                    exportTheme()
+                }
+                .buttonStyle(SettingsSecondaryButtonStyle())
+                .contextMenu {
+                    Button("Copy as JSON") {
+                        copyJson()
+                    }
+                }
+                .help("Save the theme as a JSON file. Right-click to copy JSON instead.")
+
+                if isEditable {
+                    Button("Delete…") {
+                        uiState.showDeleteConfirmation = true
+                    }
+                    .buttonStyle(SettingsSecondaryButtonStyle(isDestructive: true))
+                }
+            }
+        }
+        .frame(width: ThemeStudioLayout.contentWidth)
+    }
+
+    private var preview: some View {
         let layout = keyboardState.currentLayout
-        let aspect = CGFloat(layout.unitWidth / max(1, layout.unitHeight))
+        let previewWidth = ThemeStudioLayout.contentWidth - 120
+        let keyboardHeight = (previewWidth - 24) / KeyliConstants.keyboardAspect(layout) + 24
 
-        return VStack(spacing: 14) {
-            Spacer(minLength: 0)
+        return ZStack {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.primary.opacity(0.03))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+                )
 
             KeyboardView(state: keyboardState, showStatusBar: false)
                 .padding(12)
+                .frame(width: previewWidth, height: keyboardHeight)
                 .background(KeyboardBackdrop(theme: keyboardState.currentTheme))
-                .aspectRatio(aspect, contentMode: .fit)
-                .frame(maxWidth: 780)
-                .shadow(color: .black.opacity(0.25), radius: 18, y: 8)
-
-            Text(uiState.statusMessage ?? "Click keys to preview press states. Changes apply to every keyboard right away.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-
-            Spacer(minLength: 0)
+                .shadow(color: .black.opacity(0.22), radius: 14, y: 6)
         }
-        .padding(24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(nsColor: .underPageBackgroundColor))
+        .frame(width: ThemeStudioLayout.contentWidth, height: keyboardHeight + 36)
     }
 
     // MARK: - Inspector
 
     private var inspector: some View {
-        Form {
-            if isEditable {
-                Section("Name") {
-                    TextField("Name", text: binding(\.name), prompt: Text("Theme name"))
-                        .labelsHidden()
-                }
-            } else {
-                Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Built-in themes can’t be changed. Duplicate this theme to customize it.")
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Button("Duplicate to Customize") {
-                            themeManager.duplicateTheme(selectedTheme)
-                        }
-                    }
-                }
-            }
-
-            Section("Colors") {
+        HStack(alignment: .top, spacing: ThemeStudioLayout.columnSpacing) {
+            column {
+                SettingsSectionHeader(title: "Colors", symbol: "paintpalette")
                 colorRow("Background", \.backgroundColorHex)
                 colorRow("Keys", \.keycapBaseColorHex)
                 colorRow("Modifier keys", \.modifierKeyColorHex)
@@ -213,37 +315,46 @@ public struct ThemeStudioView: View {
                 colorRow("Accent", \.accentColorHex)
                 colorRow("Border", \.borderColorHex)
             }
-            .disabled(!isEditable)
 
-            Section("Keys") {
-                Picker("Style", selection: binding(\.keycapStyle)) {
-                    ForEach(KeycapStyle.allCases, id: \.self) { style in
-                        Text(style.displayName).tag(style)
+            column {
+                SettingsSectionHeader(title: "Keys", symbol: "keyboard")
+                pickerRow("Style") {
+                    Picker("Style", selection: binding(\.keycapStyle)) {
+                        ForEach(KeycapStyle.allCases, id: \.self) { style in
+                            Text(style.displayName).tag(style)
+                        }
                     }
                 }
-
-                Picker("Font", selection: binding(\.fontDesign)) {
-                    Text("System").tag("default")
-                    Text("Rounded").tag("rounded")
-                    Text("Monospaced").tag("monospaced")
-                    Text("Serif").tag("serif")
+                pickerRow("Font") {
+                    Picker("Font", selection: binding(\.fontDesign)) {
+                        Text("System").tag("default")
+                        Text("Rounded").tag("rounded")
+                        Text("Monospaced").tag("monospaced")
+                        Text("Serif").tag("serif")
+                    }
                 }
-
                 sliderRow("Corner radius", \.cornerRadius, in: 1...14, format: "%.0f pt")
                 sliderRow("Spacing", \.keySpacing, in: 2...10, format: "%.1f pt")
                 sliderRow("Elevation", \.keyElevation, in: 0...6, format: "%.1f pt")
+            }
+
+            column {
+                SettingsSectionHeader(title: "Surface", symbol: "square.dashed")
                 sliderRow("Border width", \.borderWidth, in: 0...3, format: "%.1f pt")
                 sliderRow("Border opacity", \.borderOpacity, in: 0...1, format: "%.0f%%", scale: 100)
+                sliderRow("Background opacity", \.backgroundOpacity, in: 0.1...1.0, format: "%.0f%%", scale: 100)
+                toggleRow("Blur behind keyboard", binding(\.backgroundBlur))
             }
-            .disabled(!isEditable)
-
-            Section("Background") {
-                Toggle("Blur content behind keyboard", isOn: binding(\.backgroundBlur))
-                sliderRow("Opacity", \.backgroundOpacity, in: 0.1...1.0, format: "%.0f%%", scale: 100)
-            }
-            .disabled(!isEditable)
         }
-        .formStyle(.grouped)
+        .disabled(!isEditable)
+        .opacity(isEditable ? 1 : 0.55)
+    }
+
+    private func column<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            content()
+        }
+        .frame(width: ThemeStudioLayout.columnWidth, alignment: .topLeading)
     }
 
     // MARK: - Row Helpers
@@ -260,17 +371,46 @@ public struct ThemeStudioView: View {
         )
     }
 
+    private func rowLabel(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(Color.primary)
+    }
+
     @ViewBuilder
     private func colorRow(_ title: String, _ keyPath: WritableKeyPath<KeyboardTheme, String>) -> some View {
         let hex = binding(keyPath)
-        ColorPicker(
-            title,
-            selection: Binding(
-                get: { Color(hex: hex.wrappedValue) },
-                set: { hex.wrappedValue = $0.toHex() }
-            ),
-            supportsOpacity: false
-        )
+        HStack(spacing: 8) {
+            rowLabel(title)
+            Spacer(minLength: 4)
+            Text(hex.wrappedValue)
+                .font(.system(size: 10.5, design: .monospaced))
+                .foregroundStyle(Color.secondary)
+            ColorPicker(
+                title,
+                selection: Binding(
+                    get: { Color(hex: hex.wrappedValue) },
+                    set: { hex.wrappedValue = $0.toHex() }
+                ),
+                supportsOpacity: false
+            )
+            .labelsHidden()
+        }
+        .frame(minHeight: 28)
+        .padding(.leading, 33)
+    }
+
+    @ViewBuilder
+    private func pickerRow<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
+        HStack(spacing: 8) {
+            rowLabel(title)
+            Spacer(minLength: 4)
+            content()
+                .settingsMenu()
+                .frame(width: 140)
+        }
+        .frame(minHeight: 30)
+        .padding(.leading, 33)
     }
 
     @ViewBuilder
@@ -284,16 +424,40 @@ public struct ThemeStudioView: View {
         let value = binding(keyPath)
         VStack(alignment: .leading, spacing: 2) {
             HStack {
-                Text(title)
+                rowLabel(title)
                 Spacer()
                 Text(String(format: format, value.wrappedValue * scale))
+                    .font(.system(size: 11, weight: .medium))
                     .monospacedDigit()
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondary)
             }
             Slider(value: value, in: range)
                 .controlSize(.small)
                 .accessibilityLabel(title)
         }
+        .padding(.leading, 33)
+        .padding(.vertical, 2)
+    }
+
+    @ViewBuilder
+    private func toggleRow(_ title: String, _ isOn: Binding<Bool>) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.16)) {
+                isOn.wrappedValue.toggle()
+            }
+        } label: {
+            HStack(spacing: 9) {
+                SettingsSwitchIndicator(isOn: isOn.wrappedValue)
+                rowLabel(title)
+                Spacer(minLength: 0)
+            }
+            .frame(minHeight: 28)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityValue(isOn.wrappedValue ? "On" : "Off")
+        .padding(.leading, 33)
     }
 
     // MARK: - Actions

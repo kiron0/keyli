@@ -16,23 +16,31 @@ public final class StatusItemController: NSObject {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         item.autosaveName = "io.coreify.keyli.statusItem"
         if let button = item.button {
-            button.image = NSImage(systemSymbolName: "keyboard", accessibilityDescription: "Keyli")
-            button.image?.isTemplate = true
-            button.toolTip = "Keyli"
             button.target = self
             button.action = #selector(statusBarButtonClicked(_:))
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
 
         self.statusItem = item
+        updateIcon(isKeyboardVisible: PanelManager.shared.isFloatingVisible)
+        PanelManager.shared.onVisibilityChange = { [weak self] isVisible in
+            self?.updateIcon(isKeyboardVisible: isVisible)
+        }
         applyVisibility(ConfigStore.shared.config.showMenuBarIcon)
     }
 
     public func applyVisibility(_ isVisible: Bool) {
         statusItem?.isVisible = isVisible
-        if !isVisible {
-            PanelManager.shared.hideQuickPanel()
-        }
+    }
+
+    private func updateIcon(isKeyboardVisible: Bool) {
+        guard let button = statusItem?.button else { return }
+        let symbol = isKeyboardVisible ? "keyboard.fill" : "keyboard"
+        let image = NSImage(systemSymbolName: symbol, accessibilityDescription: "Keyli")
+        image?.isTemplate = true
+        button.image = image
+        button.toolTip = isKeyboardVisible ? "Hide Keyboard" : "Show Keyboard"
+        button.setAccessibilityLabel(isKeyboardVisible ? "Hide Keyli keyboard" : "Show Keyli keyboard")
     }
 
     @objc private func statusBarButtonClicked(_ sender: NSStatusBarButton) {
@@ -41,21 +49,16 @@ public final class StatusItemController: NSObject {
             || (event?.type == .leftMouseUp && event?.modifierFlags.contains(.control) == true)
 
         if isSecondaryClick {
-            PanelManager.shared.hideQuickPanel()
             showContextMenu(sender)
         } else {
-            PanelManager.shared.toggleQuickPanel(relativeTo: sender)
+            PanelManager.shared.toggleFloatingKeyboard()
         }
-    }
-
-    public func closePopover() {
-        PanelManager.shared.hideQuickPanel()
     }
 
     private func showContextMenu(_ sender: NSStatusBarButton) {
         let menu = NSMenu()
 
-        let floatingTitle = PanelManager.shared.isFloatingVisible ? "Hide Floating Keyboard" : "Show Floating Keyboard"
+        let floatingTitle = PanelManager.shared.isFloatingVisible ? "Hide Keyboard" : "Show Keyboard"
         menu.addItem(NSMenuItem(title: floatingTitle, action: #selector(toggleFloating), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Theme Studio…", action: #selector(openThemeStudio), keyEquivalent: ""))
