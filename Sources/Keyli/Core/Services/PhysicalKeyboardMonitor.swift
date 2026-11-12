@@ -23,7 +23,6 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
     public func refresh() {
         let shouldRun = ConfigStore.shared.config.isPhysicalMonitoringEnabled
             && hasVisibleKeyboard
-            && CGPreflightListenEventAccess()
 
         if shouldRun {
             start()
@@ -34,7 +33,6 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
 
     public func start() {
         guard !isRunning else { return }
-        guard CGPreflightListenEventAccess() else { return }
 
         let eventMask = (1 << CGEventType.keyDown.rawValue)
             | (1 << CGEventType.keyUp.rawValue)

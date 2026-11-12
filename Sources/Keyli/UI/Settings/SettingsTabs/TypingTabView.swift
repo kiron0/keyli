@@ -7,48 +7,54 @@ public struct TypingTabView: View {
     public init() {}
 
     public var body: some View {
-        Form {
-            Section("Typing") {
-                Toggle("Release modifier keys after the next key", isOn: $configStore.config.modifierStickyMode)
-                    .help("Automatically unlatches modifier keys after a character is dispatched.")
+        VStack(alignment: .leading, spacing: 6) {
+            SettingsSectionHeader(title: "Modifiers", symbol: "command")
 
-                Toggle("Repeat keys while held", isOn: $configStore.config.keyRepeatEnabled)
+            SettingsToggle(
+                "Release modifier keys after the next key",
+                detail: "Shift, Control, Option and Command switch off after one key press.",
+                isOn: $configStore.config.modifierStickyMode
+            )
 
-                Toggle("Play sound on key press", isOn: $configStore.config.playKeyClickSound)
+            SettingsSectionHeader(title: "Keys", symbol: "keyboard")
 
-                SettingsSliderRow(
-                    "Key press duration",
-                    value: Binding(
-                        get: { Double(configStore.config.syntheticTypingDelayMs) },
-                        set: { configStore.config.syntheticTypingDelayMs = Int($0) }
-                    ),
-                    in: 0...20,
-                    step: 1,
-                    valueText: "\(configStore.config.syntheticTypingDelayMs) ms"
-                )
-                .help("How long Keyli holds each key down. Increase it if an app misses keys.")
-            }
+            SettingsToggle("Repeat keys while held", isOn: $configStore.config.keyRepeatEnabled)
 
-            Section {
-                Toggle("Highlight keys pressed on the physical keyboard", isOn: $configStore.config.isPhysicalMonitoringEnabled)
+            SettingsToggle("Play sound on key press", isOn: $configStore.config.playKeyClickSound)
 
-                if configStore.config.isPhysicalMonitoringEnabled && !permissionsManager.hasInputMonitoringPermission {
-                    LabeledContent {
-                        Button("Open Settings…") {
-                            permissionsManager.openInputMonitoringPreferences()
-                        }
-                    } label: {
-                        Label("Input Monitoring is off for Keyli", systemImage: "exclamationmark.triangle.fill")
-                            .symbolRenderingMode(.multicolor)
+            SettingsSliderRow(
+                "Key press duration",
+                value: Binding(
+                    get: { Double(configStore.config.syntheticTypingDelayMs) },
+                    set: { configStore.config.syntheticTypingDelayMs = Int($0) }
+                ),
+                in: 0...20,
+                step: 1,
+                valueText: "\(configStore.config.syntheticTypingDelayMs) ms"
+            )
+            .help("How long Keyli holds each key down. Increase it if an app misses keys.")
+
+            SettingsSectionHeader(title: "Physical Keyboard", symbol: "dot.radiowaves.left.and.right")
+
+            SettingsToggle(
+                "Highlight keys pressed on the physical keyboard",
+                detail: "Runs only while a keyboard is visible. Keyli never records or stores what you type.",
+                isOn: $configStore.config.isPhysicalMonitoringEnabled
+            )
+
+            if configStore.config.isPhysicalMonitoringEnabled && !permissionsManager.hasInputMonitoringPermission {
+                SettingsRow {
+                    Label("Input Monitoring is off for Keyli.", systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Color.orange)
+
+                    Button("Fix in Permissions") {
+                        SettingsWindowController.shared.navigation.select(.permissions)
                     }
+                    .buttonStyle(SettingsSecondaryButtonStyle())
                 }
-            } header: {
-                Text("Physical Keyboard")
-            } footer: {
-                Text("Requires Input Monitoring. Keyli only highlights keys while a keyboard is visible and never records or stores what you type.")
             }
         }
-        .formStyle(.grouped)
         .onAppear {
             permissionsManager.checkPermissions()
         }

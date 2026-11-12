@@ -38,14 +38,22 @@ public final class PanelManager: NSObject, NSWindowDelegate {
 
         let panel = NonActivatingPanel(contentRect: savedRect)
         panel.delegate = self
+        let layout = KeyboardState.shared.currentLayout
+        panel.minSize = NSSize(
+            width: KeyliConstants.minFloatingWidth,
+            height: KeyliConstants.panelHeight(forWidth: KeyliConstants.minFloatingWidth, layout: layout)
+        )
 
         let container = FloatingKeyboardContainerView { [weak self] in
             self?.hideFloatingKeyboard()
         }
-        panel.contentView = NSHostingView(rootView: container)
+        let hostingView = NSHostingView(rootView: container)
+        hostingView.sizingOptions = []
+        panel.contentView = hostingView
         panel.setFrame(savedRect, display: false)
 
         self.floatingPanel = panel
+        fitPanelsToLayout()
         return panel
     }
 
@@ -85,7 +93,10 @@ public final class PanelManager: NSObject, NSWindowDelegate {
     }
 
     public func showQuickPanel(relativeTo button: NSStatusBarButton) {
-        let size = NSSize(width: KeyliConstants.defaultMenuWidth, height: KeyliConstants.defaultMenuHeight)
+        let size = NSSize(
+            width: KeyliConstants.defaultMenuWidth,
+            height: KeyliConstants.panelHeight(forWidth: KeyliConstants.defaultMenuWidth, layout: KeyboardState.shared.currentLayout)
+        )
 
         let panel: NonActivatingPanel
         if let existing = quickPanel {
@@ -160,7 +171,46 @@ public final class PanelManager: NSObject, NSWindowDelegate {
         }
     }
 
+    public func fitPanelsToLayout() {
+        let layout = KeyboardState.shared.currentLayout
+
+        if let panel = floatingPanel {
+            panel.minSize = NSSize(
+                width: KeyliConstants.minFloatingWidth,
+                height: KeyliConstants.panelHeight(forWidth: KeyliConstants.minFloatingWidth, layout: layout)
+            )
+            let frame = panel.frame
+            let width = max(KeyliConstants.minFloatingWidth, frame.width)
+            let height = KeyliConstants.panelHeight(forWidth: width, layout: layout)
+            if abs(height - frame.height) > 0.5 || abs(width - frame.width) > 0.5 {
+                let fitted = NSRect(x: frame.minX, y: frame.maxY - height, width: width, height: height)
+                panel.setFrame(WindowPositioner.clampToVisibleScreen(frame: fitted), display: true)
+            }
+        }
+
+        if let panel = quickPanel, isQuickVisible {
+            let frame = panel.frame
+            let height = KeyliConstants.panelHeight(forWidth: frame.width, layout: layout)
+            panel.setFrame(NSRect(x: frame.minX, y: frame.maxY - height, width: frame.width, height: height), display: true)
+        }
+    }
+
     // MARK: - NSWindowDelegate
+
+    public func windowWillResize(_ sender: NSWindow, to frameSize: NSSize) -> NSSize {
+        guard sender === floatingPanel else { return frameSize }
+        let layout = KeyboardState.shared.currentLayout
+        let current = sender.frame.size
+        let widthFromHeight = KeyliConstants.panelWidth(forHeight: frameSize.height, layout: layout)
+        let widthDelta = abs(frameSize.width - current.width)
+        let heightDrivenDelta = abs(widthFromHeight - current.width)
+
+        var width = widthDelta >= heightDrivenDelta ? frameSize.width : widthFromHeight
+        let visible = (sender.screen ?? NSScreen.main)?.visibleFrame.size ?? NSSize(width: 2000, height: 1200)
+        let maxWidth = min(visible.width, KeyliConstants.panelWidth(forHeight: visible.height, layout: layout))
+        width = min(max(width, KeyliConstants.minFloatingWidth), maxWidth)
+        return NSSize(width: width, height: KeyliConstants.panelHeight(forWidth: width, layout: layout))
+    }
 
     public func windowDidMove(_ notification: Notification) {
         savePanelFrame(notification)

@@ -12,47 +12,57 @@ public struct GeneralTabView: View {
     public init() {}
 
     public var body: some View {
-        Form {
-            Section {
-                Toggle("Launch Keyli at login", isOn: Binding(
-                    get: { configStore.config.launchAtLogin },
-                    set: { val in
-                        let succeeded = LaunchAtLoginService.shared.setEnabled(val)
-                        configStore.config.launchAtLogin = LaunchAtLoginService.shared.isEnabled
-                        if !succeeded {
-                            uiState.showLoginItemError = true
-                        }
+        VStack(alignment: .leading, spacing: 6) {
+            SettingsSectionHeader(title: "Startup", symbol: "power")
+
+            SettingsToggle("Launch Keyli at login", isOn: Binding(
+                get: { configStore.config.launchAtLogin },
+                set: { val in
+                    let succeeded = LaunchAtLoginService.shared.setEnabled(val)
+                    configStore.config.launchAtLogin = LaunchAtLoginService.shared.isEnabled
+                    if !succeeded {
+                        uiState.showLoginItemError = true
                     }
-                ))
-
-                Toggle("Show Keyli in menu bar", isOn: $configStore.config.showMenuBarIcon)
-            } footer: {
-                if !configStore.config.showMenuBarIcon {
-                    Text("With the menu bar icon hidden, open Keyli again from Finder or Spotlight to reach the keyboard and these settings.")
                 }
-            }
+            ))
 
-            Section("Floating Keyboard") {
-                Toggle("Show floating keyboard", isOn: $configStore.config.isFloatingVisible)
+            SettingsSectionHeader(title: "Menu Bar", symbol: "menubar.rectangle")
 
-                Toggle("Keep on top of other windows", isOn: $configStore.config.isFloatingPinned)
+            SettingsToggle(
+                "Show Keyli in menu bar",
+                detail: configStore.config.showMenuBarIcon
+                    ? nil
+                    : "Open Keyli again from Finder or Spotlight to reach the keyboard and these settings.",
+                isOn: $configStore.config.showMenuBarIcon
+            )
 
-                SettingsSliderRow(
-                    "Opacity",
-                    value: $configStore.config.floatingOpacity,
-                    in: 0.4...1.0,
-                    step: 0.05,
-                    valueText: "\(Int((configStore.config.floatingOpacity * 100).rounded()))%"
-                )
-            }
+            SettingsSectionHeader(title: "Floating Keyboard", symbol: "macwindow")
 
-            Section {
-                Button("Reset All Settings…", role: .destructive) {
+            SettingsToggle("Show floating keyboard", isOn: $configStore.config.isFloatingVisible)
+
+            SettingsToggle("Keep on top of other windows", isOn: $configStore.config.isFloatingPinned)
+
+            SettingsSliderRow(
+                "Opacity",
+                value: $configStore.config.floatingOpacity,
+                in: 0.4...1.0,
+                step: 0.05,
+                valueText: "\(Int((configStore.config.floatingOpacity * 100).rounded()))%"
+            )
+
+            SettingsSectionHeader(title: "Reset", symbol: "arrow.counterclockwise")
+
+            SettingsRow {
+                Button("Reset All Settings…") {
                     uiState.showResetConfirmation = true
                 }
+                .buttonStyle(SettingsSecondaryButtonStyle(isDestructive: true))
+
+                Text("Custom themes are kept.")
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(Color.secondary)
             }
         }
-        .formStyle(.grouped)
         .onAppear {
             let actual = LaunchAtLoginService.shared.isEnabled
             if configStore.config.launchAtLogin != actual {

@@ -2,6 +2,30 @@
 
 All notable changes to Keyli will be documented in this file.
 
+## Unreleased
+
+### Changed
+- Settings window rebuilt as a glass sidebar window in the QuitX style, with permission cards (Allow, Settings, Repair, Relaunch).
+- Keyboards keep their proportions: resizing the floating keyboard is ratio-locked and keys never stretch.
+- Builds are signed with a stable requirement so macOS permissions survive updates.
+- Native macOS interface: Theme Studio with sidebar and inspector, native options menu on keyboards.
+- Menu bar keyboard is now a non-activating panel, so typing from it no longer steals focus.
+- macOS Native theme follows system light and dark appearance.
+- Physical key highlighting is off by default and only runs while a keyboard is visible.
+- Function row uses full-width keys with working brightness, Mission Control, Spotlight, media, volume and lock actions; fn latches F1–F12.
+
+### Added
+- Theme duplicate, rename, live edit, delete, import from file, export to file. Built-in themes are read-only.
+- Key repeat while holding a key.
+- Typing refuses with a visible message when Secure Input is on, permission is missing, or there is no target app.
+- Older settings and theme files keep loading after upgrades (schema version, default-filled decoding).
+
+### Fixed
+- Removed debug keystroke logging to `/tmp/keyli.log`.
+- Tests no longer write themes into the user's Application Support folder.
+- JIS layout space and kana keys overlapped the right command key.
+- Main-thread sleeps during typing.
+
 ## 1.0.0 - 2026-10-11
 
 ### Added

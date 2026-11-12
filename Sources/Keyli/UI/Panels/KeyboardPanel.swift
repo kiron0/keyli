@@ -66,6 +66,7 @@ public struct FloatingKeyboardContainerView: View {
                 .padding(.horizontal, 10)
                 .padding(.bottom, 8)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(KeyboardBackdrop(theme: theme))
         .ignoresSafeArea()
     }

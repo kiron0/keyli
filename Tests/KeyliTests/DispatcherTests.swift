@@ -114,4 +114,12 @@ struct DispatcherTests {
             #expect(dispatcher.action(for: returnKey, state: state) == .keyCode(36))
         }
     }
+
+    @Test("Permission Status Distinguishes Never Granted From Lost")
+    func testPermissionStatusResolution() {
+        #expect(PermissionStatus.resolve(isGranted: true, wasGrantedBefore: false) == .granted)
+        #expect(PermissionStatus.resolve(isGranted: true, wasGrantedBefore: true) == .granted)
+        #expect(PermissionStatus.resolve(isGranted: false, wasGrantedBefore: false) == .notGranted)
+        #expect(PermissionStatus.resolve(isGranted: false, wasGrantedBefore: true) == .needsRepair)
+    }
 }

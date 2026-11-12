@@ -58,7 +58,7 @@ public final class KeyboardInputDispatcher {
         if NSRunningApplication.current.isActive {
             return .noTarget
         }
-        if !CGPreflightPostEventAccess() {
+        if !PermissionsManager.canTypeNow {
             return .missingPermission
         }
         if IsSecureEventInputEnabled() {
@@ -116,7 +116,7 @@ public final class KeyboardInputDispatcher {
 
     /// Injects Unicode text into the target application
     public func typeText(_ text: String, keyCode: UInt16 = 0, state: KeyboardState) {
-        guard !text.isEmpty, CGPreflightPostEventAccess() else { return }
+        guard !text.isEmpty, PermissionsManager.canTypeNow else { return }
 
         let characters = Array(text.utf16)
         let flags = currentEventFlags(from: state)
@@ -135,7 +135,7 @@ public final class KeyboardInputDispatcher {
 
     /// Sends a virtual keycode event (e.g. Return, Backspace, Arrows, Tab, Esc)
     public func sendKeycode(_ keyCode: UInt16, state: KeyboardState) {
-        guard CGPreflightPostEventAccess() else { return }
+        guard PermissionsManager.canTypeNow else { return }
         postKeyPair(keyCode: keyCode, flags: currentEventFlags(from: state), configure: nil)
     }
 

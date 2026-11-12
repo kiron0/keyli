@@ -8,31 +8,50 @@ public struct AppearanceTabView: View {
     public init() {}
 
     public var body: some View {
-        Form {
-            Section("Keyboard") {
-                Picker("Layout", selection: $configStore.config.layoutGeometry) {
+        VStack(alignment: .leading, spacing: 6) {
+            SettingsSectionHeader(title: "Layout", symbol: "keyboard")
+
+            SettingsRow {
+                Text("Keyboard layout")
+                    .font(.system(size: 12, weight: .medium))
+                    .frame(width: 130, alignment: .leading)
+
+                Picker("Keyboard layout", selection: $configStore.config.layoutGeometry) {
                     ForEach(GeometryType.allCases, id: \.rawValue) { geo in
                         Text(geo.displayName).tag(geo.rawValue)
                     }
                 }
-
-                LabeledContent("Input source", value: keyboardState.currentLayout.inputSourceName ?? "Unknown")
+                .settingsMenu()
+                .frame(width: 200)
             }
 
-            Section {
-                ThemePickerView()
+            SettingsRow {
+                Text("Input source")
+                    .font(.system(size: 12, weight: .medium))
+                    .frame(width: 130, alignment: .leading)
 
-                LabeledContent("Selected theme") {
-                    Button("Open Theme Studio…") {
-                        NotificationCenter.default.post(name: KeyliConstants.NotificationName.openThemeStudio, object: nil)
-                    }
+                Text(keyboardState.currentLayout.inputSourceName ?? "Unknown")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.secondary)
+            }
+
+            SettingsSectionHeader(title: "Theme", symbol: "paintpalette")
+
+            ThemePickerView()
+                .padding(.leading, 29)
+                .padding(.top, 2)
+
+            SettingsRow {
+                Button("Open Theme Studio…") {
+                    NotificationCenter.default.post(name: KeyliConstants.NotificationName.openThemeStudio, object: nil)
                 }
-            } header: {
-                Text("Theme")
-            } footer: {
+                .buttonStyle(SettingsPrimaryButtonStyle())
+
                 Text("macOS Native follows the system light and dark appearance.")
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(Color.secondary)
             }
+            .padding(.top, 4)
         }
-        .formStyle(.grouped)
     }
 }

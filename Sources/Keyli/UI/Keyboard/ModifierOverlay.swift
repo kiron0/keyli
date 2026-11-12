@@ -65,9 +65,8 @@ public struct ModifierOverlay: View {
                 Text("Keyli needs Accessibility access to type.")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(text)
-                Button("Open Settings…") {
+                Button("Allow…") {
                     PermissionsManager.shared.requestAccessibility()
-                    PermissionsManager.shared.openAccessibilityPreferences()
                 }
                 .controlSize(.small)
             case .secureInput:

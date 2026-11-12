@@ -36,6 +36,7 @@ public struct KeyboardView: View {
                     }
                 }
             }
+            .aspectRatio(KeyliConstants.keyboardAspect(layout), contentMode: .fit)
 
             if showStatusBar {
                 ModifierOverlay(state: state, theme: theme)

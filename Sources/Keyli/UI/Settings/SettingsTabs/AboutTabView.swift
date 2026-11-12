@@ -46,15 +46,16 @@ public struct AboutTabView: View {
                     }
                 }
             }
+            .buttonStyle(SettingsSecondaryButtonStyle())
             .padding(.top, 4)
 
-            Spacer(minLength: 0)
+            Spacer(minLength: 24)
 
             Text("© 2026 Coreify. Released under MIT License.")
                 .font(.footnote)
                 .foregroundStyle(.tertiary)
         }
-        .padding(24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.top, 40)
+        .frame(maxWidth: .infinity)
     }
 }

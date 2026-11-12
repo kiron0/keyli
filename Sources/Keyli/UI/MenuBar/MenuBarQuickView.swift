@@ -45,7 +45,7 @@ public struct MenuBarQuickView: View {
                 .padding(.horizontal, 10)
                 .padding(.bottom, 8)
         }
-        .frame(width: KeyliConstants.defaultMenuWidth, height: KeyliConstants.defaultMenuHeight)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(KeyboardBackdrop(theme: theme))
         .ignoresSafeArea()
     }

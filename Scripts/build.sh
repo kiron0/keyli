@@ -27,7 +27,26 @@ cp "$ROOT_DIR"/Support/Icons/*.png "$ROOT_DIR"/Support/Icons/*.icns "$RESOURCES_
 cp "$ROOT_DIR"/Support/Sounds/*.aiff "$RESOURCES_DIR"/ 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Set :CFBundleIconFile AppIcon" "$CONTENTS/Info.plist" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$CONTENTS/Info.plist" 2>/dev/null || true
-codesign --force --deep --sign - "$APP_DIR"
+# A stable designated requirement lets macOS recognize local ad-hoc rebuilds as
+# the same app, so privacy grants do not bind to a changing CDHash.
+# Release builds should set KEYLI_CODESIGN_IDENTITY to a Developer ID identity.
+if [[ -n "${KEYLI_CODESIGN_IDENTITY:-}" ]]; then
+    codesign --force --deep --sign "$KEYLI_CODESIGN_IDENTITY" "$APP_DIR"
+else
+    codesign \
+        --force \
+        --deep \
+        --sign - \
+        --requirements '=designated => identifier "io.coreify.keyli" and info[CFBundleIdentifier] = "io.coreify.keyli"' \
+        "$APP_DIR"
+fi
+REQUIREMENT=$(codesign --display --requirements - "$APP_DIR" 2>&1 || true)
+if ! grep -q 'designated => .*identifier "io.coreify.keyli"' <<<"$REQUIREMENT" || grep -q 'cdhash' <<<"$REQUIREMENT"; then
+    echo "❌ Unstable designated requirement. macOS privacy grants would reset on every build:" >&2
+    echo "$REQUIREMENT" >&2
+    exit 1
+fi
+codesign --verify --strict --deep "$APP_DIR"
 echo "✅ $APP_NAME.app ready: $APP_DIR"
 
 if [[ "${1:-}" == "--run" ]]; then

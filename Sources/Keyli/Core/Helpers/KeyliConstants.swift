@@ -20,6 +20,21 @@ public enum KeyliConstants {
     public static let defaultMenuWidth: CGFloat = 720
     public static let defaultMenuHeight: CGFloat = 300
 
+    public static let keyboardHorizontalPadding: CGFloat = 20
+    public static let keyboardChromeHeight: CGFloat = 64
+
+    public static func keyboardAspect(_ layout: KeyboardLayout) -> CGFloat {
+        CGFloat(layout.unitWidth / max(1, layout.unitHeight))
+    }
+
+    public static func panelHeight(forWidth width: CGFloat, layout: KeyboardLayout) -> CGFloat {
+        (keyboardChromeHeight + (width - keyboardHorizontalPadding) / keyboardAspect(layout)).rounded()
+    }
+
+    public static func panelWidth(forHeight height: CGFloat, layout: KeyboardLayout) -> CGFloat {
+        (keyboardHorizontalPadding + (height - keyboardChromeHeight) * keyboardAspect(layout)).rounded()
+    }
+
     public enum NotificationName {
         public static let themeDidChange = Notification.Name("io.coreify.keyli.themeDidChange")
         public static let layoutDidChange = Notification.Name("io.coreify.keyli.layoutDidChange")

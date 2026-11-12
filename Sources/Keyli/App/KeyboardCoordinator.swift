@@ -20,7 +20,7 @@ public final class KeyboardCoordinator {
         KeyboardLayoutManager.shared.reloadActiveLayout()
         ThemeManager.shared.applySavedTheme()
 
-        if !PermissionsManager.shared.hasPostEventPermission {
+        if !PermissionsManager.shared.canType {
             PermissionsManager.shared.startPollingForPermissions()
         }
 
@@ -79,6 +79,7 @@ public final class KeyboardCoordinator {
 
         if previous.layoutGeometry != config.layoutGeometry {
             KeyboardLayoutManager.shared.reloadActiveLayout()
+            PanelManager.shared.fitPanelsToLayout()
         }
 
         if previous.themeId != config.themeId && ThemeManager.shared.currentTheme.id != config.themeId {
@@ -103,10 +104,12 @@ public final class KeyboardCoordinator {
         }
 
         if previous.isPhysicalMonitoringEnabled != config.isPhysicalMonitoringEnabled {
-            if config.isPhysicalMonitoringEnabled && !PermissionsManager.shared.hasInputMonitoringPermission {
+            PhysicalKeyboardMonitor.shared.refresh()
+            if config.isPhysicalMonitoringEnabled && !PhysicalKeyboardMonitor.shared.isRunning
+                && !PermissionsManager.shared.hasInputMonitoringPermission {
                 PermissionsManager.shared.requestInputMonitoring()
             }
-            PhysicalKeyboardMonitor.shared.refresh()
+            PermissionsManager.shared.checkPermissions()
         }
     }
 }

@@ -101,6 +101,20 @@ struct LayoutTests {
         #expect(abs(maxX - layout.unitWidth) < 0.0001)
     }
 
+    @Test("Panel Size Keeps Keys Square At Any Width")
+    func testPanelSizeKeepsKeyboardAspect() {
+        for geometry in GeometryType.allCases {
+            let layout = KeyboardLayoutManager.shared.generateLayout(geometry: geometry)
+            for width in [620.0, 820.0, 1200.0] {
+                let height = KeyliConstants.panelHeight(forWidth: width, layout: layout)
+                let unitW = (width - KeyliConstants.keyboardHorizontalPadding) / layout.unitWidth
+                let unitH = (height - KeyliConstants.keyboardChromeHeight) / layout.unitHeight
+                #expect(abs(unitW - unitH) < 0.2)
+                #expect(abs(KeyliConstants.panelWidth(forHeight: height, layout: layout) - width) <= 2)
+            }
+        }
+    }
+
     @Test("Key IDs Are Unique")
     func testKeyIdsAreUnique() {
         let layout = KeyboardLayoutManager.shared.generateLayout(geometry: .ansi)

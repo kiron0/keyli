@@ -1,59 +1,93 @@
 import AppKit
 import SwiftUI
 
-public final class SettingsWindowController: NSWindowController {
-    public static let shared = SettingsWindowController()
-
-    private let tabController = NSTabViewController()
-    private var hasBeenShown = false
-
-    private init() {
-        tabController.tabStyle = .toolbar
-
-        for tab in SettingsTab.allCases {
-            let host = NSHostingController(rootView: tab.makeView())
-            host.title = tab.rawValue
-            host.sizingOptions = [.preferredContentSize]
-            host.preferredContentSize = NSSize(width: SettingsView.contentWidth, height: tab.contentHeight)
-
-            let item = NSTabViewItem(viewController: host)
-            item.label = tab.rawValue
-            item.image = NSImage(systemSymbolName: tab.icon, accessibilityDescription: tab.rawValue)
-            tabController.addTabViewItem(item)
-        }
-
-        let window = NSWindow(contentViewController: tabController)
-        window.styleMask = [.titled, .closable, .miniaturizable]
-        window.toolbarStyle = .preference
-        window.title = SettingsTab.general.rawValue
-        window.isReleasedWhenClosed = false
-
-        super.init(window: window)
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    public func showSettings(tab: SettingsTab? = nil) {
-        if let tab = tab, let index = SettingsTab.allCases.firstIndex(of: tab) {
-            tabController.selectedTabViewItemIndex = index
-        }
-        NSApp.activate()
-        if !hasBeenShown {
-            window?.center()
-            hasBeenShown = true
-        }
-        window?.makeKeyAndOrderFront(nil)
+public enum WindowActivationCoordinator {
+    public static func update() {
+        guard let application = NSApp else { return }
+        let hasOpenWindow = SettingsWindowController.shared.isOpen || ThemeStudioWindowController.shared.isOpen
+        let policy: NSApplication.ActivationPolicy = hasOpenWindow ? .regular : .accessory
+        guard application.activationPolicy() != policy else { return }
+        application.setActivationPolicy(policy)
     }
 }
 
-public final class ThemeStudioWindowController: NSWindowController {
+public final class SettingsWindowController: NSObject, NSWindowDelegate {
+    public static let shared = SettingsWindowController()
+
+    public let navigation = SettingsNavigationModel()
+    private var window: NSWindow?
+
+    public var isOpen: Bool { window != nil }
+
+    private override init() {
+        super.init()
+    }
+
+    public func showSettings(tab: SettingsTab? = nil) {
+        if let tab = tab {
+            navigation.select(tab)
+        }
+
+        if let window = window {
+            NSApp.activate()
+            window.makeKeyAndOrderFront(nil)
+            return
+        }
+
+        let hosting = NSHostingController(rootView: SettingsRootView(navigation: navigation))
+        hosting.sizingOptions = []
+        let window = NSWindow(contentViewController: hosting)
+        window.title = "Keyli Settings"
+        window.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
+        window.titlebarAppearsTransparent = true
+        window.titlebarSeparatorStyle = .none
+        window.titleVisibility = .hidden
+        window.setContentSize(SettingsTab.windowSize)
+        window.minSize = window.frame.size
+        window.maxSize = window.frame.size
+        window.collectionBehavior = [.fullScreenNone]
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.hidesOnDeactivate = false
+        window.isReleasedWhenClosed = false
+        window.isMovableByWindowBackground = true
+        window.tabbingMode = .disallowed
+        window.standardWindowButton(.zoomButton)?.isEnabled = false
+        window.delegate = self
+        window.center()
+
+        self.window = window
+        WindowActivationCoordinator.update()
+        NSApp.activate()
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    public func windowWillClose(_ notification: Notification) {
+        window = nil
+        DispatchQueue.main.async {
+            WindowActivationCoordinator.update()
+        }
+    }
+}
+
+public final class ThemeStudioWindowController: NSObject, NSWindowDelegate {
     public static let shared = ThemeStudioWindowController()
 
-    private var hasBeenShown = false
+    private var window: NSWindow?
 
-    private init() {
+    public var isOpen: Bool { window != nil }
+
+    private override init() {
+        super.init()
+    }
+
+    public func showThemeStudio() {
+        if let window = window {
+            NSApp.activate()
+            window.makeKeyAndOrderFront(nil)
+            return
+        }
+
         let host = NSHostingController(rootView: ThemeStudioView())
         host.sceneBridgingOptions = [.toolbars, .title]
 
@@ -64,20 +98,19 @@ public final class ThemeStudioWindowController: NSWindowController {
         window.setContentSize(NSSize(width: 1040, height: 620))
         window.minSize = NSSize(width: 920, height: 540)
         window.isReleasedWhenClosed = false
+        window.delegate = self
+        window.center()
 
-        super.init(window: window)
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    public func showThemeStudio() {
+        self.window = window
+        WindowActivationCoordinator.update()
         NSApp.activate()
-        if !hasBeenShown {
-            window?.center()
-            hasBeenShown = true
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    public func windowWillClose(_ notification: Notification) {
+        window = nil
+        DispatchQueue.main.async {
+            WindowActivationCoordinator.update()
         }
-        window?.makeKeyAndOrderFront(nil)
     }
 }
