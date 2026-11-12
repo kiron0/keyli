@@ -42,6 +42,9 @@ public final class KeyboardInputDispatcher {
             return textToType.isEmpty ? .none : .text(textToType, keyCode: key.keyCode)
 
         case .function, .navigation, .system:
+            if state.isFnActive, let mapped = KeyboardInputDispatcher.fnAlternateKeyCode(for: key) {
+                return .keyCode(mapped)
+            }
             if let systemAction = key.systemAction {
                 if key.kind != .function || !state.isFnActive {
                     return .system(systemAction)
@@ -51,6 +54,18 @@ public final class KeyboardInputDispatcher {
 
         case .spacer:
             return .none
+        }
+    }
+
+    public static func fnAlternateKeyCode(for key: KeyboardKey) -> UInt16? {
+        switch key.keyCode {
+        case 123: return 115
+        case 124: return 119
+        case 126: return 116
+        case 125: return 121
+        case 51: return 117
+        case 36: return 76
+        default: return nil
         }
     }
 

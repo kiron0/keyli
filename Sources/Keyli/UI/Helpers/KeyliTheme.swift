@@ -1,7 +1,29 @@
 import SwiftUI
 
 extension Color {
+    private static let hexCacheLock = NSLock()
+    private static var hexCache: [String: Color] = [:]
+
     public init(hex: String, defaultColor: Color = .primary) {
+        Color.hexCacheLock.lock()
+        let cached = Color.hexCache[hex]
+        Color.hexCacheLock.unlock()
+        if let cached = cached {
+            self = cached
+            return
+        }
+        self.init(uncachedHex: hex, defaultColor: defaultColor)
+        if hex.count >= 6 {
+            Color.hexCacheLock.lock()
+            if Color.hexCache.count > 512 {
+                Color.hexCache.removeAll()
+            }
+            Color.hexCache[hex] = self
+            Color.hexCacheLock.unlock()
+        }
+    }
+
+    private init(uncachedHex hex: String, defaultColor: Color) {
         var cleanHex = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         if cleanHex.hasPrefix("#") {
             cleanHex.removeFirst()

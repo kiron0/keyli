@@ -1,6 +1,6 @@
 import SwiftUI
 
-public struct ThemeSwatchView: View {
+public struct ThemeSwatchView: View, Equatable {
     public let theme: KeyboardTheme
     public var size: CGSize
 
@@ -10,39 +10,44 @@ public struct ThemeSwatchView: View {
     }
 
     public var body: some View {
-        let keyWidth = size.width * 0.2
-        let keyHeight = size.height * 0.28
-        let radius = max(1.5, CGFloat(theme.cornerRadius) * 0.35)
+        let background = Color(hex: theme.backgroundColorHex)
+        let keyColor = Color(hex: theme.keycapBaseColorHex)
+        let accent = Color(hex: theme.accentColorHex)
+        let border = Color(hex: theme.borderColorHex).opacity(theme.borderOpacity)
+        let outerRadius = size.height * 0.2
+        let keyRadius = max(1.5, CGFloat(theme.cornerRadius) * 0.35 * size.height / 40)
 
-        ZStack {
-            RoundedRectangle(cornerRadius: size.height * 0.2, style: .continuous)
-                .fill(Color(hex: theme.backgroundColorHex))
+        Canvas { context, canvasSize in
+            let outer = Path(roundedRect: CGRect(origin: .zero, size: canvasSize), cornerRadius: outerRadius, style: .continuous)
+            context.fill(outer, with: .color(background))
 
-            VStack(spacing: size.height * 0.08) {
-                ForEach(0..<2, id: \.self) { row in
-                    HStack(spacing: size.width * 0.05) {
-                        ForEach(0..<3, id: \.self) { column in
-                            RoundedRectangle(cornerRadius: radius, style: .continuous)
-                                .fill(
-                                    row == 1 && column == 2
-                                        ? Color(hex: theme.accentColorHex)
-                                        : Color(hex: theme.keycapBaseColorHex)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: radius, style: .continuous)
-                                        .strokeBorder(Color(hex: theme.borderColorHex).opacity(theme.borderOpacity), lineWidth: 0.5)
-                                )
-                                .frame(width: keyWidth, height: keyHeight)
-                        }
-                    }
+            let keyWidth = canvasSize.width * 0.2
+            let keyHeight = canvasSize.height * 0.28
+            let hGap = canvasSize.width * 0.05
+            let vGap = canvasSize.height * 0.08
+            let totalW = keyWidth * 3 + hGap * 2
+            let totalH = keyHeight * 2 + vGap
+            let originX = (canvasSize.width - totalW) / 2
+            let originY = (canvasSize.height - totalH) / 2
+
+            for row in 0..<2 {
+                for column in 0..<3 {
+                    let rect = CGRect(
+                        x: originX + CGFloat(column) * (keyWidth + hGap),
+                        y: originY + CGFloat(row) * (keyHeight + vGap),
+                        width: keyWidth,
+                        height: keyHeight
+                    )
+                    let key = Path(roundedRect: rect, cornerRadius: keyRadius, style: .continuous)
+                    context.fill(key, with: .color(row == 1 && column == 2 ? accent : keyColor))
+                    context.stroke(key, with: .color(border), lineWidth: 0.5)
                 }
             }
+
+            context.stroke(outer, with: .color(Color.primary.opacity(0.12)), lineWidth: 0.5)
         }
         .frame(width: size.width, height: size.height)
-        .overlay(
-            RoundedRectangle(cornerRadius: size.height * 0.2, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5)
-        )
+        .accessibilityHidden(true)
     }
 }
 

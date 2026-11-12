@@ -6,7 +6,6 @@ final class ThemeStudioUIState: ObservableObject {
     @Published var showDeleteConfirmation: Bool = false
     @Published var showImportError: Bool = false
     @Published var statusMessage: String? = nil
-    @Published var hoveredThemeId: String? = nil
     @Published var searchText: String = ""
 
     func showStatus(_ message: String) {
@@ -31,7 +30,6 @@ public enum ThemeStudioLayout {
 
 public struct ThemeStudioView: View {
     @ObservedObject public var themeManager: ThemeManager = .shared
-    @ObservedObject public var keyboardState: KeyboardState = .shared
     @StateObject private var uiState = ThemeStudioUIState()
 
     public init() {}
@@ -158,47 +156,15 @@ public struct ThemeStudioView: View {
     }
 
     private func sidebarRow(_ theme: KeyboardTheme) -> some View {
-        let isSelected = selectedTheme.id == theme.id
-        let shown = themeManager.resolved(theme)
-        return Button {
-            themeManager.selectTheme(theme)
-        } label: {
-            HStack(spacing: 8) {
-                ThemeSwatchView(theme: shown, size: CGSize(width: 28, height: 18))
-                Text(theme.name)
-                    .font(.system(size: 13, weight: isSelected ? .medium : .regular))
-                    .foregroundStyle(Color.primary)
-                    .lineLimit(1)
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isSelected ? KeyliChrome.accent.opacity(0.18) : (uiState.hoveredThemeId == theme.id ? Color.primary.opacity(0.05) : Color.clear))
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(theme.name)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-        .onHover { hovering in
-            if hovering {
-                uiState.hoveredThemeId = theme.id
-            } else if uiState.hoveredThemeId == theme.id {
-                uiState.hoveredThemeId = nil
-            }
-        }
-        .contextMenu {
-            Button("Duplicate") {
-                themeManager.duplicateTheme(theme)
-            }
-            if !theme.isBuiltIn {
-                Button("Delete", role: .destructive) {
-                    themeManager.deleteCustomTheme(theme)
-                }
-            }
-        }
+        ThemeSidebarRow(
+            theme: theme,
+            displayTheme: themeManager.resolved(theme),
+            isSelected: selectedTheme.id == theme.id,
+            onSelect: { themeManager.selectTheme(theme) },
+            onDuplicate: { themeManager.duplicateTheme(theme) },
+            onDelete: theme.isBuiltIn ? nil : { themeManager.deleteCustomTheme(theme) }
+        )
+        .equatable()
     }
 
     // MARK: - Detail
@@ -280,25 +246,7 @@ public struct ThemeStudioView: View {
     }
 
     private var preview: some View {
-        let layout = keyboardState.currentLayout
-        let previewWidth = ThemeStudioLayout.contentWidth - 120
-        let keyboardHeight = (previewWidth - 24) / KeyliConstants.keyboardAspect(layout) + 24
-
-        return ZStack {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.primary.opacity(0.03))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
-                )
-
-            KeyboardView(state: keyboardState, showStatusBar: false, isInteractive: false)
-                .padding(12)
-                .frame(width: previewWidth, height: keyboardHeight)
-                .background(KeyboardBackdrop(theme: keyboardState.currentTheme))
-                .shadow(color: .black.opacity(0.22), radius: 14, y: 6)
-        }
-        .frame(width: ThemeStudioLayout.contentWidth, height: keyboardHeight + 36)
+        ThemeStudioPreview()
     }
 
     // MARK: - Inspector
@@ -493,5 +441,80 @@ public struct ThemeStudioView: View {
             NSPasteboard.general.setString(json, forType: .string)
             uiState.showStatus("Theme JSON copied.")
         }
+    }
+}
+
+struct ThemeSidebarRow: View, Equatable {
+    let theme: KeyboardTheme
+    let displayTheme: KeyboardTheme
+    let isSelected: Bool
+    let onSelect: () -> Void
+    let onDuplicate: () -> Void
+    let onDelete: (() -> Void)?
+
+    @StateObject private var hover = HoverUIState()
+
+    static func == (lhs: ThemeSidebarRow, rhs: ThemeSidebarRow) -> Bool {
+        lhs.displayTheme == rhs.displayTheme && lhs.isSelected == rhs.isSelected && lhs.theme.name == rhs.theme.name
+    }
+
+    var body: some View {
+        Button(action: onSelect) {
+            HStack(spacing: 8) {
+                ThemeSwatchView(theme: displayTheme, size: CGSize(width: 28, height: 18))
+                Text(theme.name)
+                    .font(.system(size: 13, weight: isSelected ? .medium : .regular))
+                    .foregroundStyle(Color.primary)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isSelected ? KeyliChrome.accent.opacity(0.18) : (hover.isHovered ? Color.primary.opacity(0.05) : Color.clear))
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(theme.name)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .onHover { hovering in
+            if hover.isHovered != hovering {
+                hover.isHovered = hovering
+            }
+        }
+        .contextMenu {
+            Button("Duplicate", action: onDuplicate)
+            if let onDelete = onDelete {
+                Button("Delete", role: .destructive, action: onDelete)
+            }
+        }
+    }
+}
+
+struct ThemeStudioPreview: View {
+    @ObservedObject var keyboardState: KeyboardState = .shared
+
+    var body: some View {
+        let layout = keyboardState.currentLayout
+        let previewWidth = ThemeStudioLayout.contentWidth - 120
+        let keyboardHeight = (previewWidth - 24) / KeyliConstants.keyboardAspect(layout) + 24
+
+        ZStack {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.primary.opacity(0.03))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+                )
+
+            KeyboardView(state: keyboardState, showStatusBar: false, isInteractive: false)
+                .padding(12)
+                .frame(width: previewWidth, height: keyboardHeight)
+                .background(KeyboardBackdrop(theme: keyboardState.currentTheme))
+                .shadow(color: .black.opacity(0.22), radius: 14, y: 6)
+        }
+        .frame(width: ThemeStudioLayout.contentWidth, height: keyboardHeight + 36)
     }
 }

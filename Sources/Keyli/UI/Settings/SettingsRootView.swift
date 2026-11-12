@@ -3,7 +3,6 @@ import SwiftUI
 
 public final class SettingsNavigationModel: ObservableObject {
     @Published public private(set) var selection: SettingsTab = .general
-    @Published public var hoveredTab: SettingsTab?
 
     public init() {}
 
@@ -57,52 +56,13 @@ public struct SettingsRootView: View {
     }
 
     private func sidebarRow(_ tab: SettingsTab) -> some View {
-        let isSelected = navigation.selection == tab
-        return Button {
-            navigation.select(tab)
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: tab.icon)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(isSelected ? KeyliChrome.accent : Color.secondary)
-                    .frame(width: 18)
-
-                Text(tab.rawValue)
-                    .font(.system(size: 13, weight: isSelected ? .medium : .regular))
-                    .foregroundStyle(Color.primary)
-                    .lineLimit(1)
-
-                Spacer(minLength: 0)
-
-                if tab == .permissions && permissionsManager.attentionCount > 0 {
-                    Text("\(permissionsManager.attentionCount)")
-                        .font(.system(size: 9.5, weight: .bold))
-                        .monospacedDigit()
-                        .foregroundStyle(Color.white)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1.5)
-                        .background(Color.orange, in: Capsule())
-                        .accessibilityLabel("\(permissionsManager.attentionCount) permissions need attention")
-                }
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isSelected ? KeyliChrome.accent.opacity(0.18) : (navigation.hoveredTab == tab ? Color.primary.opacity(0.05) : Color.clear))
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(tab.rawValue)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-        .onHover { hovering in
-            if hovering {
-                navigation.hoveredTab = tab
-            } else if navigation.hoveredTab == tab {
-                navigation.hoveredTab = nil
-            }
-        }
+        SettingsSidebarRow(
+            tab: tab,
+            isSelected: navigation.selection == tab,
+            badgeCount: tab == .permissions ? permissionsManager.attentionCount : 0,
+            onSelect: { navigation.select(tab) }
+        )
+        .equatable()
     }
 
     private var detail: some View {
@@ -143,6 +103,63 @@ public struct SettingsRootView: View {
         case .appearance: AppearanceTabView()
         case .permissions: PermissionsTabView()
         case .about: AboutTabView()
+        }
+    }
+}
+
+struct SettingsSidebarRow: View, Equatable {
+    let tab: SettingsTab
+    let isSelected: Bool
+    let badgeCount: Int
+    let onSelect: () -> Void
+
+    @StateObject private var hover = HoverUIState()
+
+    static func == (lhs: SettingsSidebarRow, rhs: SettingsSidebarRow) -> Bool {
+        lhs.tab == rhs.tab && lhs.isSelected == rhs.isSelected && lhs.badgeCount == rhs.badgeCount
+    }
+
+    var body: some View {
+        Button(action: onSelect) {
+            HStack(spacing: 8) {
+                Image(systemName: tab.icon)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(isSelected ? KeyliChrome.accent : Color.secondary)
+                    .frame(width: 18)
+
+                Text(tab.rawValue)
+                    .font(.system(size: 13, weight: isSelected ? .medium : .regular))
+                    .foregroundStyle(Color.primary)
+                    .lineLimit(1)
+
+                Spacer(minLength: 0)
+
+                if badgeCount > 0 {
+                    Text("\(badgeCount)")
+                        .font(.system(size: 9.5, weight: .bold))
+                        .monospacedDigit()
+                        .foregroundStyle(Color.white)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1.5)
+                        .background(Color.orange, in: Capsule())
+                        .accessibilityLabel("\(badgeCount) permissions need attention")
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isSelected ? KeyliChrome.accent.opacity(0.18) : (hover.isHovered ? Color.primary.opacity(0.05) : Color.clear))
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(tab.rawValue)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .onHover { hovering in
+            if hover.isHovered != hovering {
+                hover.isHovered = hovering
+            }
         }
     }
 }

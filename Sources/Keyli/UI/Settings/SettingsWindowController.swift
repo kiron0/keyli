@@ -50,7 +50,7 @@ public final class SettingsWindowController: NSObject, NSWindowDelegate {
         window.backgroundColor = .clear
         window.hidesOnDeactivate = false
         window.isReleasedWhenClosed = false
-        window.isMovableByWindowBackground = true
+        window.isMovableByWindowBackground = false
         window.tabbingMode = .disallowed
         window.standardWindowButton(.zoomButton)?.isEnabled = false
         window.delegate = self
@@ -104,7 +104,7 @@ public final class ThemeStudioWindowController: NSObject, NSWindowDelegate {
         window.backgroundColor = .clear
         window.hidesOnDeactivate = false
         window.isReleasedWhenClosed = false
-        window.isMovableByWindowBackground = true
+        window.isMovableByWindowBackground = false
         window.tabbingMode = .disallowed
         window.standardWindowButton(.zoomButton)?.isEnabled = false
         window.delegate = self

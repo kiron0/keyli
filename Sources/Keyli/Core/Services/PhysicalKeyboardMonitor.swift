@@ -121,14 +121,18 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
                 state.pressedPhysicalKeyCodes.insert(keyCode)
             }
         case .keyUp:
-            state.pressedPhysicalKeyCodes.remove(keyCode)
+            if state.pressedPhysicalKeyCodes.contains(keyCode) {
+                state.pressedPhysicalKeyCodes.remove(keyCode)
+            }
         case .flagsChanged:
             let flags = event.flags
-            state.isShiftActive = flags.contains(.maskShift)
-            state.isOptionActive = flags.contains(.maskAlternate)
-            state.isControlActive = flags.contains(.maskControl)
-            state.isCommandActive = flags.contains(.maskCommand)
-            state.isCapsLockActive = flags.contains(.maskAlphaShift)
+            state.setModifiers(
+                shift: flags.contains(.maskShift),
+                option: flags.contains(.maskAlternate),
+                control: flags.contains(.maskControl),
+                command: flags.contains(.maskCommand),
+                capsLock: flags.contains(.maskAlphaShift)
+            )
 
             let isModDown: Bool
             switch keyCode {
@@ -142,8 +146,10 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
             }
 
             if isModDown {
-                state.pressedPhysicalKeyCodes.insert(keyCode)
-            } else {
+                if !state.pressedPhysicalKeyCodes.contains(keyCode) {
+                    state.pressedPhysicalKeyCodes.insert(keyCode)
+                }
+            } else if state.pressedPhysicalKeyCodes.contains(keyCode) {
                 state.pressedPhysicalKeyCodes.remove(keyCode)
             }
         default:

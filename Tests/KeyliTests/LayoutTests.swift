@@ -141,6 +141,23 @@ struct LayoutTests {
         #expect(huge.height <= screen.height + 1)
     }
 
+    @Test("Clicking Anywhere On A Key Hits That Key, Gaps Hit Nothing")
+    func testKeyHitTesting() {
+        for geometry in GeometryType.allCases {
+            let layout = KeyboardLayoutManager.shared.generateLayout(geometry: geometry)
+            let size = CGSize(width: 780, height: 780 / KeyliConstants.keyboardAspect(layout))
+            let geo = KeyboardGeometry(layout: layout, size: size, spacing: 4)
+            for key in layout.keys {
+                let frame = geo.frame(for: key)
+                #expect(frame.width > 0 && frame.height > 0)
+                for point in [CGPoint(x: frame.midX, y: frame.midY), CGPoint(x: frame.minX + 1, y: frame.minY + 1), CGPoint(x: frame.maxX - 1, y: frame.maxY - 1)] {
+                    #expect(geo.key(at: point)?.id == key.id, "\(geometry.rawValue) \(key.id)")
+                }
+            }
+            #expect(geo.key(at: CGPoint(x: -5, y: -5)) == nil)
+        }
+    }
+
     @Test("Key IDs Are Unique")
     func testKeyIdsAreUnique() {
         let layout = KeyboardLayoutManager.shared.generateLayout(geometry: .ansi)

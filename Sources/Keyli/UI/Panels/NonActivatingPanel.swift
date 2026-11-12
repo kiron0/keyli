@@ -22,7 +22,7 @@ open class NonActivatingPanel: NSPanel {
         self.hasShadow = true
         self.titleVisibility = .hidden
         self.titlebarAppearsTransparent = true
-        self.isMovableByWindowBackground = resizable
+        self.isMovableByWindowBackground = false
         self.isMovable = resizable
         self.animationBehavior = .utilityWindow
         for button in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
