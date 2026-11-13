@@ -129,11 +129,8 @@ struct SettingsSidebarRow: View, Equatable {
 
     var body: some View {
         Button(action: onSelect) {
-            HStack(spacing: 8) {
-                Image(systemName: tab.icon)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(isSelected ? KeyliChrome.accent : Color.secondary)
-                    .frame(width: 18)
+            HStack(spacing: 9) {
+                SettingsTabTile(tab: tab)
 
                 Text(tab.rawValue)
                     .font(.system(size: 13, weight: isSelected ? .medium : .regular))
@@ -153,11 +150,11 @@ struct SettingsSidebarRow: View, Equatable {
                         .accessibilityLabel("\(badgeCount) permissions need attention")
                 }
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
             .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isSelected ? KeyliChrome.accent.opacity(0.18) : (hover.isHovered ? Color.primary.opacity(0.05) : Color.clear))
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(isSelected ? KeyliChrome.accent.opacity(0.20) : (hover.isHovered ? Color.primary.opacity(0.05) : Color.clear))
             )
             .contentShape(Rectangle())
         }

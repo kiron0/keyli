@@ -355,8 +355,7 @@ public struct ThemeStudioView: View {
             rowLabel(title)
             Spacer(minLength: 4)
             content()
-                .settingsMenu()
-                .frame(width: 140)
+                .settingsMenu(width: 150)
         }
         .frame(minHeight: 30)
         .padding(.leading, 33)

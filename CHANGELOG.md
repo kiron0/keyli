@@ -27,6 +27,9 @@ All notable changes to Keyli will be documented in this file.
 - Native macOS interface: Theme Studio with sidebar and inspector, native options menu on keyboards.
 - macOS Native theme follows system light and dark appearance.
 - Function row uses full-width keys with working brightness, Mission Control, Spotlight, media, volume and lock actions; fn latches F1–F12.
+- Input source picker in Settings › Keyboard switches the macOS input source directly, with an Edit… shortcut to System Settings.
+- Settings sidebar uses colored tile icons like System Settings.
+- README with real screenshots.
 - Menu bar icon toggles the floating keyboard (click to show, click to hide).
 - Menu bar keyboard is a non-activating panel, so typing from it does not steal focus.
 - New app icon: warm cream squircle with a floating dark keyboard panel, one amber key lit and an amber text caret above it. Source: `Scripts/render-icon.swift`.

@@ -4,6 +4,7 @@ public struct KeyboardTabView: View {
     @ObservedObject public var configStore: ConfigStore = .shared
     @ObservedObject public var permissionsManager: PermissionsManager = .shared
     @ObservedObject public var keyboardState: KeyboardState = .shared
+    @ObservedObject private var inputSources: InputSourceService = .shared
 
     public init() {}
 
@@ -39,8 +40,7 @@ public struct KeyboardTabView: View {
                         Text(geo.displayName).tag(geo.rawValue)
                     }
                 }
-                .settingsMenu()
-                .frame(width: 200)
+                .settingsMenu(width: 220)
             }
 
             SettingsRow {
@@ -48,13 +48,24 @@ public struct KeyboardTabView: View {
                     .font(.system(size: 12, weight: .medium))
                     .frame(width: 130, alignment: .leading)
 
-                Text(keyboardState.currentLayout.inputSourceName ?? "Unknown")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.secondary)
+                Picker("Input source", selection: Binding(
+                    get: { inputSources.currentId },
+                    set: { inputSources.select(id: $0) }
+                )) {
+                    ForEach(inputSources.sources) { source in
+                        Text(source.name).tag(source.id)
+                    }
+                    if !inputSources.sources.contains(where: { $0.id == inputSources.currentId }) {
+                        Text(keyboardState.currentLayout.inputSourceName ?? "Current").tag(inputSources.currentId)
+                    }
+                }
+                .settingsMenu(width: 220)
 
-                Text("Follows the input source in the menu bar.")
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(Color.secondary.opacity(0.8))
+                Button("Edit…") {
+                    inputSources.openInputSourceSettings()
+                }
+                .buttonStyle(SettingsSecondaryButtonStyle())
+                .help("Add or remove input sources in System Settings › Keyboard.")
             }
 
             SettingsSectionHeader(title: "Physical Keyboard", symbol: "dot.radiowaves.left.and.right")
@@ -80,6 +91,7 @@ public struct KeyboardTabView: View {
         }
         .onAppear {
             permissionsManager.checkPermissions()
+            inputSources.refresh()
         }
     }
 }

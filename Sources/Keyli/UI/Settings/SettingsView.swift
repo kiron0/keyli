@@ -41,6 +41,17 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
         }
     }
 
+    public var tileColors: (top: String, bottom: String) {
+        switch self {
+        case .keyboard: return ("#6B6E75", "#3E4046")
+        case .typing: return ("#F2B552", "#D9891F")
+        case .themes: return ("#F07A62", "#D2493A")
+        case .general: return ("#A3A6AC", "#7B7E85")
+        case .permissions: return ("#5BC27A", "#2F9150")
+        case .about: return ("#C9A56E", "#9C7A45")
+        }
+    }
+
     public var headerSummary: String {
         switch self {
         case .keyboard: return "The floating keyboard window, layout and key highlighting."
@@ -317,11 +328,14 @@ public struct SettingsSecondaryButtonStyle: ButtonStyle {
 }
 
 private struct SettingsMenuChrome: ViewModifier {
+    let width: CGFloat?
+
     func body(content: Content) -> some View {
         content
             .pickerStyle(.menu)
             .labelsHidden()
             .controlSize(.small)
+            .frame(width: width.map { $0 - 10 }, alignment: .leading)
             .padding(.horizontal, 5)
             .frame(minHeight: 30)
             .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -333,7 +347,33 @@ private struct SettingsMenuChrome: ViewModifier {
 }
 
 extension View {
-    public func settingsMenu() -> some View {
-        modifier(SettingsMenuChrome())
+    public func settingsMenu(width: CGFloat? = nil) -> some View {
+        modifier(SettingsMenuChrome(width: width))
+    }
+}
+
+public struct SettingsTabTile: View {
+    public let tab: SettingsTab
+    public var size: CGFloat
+
+    public init(tab: SettingsTab, size: CGFloat = 22) {
+        self.tab = tab
+        self.size = size
+    }
+
+    public var body: some View {
+        let colors = tab.tileColors
+        ZStack {
+            RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)
+                .fill(LinearGradient(colors: [Color(hex: colors.top), Color(hex: colors.bottom)], startPoint: .top, endPoint: .bottom))
+            RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5)
+            Image(systemName: tab.icon)
+                .font(.system(size: size * 0.52, weight: .semibold))
+                .foregroundStyle(Color.white)
+                .shadow(color: Color.black.opacity(0.18), radius: 0.5, y: 0.5)
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
     }
 }
