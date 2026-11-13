@@ -43,6 +43,7 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
         let eventMask = (1 << CGEventType.keyDown.rawValue)
             | (1 << CGEventType.keyUp.rawValue)
             | (1 << CGEventType.flagsChanged.rawValue)
+            | (1 << PhysicalKeyMap.systemDefinedEventType)
 
         let selfPointer = Unmanaged.passUnretained(self).toOpaque()
 
@@ -107,23 +108,30 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
         }
     }
 
-    private func handleCGEvent(type: CGEventType, event: CGEvent) {
+    func handleCGEvent(type: CGEventType, event: CGEvent, state: KeyboardState = .shared) {
         if event.getIntegerValueField(.eventSourceUserData) == KeyliConstants.syntheticEventUserData {
             return
         }
 
-        let keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
-        let state = KeyboardState.shared
+        let available = Set(state.currentLayout.keys.map { $0.keyCode })
+
+        if type.rawValue == PhysicalKeyMap.systemDefinedEventType {
+            guard let nsEvent = NSEvent(cgEvent: event),
+                  nsEvent.subtype.rawValue == PhysicalKeyMap.auxControlButtonsSubtype,
+                  let media = PhysicalKeyMap.mediaKeyCode(forData1: nsEvent.data1),
+                  available.contains(media.keyCode) else {
+                return
+            }
+            setPressed(media.keyCode, media.isDown, state: state)
+            return
+        }
+
+        let rawKeyCode = UInt16(truncatingIfNeeded: event.getIntegerValueField(.keyboardEventKeycode))
 
         switch type {
-        case .keyDown:
-            if !state.pressedPhysicalKeyCodes.contains(keyCode) {
-                state.pressedPhysicalKeyCodes.insert(keyCode)
-            }
-        case .keyUp:
-            if state.pressedPhysicalKeyCodes.contains(keyCode) {
-                state.pressedPhysicalKeyCodes.remove(keyCode)
-            }
+        case .keyDown, .keyUp:
+            guard let keyCode = PhysicalKeyMap.displayKeyCode(for: rawKeyCode, availableKeyCodes: available) else { return }
+            setPressed(keyCode, type == .keyDown, state: state)
         case .flagsChanged:
             let flags = event.flags
             state.setModifiers(
@@ -133,27 +141,20 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
                 command: flags.contains(.maskCommand),
                 capsLock: flags.contains(.maskAlphaShift)
             )
-
-            let isModDown: Bool
-            switch keyCode {
-            case 56, 60: isModDown = flags.contains(.maskShift)
-            case 58, 61: isModDown = flags.contains(.maskAlternate)
-            case 55, 54: isModDown = flags.contains(.maskCommand)
-            case 59, 62: isModDown = flags.contains(.maskControl)
-            case 57:     isModDown = flags.contains(.maskAlphaShift)
-            case 63:     isModDown = flags.contains(.maskSecondaryFn)
-            default:     isModDown = false
-            }
-
-            if isModDown {
-                if !state.pressedPhysicalKeyCodes.contains(keyCode) {
-                    state.pressedPhysicalKeyCodes.insert(keyCode)
-                }
-            } else if state.pressedPhysicalKeyCodes.contains(keyCode) {
-                state.pressedPhysicalKeyCodes.remove(keyCode)
-            }
+            guard let isDown = PhysicalKeyMap.isModifierDown(keyCode: rawKeyCode, flags: flags),
+                  let keyCode = PhysicalKeyMap.displayKeyCode(for: rawKeyCode, availableKeyCodes: available) else { return }
+            setPressed(keyCode, isDown, state: state)
         default:
             break
+        }
+    }
+
+    private func setPressed(_ keyCode: UInt16, _ isDown: Bool, state: KeyboardState) {
+        let contains = state.pressedPhysicalKeyCodes.contains(keyCode)
+        if isDown && !contains {
+            state.pressedPhysicalKeyCodes.insert(keyCode)
+        } else if !isDown && contains {
+            state.pressedPhysicalKeyCodes.remove(keyCode)
         }
     }
 }

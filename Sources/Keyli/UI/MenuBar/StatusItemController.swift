@@ -63,6 +63,8 @@ public final class StatusItemController: NSObject {
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Theme Studio…", action: #selector(openThemeStudio), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: ","))
+        let setupPending = !PermissionsManager.shared.canType || !SetupAssistantModel.isCompleted()
+        menu.addItem(NSMenuItem(title: setupPending ? "Finish Setup…" : "Setup Assistant…", action: #selector(openSetup), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit Keyli", action: #selector(quitApp), keyEquivalent: "q"))
 
@@ -81,6 +83,10 @@ public final class StatusItemController: NSObject {
 
     @objc private func openThemeStudio() {
         NotificationCenter.default.post(name: KeyliConstants.NotificationName.openThemeStudio, object: nil)
+    }
+
+    @objc private func openSetup() {
+        SetupAssistantController.shared.show(from: PermissionsManager.shared.canType ? .welcome : .accessibility)
     }
 
     @objc private func openSettings() {

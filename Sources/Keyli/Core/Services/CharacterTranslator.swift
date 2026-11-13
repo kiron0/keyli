@@ -138,6 +138,9 @@ public final class CharacterTranslator {
         case 46: return "m"
         case 47: return "."
         case 50: return "`"
+        case 10: return "§"
+        case 93: return "¥"
+        case 94: return "_"
         default: return ""
         }
     }

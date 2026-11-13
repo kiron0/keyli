@@ -249,22 +249,55 @@ public final class KeyboardLayoutManager: ObservableObject {
 
     private func buildISOKeys(translator: CharacterTranslator) -> [KeyboardKey] {
         var list = buildANSIKeys(translator: translator)
-        // ISO: left shift is narrower (1.25), extra key (kc=10) inserted
-        list.removeAll { $0.id == "k_lshift" }
+        let topLeft = list.first { $0.id == "k_50" }?.unitFrame ?? KeyUnitFrame(x: 0, y: 0.85)
+        let homeCodes: Set<UInt16> = [0, 1, 2, 3, 5, 4, 38, 40, 37, 41, 39]
+        list.removeAll { ["k_50", "k_lshift", "k_42", "k_return", "k_caps"].contains($0.id) }
+        list = list.map { key in
+            var k = key
+            if homeCodes.contains(k.keyCode) && k.kind == .character {
+                k.unitFrame.x -= 0.25
+            }
+            return k
+        }
+        list.append(KeyboardKey(id: "k_10", keyCode: 10, kind: .character,
+            unitFrame: topLeft, labels: translator.translateKeycode(10)))
+        list.append(KeyboardKey(id: "k_caps", keyCode: 57, kind: .modifier, modifierType: .capsLock,
+            unitFrame: KeyUnitFrame(x: 0.0, y: 3.05, width: 1.5, height: 1.0),
+            labels: KeyLabels(defaultLabel: "caps lock"), symbolIcon: "capslock.fill"))
+        list.append(KeyboardKey(id: "k_42", keyCode: 42, kind: .character,
+            unitFrame: KeyUnitFrame(x: 12.5, y: 3.05, width: 1.0, height: 1.0),
+            labels: translator.translateKeycode(42)))
+        list.append(KeyboardKey(id: "k_return", keyCode: 36, kind: .system,
+            unitFrame: KeyUnitFrame(x: 13.5, y: 1.95, width: 1.5, height: 2.1),
+            labels: KeyLabels(defaultLabel: "return"), symbolIcon: "return"))
         list.append(KeyboardKey(id: "k_lshift", keyCode: 56, kind: .modifier, modifierType: .shift,
             unitFrame: KeyUnitFrame(x: 0.0, y: 4.15, width: 1.25, height: 1.0),
             labels: KeyLabels(defaultLabel: "shift"), symbolIcon: "shift.fill"))
-        let extraLabels = translator.translateKeycode(10)
-        list.append(KeyboardKey(id: "k_10", keyCode: 10, kind: .character,
+        list.append(KeyboardKey(id: "k_50", keyCode: 50, kind: .character,
             unitFrame: KeyUnitFrame(x: 1.25, y: 4.15, width: 1.0, height: 1.0),
-            labels: extraLabels))
+            labels: translator.translateKeycode(50)))
         return list
     }
 
     private func buildJISKeys(translator: CharacterTranslator) -> [KeyboardKey] {
         var list = buildANSIKeys(translator: translator)
-        // JIS: eisu + narrower space + kana keys
-        list.removeAll { $0.id == "k_space" }
+        list.removeAll { ["k_50", "k_space", "k_rshift"].contains($0.id) }
+        list = list.map { key in
+            var k = key
+            if k.unitFrame.y == 0.85 && k.kind == .character {
+                k.unitFrame.x -= 1.0
+            }
+            return k
+        }
+        list.append(KeyboardKey(id: "k_93", keyCode: 93, kind: .character,
+            unitFrame: KeyUnitFrame(x: 12.0, y: 0.85, width: 1.0, height: 1.0),
+            labels: translator.translateKeycode(93)))
+        list.append(KeyboardKey(id: "k_94", keyCode: 94, kind: .character,
+            unitFrame: KeyUnitFrame(x: 12.25, y: 4.15, width: 1.0, height: 1.0),
+            labels: translator.translateKeycode(94)))
+        list.append(KeyboardKey(id: "k_rshift", keyCode: 60, kind: .modifier, modifierType: .shift,
+            unitFrame: KeyUnitFrame(x: 13.25, y: 4.15, width: 1.75, height: 1.0),
+            labels: KeyLabels(defaultLabel: "shift"), symbolIcon: "shift.fill"))
         list.append(KeyboardKey(id: "k_eisu", keyCode: 102, kind: .system,
             unitFrame: KeyUnitFrame(x: 5.0, y: 5.25, width: 1.125, height: 1.0),
             labels: KeyLabels(defaultLabel: "英数")))
