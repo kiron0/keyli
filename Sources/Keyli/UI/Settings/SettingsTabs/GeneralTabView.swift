@@ -94,19 +94,18 @@ public struct AppearancePicker: View {
     }
 
     public var body: some View {
-        Picker("Window style", selection: Binding(
-            get: { configStore.config.liquidGlassEnabled },
-            set: { newValue in
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    configStore.config.liquidGlassEnabled = newValue
+        SettingsSegmentedControl(
+            "Window style",
+            selection: Binding(
+                get: { configStore.config.liquidGlassEnabled },
+                set: { newValue in
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        configStore.config.liquidGlassEnabled = newValue
+                    }
                 }
-            }
-        )) {
-            Text("Classic").tag(false)
-            Text("Liquid Glass").tag(true)
-        }
-        .labelsHidden()
-        .pickerStyle(.segmented)
-        .frame(width: width)
+            ),
+            options: [SettingsMenuOption(false, "Classic"), SettingsMenuOption(true, "Liquid Glass")],
+            width: width
+        )
     }
 }

@@ -401,6 +401,54 @@ public struct SettingsMenuPicker<Value: Hashable>: View {
     }
 }
 
+public struct SettingsSegmentedControl<Value: Hashable>: View {
+    public let title: String
+    @Binding public var selection: Value
+    public let options: [SettingsMenuOption<Value>]
+    public var width: CGFloat
+
+    public init(_ title: String, selection: Binding<Value>, options: [SettingsMenuOption<Value>], width: CGFloat = 220) {
+        self.title = title
+        self._selection = selection
+        self.options = options
+        self.width = width
+    }
+
+    public var body: some View {
+        HStack(spacing: 2) {
+            ForEach(options) { option in
+                let isSelected = option.value == selection
+                Button {
+                    selection = option.value
+                } label: {
+                    Text(option.title)
+                        .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
+                        .foregroundStyle(isSelected ? KeyliChrome.onAccent : Color.primary)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 24)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(isSelected ? KeyliChrome.accent : Color.clear)
+                        )
+                        .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+            }
+        }
+        .padding(3)
+        .frame(width: width)
+        .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(title)
+    }
+}
+
 public struct SettingsTabTile: View {
     public let tab: SettingsTab
     public var size: CGFloat
