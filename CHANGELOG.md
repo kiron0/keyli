@@ -5,6 +5,10 @@ All notable changes to Keyli will be documented in this file.
 ## Unreleased
 
 ### Changed
+- Keyboard renders in a single Canvas per keyboard instead of ~80 SwiftUI views: modifier toggles use about 4x less CPU (measured ~47% to ~11% while tapping Shift twice a second).
+- Theme Studio list scrolls lighter: row hover no longer redraws the whole window, swatches are drawn with Canvas, and windows no longer use move-by-background.
+- Holding a key repeats with the modifiers that were active when you pressed it.
+- fn + arrows, delete and return send Home/End/Page Up/Page Down, Forward Delete and Enter.
 - Brightness, volume, media and Mission Control keys work even when no other app is focused.
 - Typing while a Keyli window is frontmost switches back to the last app and types there instead of refusing.
 - Permissions page lists Accessibility, Input Monitoring and Open at Login with live status (Waiting, Denied, Needs Repair, Relaunch Needed, Needs Approval) and refreshes when you return from System Settings.
