@@ -268,19 +268,25 @@ public struct ThemeStudioView: View {
             column {
                 SettingsSectionHeader(title: "Keys", symbol: "keyboard")
                 pickerRow("Style") {
-                    Picker("Style", selection: binding(\.keycapStyle)) {
-                        ForEach(KeycapStyle.allCases, id: \.self) { style in
-                            Text(style.displayName).tag(style)
-                        }
-                    }
+                    SettingsMenuPicker(
+                        "Style",
+                        selection: binding(\.keycapStyle),
+                        options: KeycapStyle.allCases.map { SettingsMenuOption($0, $0.displayName) },
+                        width: 150
+                    )
                 }
                 pickerRow("Font") {
-                    Picker("Font", selection: binding(\.fontDesign)) {
-                        Text("System").tag("default")
-                        Text("Rounded").tag("rounded")
-                        Text("Monospaced").tag("monospaced")
-                        Text("Serif").tag("serif")
-                    }
+                    SettingsMenuPicker(
+                        "Font",
+                        selection: binding(\.fontDesign),
+                        options: [
+                            SettingsMenuOption("default", "System"),
+                            SettingsMenuOption("rounded", "Rounded"),
+                            SettingsMenuOption("monospaced", "Monospaced"),
+                            SettingsMenuOption("serif", "Serif")
+                        ],
+                        width: 150
+                    )
                 }
                 sliderRow("Corner radius", \.cornerRadius, in: 1...14, format: "%.0f pt")
                 sliderRow("Spacing", \.keySpacing, in: 2...10, format: "%.1f pt")
@@ -355,7 +361,6 @@ public struct ThemeStudioView: View {
             rowLabel(title)
             Spacer(minLength: 4)
             content()
-                .settingsMenu(width: 150)
         }
         .frame(minHeight: 30)
         .padding(.leading, 33)

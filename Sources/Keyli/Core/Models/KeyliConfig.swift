@@ -9,6 +9,7 @@ public struct KeyliConfig: Codable, Equatable {
     public var floatingOpacity: Double = 1.0
     public var isPhysicalMonitoringEnabled: Bool = false
     public var playKeyClickSound: Bool = true
+    public var liquidGlassEnabled: Bool = true
     public var launchAtLogin: Bool = false
     public var showMenuBarIcon: Bool = true
     public var modifierStickyMode: Bool = true
@@ -32,6 +33,7 @@ public struct KeyliConfig: Codable, Equatable {
         floatingOpacity = try container.decodeIfPresent(Double.self, forKey: .floatingOpacity) ?? fallback.floatingOpacity
         isPhysicalMonitoringEnabled = try container.decodeIfPresent(Bool.self, forKey: .isPhysicalMonitoringEnabled) ?? fallback.isPhysicalMonitoringEnabled
         playKeyClickSound = try container.decodeIfPresent(Bool.self, forKey: .playKeyClickSound) ?? fallback.playKeyClickSound
+        liquidGlassEnabled = try container.decodeIfPresent(Bool.self, forKey: .liquidGlassEnabled) ?? fallback.liquidGlassEnabled
         launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? fallback.launchAtLogin
         showMenuBarIcon = try container.decodeIfPresent(Bool.self, forKey: .showMenuBarIcon) ?? fallback.showMenuBarIcon
         modifierStickyMode = try container.decodeIfPresent(Bool.self, forKey: .modifierStickyMode) ?? fallback.modifierStickyMode

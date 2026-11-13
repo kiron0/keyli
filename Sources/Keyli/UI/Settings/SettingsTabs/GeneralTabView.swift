@@ -13,6 +13,18 @@ public struct GeneralTabView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 6) {
+            if KeyliChrome.supportsGlass {
+                SettingsSectionHeader(title: "Appearance", symbol: "circle.lefthalf.filled")
+
+                SettingsRow {
+                    Text("Window style")
+                        .font(.system(size: 12, weight: .medium))
+                        .frame(width: 130, alignment: .leading)
+
+                    AppearancePicker()
+                }
+            }
+
             SettingsSectionHeader(title: "Startup", symbol: "power")
 
             SettingsToggle("Launch Keyli at login", isOn: Binding(
@@ -70,5 +82,31 @@ public struct GeneralTabView: View {
         } message: {
             Text("Move Keyli to the Applications folder, then try again. You can also manage login items in System Settings › General › Login Items.")
         }
+    }
+}
+
+public struct AppearancePicker: View {
+    @ObservedObject private var configStore: ConfigStore = .shared
+    public var width: CGFloat
+
+    public init(width: CGFloat = 220) {
+        self.width = width
+    }
+
+    public var body: some View {
+        Picker("Window style", selection: Binding(
+            get: { configStore.config.liquidGlassEnabled },
+            set: { newValue in
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    configStore.config.liquidGlassEnabled = newValue
+                }
+            }
+        )) {
+            Text("Classic").tag(false)
+            Text("Liquid Glass").tag(true)
+        }
+        .labelsHidden()
+        .pickerStyle(.segmented)
+        .frame(width: width)
     }
 }

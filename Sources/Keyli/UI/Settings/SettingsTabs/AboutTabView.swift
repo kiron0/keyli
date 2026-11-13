@@ -183,14 +183,6 @@ public struct AboutTabView: View {
                 }
                 Text(KeyliConstants.tagline)
                     .font(.system(size: 12.5, weight: .medium))
-                HStack(spacing: 5) {
-                    Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: 9.5, weight: .semibold))
-                        .foregroundStyle(.green)
-                    Text("Build \(KeyliConstants.buildNumber) • macOS \(ProcessInfo.processInfo.operatingSystemVersion.majorVersion)")
-                        .font(.system(size: 10.5))
-                        .foregroundStyle(Color.secondary)
-                }
             }
 
             Spacer(minLength: 8)

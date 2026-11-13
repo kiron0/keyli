@@ -76,26 +76,31 @@ public enum KeyliChrome {
     public static let onAccent = Color(hex: "#1F1A12")
     public static let cardBackground = Color.primary.opacity(0.035)
 
-    public static var usesGlass: Bool {
+    public static var supportsGlass: Bool {
         if #available(macOS 26.0, *) {
             return true
         }
         return false
     }
+
+    public static var usesGlass: Bool {
+        supportsGlass && ConfigStore.shared.config.liquidGlassEnabled
+    }
 }
 
 public struct GlassFill<S: Shape>: View {
     public let shape: S
+    @ObservedObject private var configStore: ConfigStore = .shared
 
     public init(shape: S) {
         self.shape = shape
     }
 
     public var body: some View {
-        if #available(macOS 26.0, *) {
+        if #available(macOS 26.0, *), configStore.config.liquidGlassEnabled {
             Color.clear.glassEffect(.regular, in: shape)
         } else {
-            Color(NSColor.windowBackgroundColor)
+            shape.fill(Color(NSColor.windowBackgroundColor))
         }
     }
 }
@@ -327,28 +332,72 @@ public struct SettingsSecondaryButtonStyle: ButtonStyle {
     }
 }
 
-private struct SettingsMenuChrome: ViewModifier {
-    let width: CGFloat?
+public struct SettingsMenuOption<Value: Hashable>: Identifiable {
+    public let value: Value
+    public let title: String
 
-    func body(content: Content) -> some View {
-        content
-            .pickerStyle(.menu)
+    public var id: Value { value }
+
+    public init(_ value: Value, _ title: String) {
+        self.value = value
+        self.title = title
+    }
+}
+
+public struct SettingsMenuPicker<Value: Hashable>: View {
+    public let title: String
+    @Binding public var selection: Value
+    public let options: [SettingsMenuOption<Value>]
+    public var width: CGFloat
+
+    public init(_ title: String, selection: Binding<Value>, options: [SettingsMenuOption<Value>], width: CGFloat = 220) {
+        self.title = title
+        self._selection = selection
+        self.options = options
+        self.width = width
+    }
+
+    private var currentTitle: String {
+        options.first { $0.value == selection }?.title ?? ""
+    }
+
+    public var body: some View {
+        Menu {
+            Picker(title, selection: $selection) {
+                ForEach(options) { option in
+                    Text(option.title).tag(option.value)
+                }
+            }
+            .pickerStyle(.inline)
             .labelsHidden()
-            .controlSize(.small)
-            .frame(width: width.map { $0 - 10 }, alignment: .leading)
-            .padding(.horizontal, 5)
-            .frame(minHeight: 30)
+        } label: {
+            HStack(spacing: 8) {
+                Text(currentTitle)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color.primary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(Color.secondary)
+                    .accessibilityHidden(true)
+            }
+            .padding(.horizontal, 10)
+            .frame(width: width, height: 30)
             .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)
             )
-    }
-}
-
-extension View {
-    public func settingsMenu(width: CGFloat? = nil) -> some View {
-        modifier(SettingsMenuChrome(width: width))
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .accessibilityLabel(title)
+        .accessibilityValue(currentTitle)
     }
 }
 

@@ -34,8 +34,13 @@ public enum SetupStep: Int, CaseIterable, Identifiable {
 
 public final class SetupAssistantModel: ObservableObject {
     @Published public var step: SetupStep {
-        didSet { defaults.set(step.rawValue, forKey: SetupAssistantModel.stepKey) }
+        didSet {
+            isMovingForward = step.rawValue >= oldValue.rawValue
+            defaults.set(step.rawValue, forKey: SetupAssistantModel.stepKey)
+        }
     }
+    @Published public private(set) var isMovingForward = true
+    @Published public var hasAppeared = false
 
     static let completedKey = "io.coreify.keyli.setup.completed"
     static let stepKey = "io.coreify.keyli.setup.step"
@@ -116,6 +121,8 @@ public final class SetupAssistantController: NSObject, NSWindowDelegate {
         }))
         hosting.sizingOptions = []
         let window = NSWindow(contentViewController: hosting)
+        window.alphaValue = 0
+        window.animationBehavior = .none
         window.title = "Set Up Keyli"
         window.styleMask = [.titled, .closable, .fullSizeContentView]
         window.titlebarAppearsTransparent = true
@@ -134,10 +141,19 @@ public final class SetupAssistantController: NSObject, NSWindowDelegate {
         window.center()
 
         self.window = window
+        hosting.view.layoutSubtreeIfNeeded()
         WindowActivationCoordinator.update()
-        NSApp.activate()
-        window.makeKeyAndOrderFront(nil)
-        PermissionsManager.shared.startPollingForPermissions()
+        DispatchQueue.main.async {
+            NSApp.activate()
+            window.makeKeyAndOrderFront(nil)
+            let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = reduceMotion ? 0 : 0.24
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                window.animator().alphaValue = 1
+            }
+            PermissionsManager.shared.startPollingForPermissions()
+        }
     }
 
     private func finish() {
@@ -159,7 +175,29 @@ struct SetupAssistantView: View {
     @ObservedObject var model: SetupAssistantModel
     @ObservedObject private var permissions = PermissionsManager.shared
     @ObservedObject private var configStore = ConfigStore.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let onFinish: () -> Void
+
+    private var stepAnimation: Animation {
+        reduceMotion ? .easeOut(duration: 0.12) : .smooth(duration: 0.34)
+    }
+
+    private var stepTransition: AnyTransition {
+        guard !reduceMotion else { return .opacity }
+        let offset: CGFloat = model.isMovingForward ? 28 : -28
+        return .asymmetric(
+            insertion: .offset(x: offset).combined(with: .opacity),
+            removal: .offset(x: -offset * 0.5).combined(with: .opacity)
+        )
+    }
+
+    private func go(_ move: () -> Void) {
+        withAnimation(stepAnimation, move)
+    }
+
+    private func entrance(_ index: Int) -> some ViewModifier {
+        EntranceModifier(isVisible: model.hasAppeared || model.step != .welcome, index: index, reduceMotion: reduceMotion)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -167,14 +205,19 @@ struct SetupAssistantView: View {
                 .padding(.top, 40)
                 .padding(.horizontal, 36)
 
-            content
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(.horizontal, 44)
-                .padding(.top, 30)
-                .id(model.step)
-                .transition(.opacity)
+            ZStack(alignment: .topLeading) {
+                content
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .id(model.step)
+                    .transition(stepTransition)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .padding(.horizontal, 44)
+            .padding(.top, 30)
+            .clipped()
 
             footer
+                .frame(height: 30)
                 .padding(.horizontal, 36)
                 .padding(.bottom, 24)
         }
@@ -185,8 +228,12 @@ struct SetupAssistantView: View {
                 .ignoresSafeArea()
         }
         .ignoresSafeArea()
-        .animation(.easeOut(duration: 0.18), value: model.step)
-        .onAppear { permissions.checkPermissions() }
+        .onAppear {
+            permissions.checkPermissions()
+            withAnimation(reduceMotion ? nil : .smooth(duration: 0.5).delay(0.08)) {
+                model.hasAppeared = true
+            }
+        }
     }
 
     private var progress: some View {
@@ -195,7 +242,12 @@ struct SetupAssistantView: View {
                 let reached = step.rawValue <= model.step.rawValue
                 VStack(alignment: .leading, spacing: 6) {
                     Capsule()
-                        .fill(reached ? KeyliChrome.accent : Color.primary.opacity(0.1))
+                        .fill(Color.primary.opacity(0.1))
+                        .overlay(alignment: .leading) {
+                            Capsule()
+                                .fill(KeyliChrome.accent)
+                                .scaleEffect(x: reached ? 1 : 0.0001, y: 1, anchor: .leading)
+                        }
                         .frame(height: 4)
                     Text(step.shortTitle)
                         .font(.system(size: 10, weight: step == model.step ? .bold : .medium))
@@ -253,6 +305,7 @@ struct SetupAssistantView: View {
     private var welcome: some View {
         VStack(alignment: .leading, spacing: 18) {
             appIcon
+                .modifier(entrance(0))
             VStack(alignment: .leading, spacing: 8) {
                 Text("Welcome to Keyli")
                     .font(.system(size: 26, weight: .bold))
@@ -261,12 +314,26 @@ struct SetupAssistantView: View {
                     .foregroundStyle(Color.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .modifier(entrance(1))
             VStack(alignment: .leading, spacing: 10) {
                 checklistRow(symbol: "accessibility", title: "Typing", detail: "Required. Lets Keyli press keys in other apps.")
+                    .modifier(entrance(2))
                 checklistRow(symbol: "keyboard", title: "Key lighting", detail: "Recommended. Mirrors your physical keyboard on screen.")
+                    .modifier(entrance(3))
                 checklistRow(symbol: "power", title: "Open at login", detail: "Optional.")
+                    .modifier(entrance(4))
             }
             .padding(.top, 4)
+            if KeyliChrome.supportsGlass {
+                HStack(spacing: 12) {
+                    Text("Window style")
+                        .font(.system(size: 12, weight: .medium))
+                    Spacer(minLength: 0)
+                    AppearancePicker(width: 190)
+                }
+                .padding(.top, 6)
+                .modifier(entrance(5))
+            }
         }
     }
 
@@ -477,13 +544,13 @@ struct SetupAssistantView: View {
         let accessibilityGranted = permissions.canType
         return HStack(spacing: 10) {
             if model.step != .welcome && model.step != .done {
-                Button("Back") { model.back() }
+                Button("Back") { go { model.back() } }
                     .buttonStyle(SettingsSecondaryButtonStyle())
             }
             Spacer(minLength: 0)
             switch model.step {
             case .welcome:
-                Button("Get Started") { model.next() }
+                Button("Get Started") { go { model.next() } }
                     .buttonStyle(SettingsPrimaryButtonStyle())
                     .keyboardShortcut(.defaultAction)
             case .accessibility:
@@ -492,7 +559,7 @@ struct SetupAssistantView: View {
                         .font(.system(size: 11))
                         .foregroundStyle(Color.secondary)
                 }
-                Button("Continue") { model.next() }
+                Button("Continue") { go { model.next() } }
                     .buttonStyle(SettingsPrimaryButtonStyle())
                     .disabled(!model.canAdvance(accessibilityGranted: accessibilityGranted))
                     .opacity(model.canAdvance(accessibilityGranted: accessibilityGranted) ? 1 : 0.45)
@@ -500,11 +567,11 @@ struct SetupAssistantView: View {
             case .inputMonitoring, .loginItem:
                 let kind: PermissionKind = model.step == .inputMonitoring ? .inputMonitoring : .loginItem
                 if permissions.status(of: kind) == .granted {
-                    Button("Continue") { model.next() }
+                    Button("Continue") { go { model.next() } }
                         .buttonStyle(SettingsPrimaryButtonStyle())
                         .keyboardShortcut(.defaultAction)
                 } else {
-                    Button("Skip for Now") { model.next() }
+                    Button("Skip for Now") { go { model.next() } }
                         .buttonStyle(SettingsSecondaryButtonStyle())
                 }
             case .done:
@@ -513,5 +580,18 @@ struct SetupAssistantView: View {
                     .keyboardShortcut(.defaultAction)
             }
         }
+    }
+}
+
+private struct EntranceModifier: ViewModifier {
+    let isVisible: Bool
+    let index: Int
+    let reduceMotion: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(isVisible ? 1 : 0)
+            .offset(y: isVisible || reduceMotion ? 0 : 10)
+            .animation(reduceMotion ? nil : .smooth(duration: 0.5).delay(0.06 * Double(index)), value: isVisible)
     }
 }

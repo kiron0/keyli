@@ -35,12 +35,11 @@ public struct KeyboardTabView: View {
                     .font(.system(size: 12, weight: .medium))
                     .frame(width: 130, alignment: .leading)
 
-                Picker("Keyboard layout", selection: $configStore.config.layoutGeometry) {
-                    ForEach(GeometryType.allCases, id: \.rawValue) { geo in
-                        Text(geo.displayName).tag(geo.rawValue)
-                    }
-                }
-                .settingsMenu(width: 220)
+                SettingsMenuPicker(
+                    "Keyboard layout",
+                    selection: $configStore.config.layoutGeometry,
+                    options: GeometryType.allCases.map { SettingsMenuOption($0.rawValue, $0.displayName) }
+                )
             }
 
             SettingsRow {
@@ -48,18 +47,14 @@ public struct KeyboardTabView: View {
                     .font(.system(size: 12, weight: .medium))
                     .frame(width: 130, alignment: .leading)
 
-                Picker("Input source", selection: Binding(
-                    get: { inputSources.currentId },
-                    set: { inputSources.select(id: $0) }
-                )) {
-                    ForEach(inputSources.sources) { source in
-                        Text(source.name).tag(source.id)
-                    }
-                    if !inputSources.sources.contains(where: { $0.id == inputSources.currentId }) {
-                        Text(keyboardState.currentLayout.inputSourceName ?? "Current").tag(inputSources.currentId)
-                    }
-                }
-                .settingsMenu(width: 220)
+                SettingsMenuPicker(
+                    "Input source",
+                    selection: Binding(
+                        get: { inputSources.currentId },
+                        set: { inputSources.select(id: $0) }
+                    ),
+                    options: inputSourceOptions
+                )
 
                 Button("Edit…") {
                     inputSources.openInputSourceSettings()
@@ -93,5 +88,13 @@ public struct KeyboardTabView: View {
             permissionsManager.checkPermissions()
             inputSources.refresh()
         }
+    }
+
+    private var inputSourceOptions: [SettingsMenuOption<String>] {
+        var options = inputSources.sources.map { SettingsMenuOption($0.id, $0.name) }
+        if !inputSources.sources.contains(where: { $0.id == inputSources.currentId }) {
+            options.append(SettingsMenuOption(inputSources.currentId, keyboardState.currentLayout.inputSourceName ?? "Current"))
+        }
+        return options
     }
 }
