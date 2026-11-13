@@ -27,6 +27,9 @@ All notable changes to Keyli will be documented in this file.
 - Native macOS interface: Theme Studio with sidebar and inspector, native options menu on keyboards.
 - macOS Native theme follows system light and dark appearance.
 - Function row uses full-width keys with working brightness, Mission Control, Spotlight, media, volume and lock actions; fn latches F1–F12.
+- Tapping the on-screen fn key now does what your Globe key does in System Settings (switch input source or show Emoji & Symbols); hold fn to latch it for F1–F12 and navigation keys.
+- Clicking the menu bar icon while the keyboard is hidden behind other windows brings it to the front instead of hiding it.
+- README moved build instructions to CONTRIBUTING.md and has a new product hero image.
 - Input source picker in Settings › Keyboard switches the macOS input source directly, with an Edit… shortcut to System Settings.
 - Settings sidebar uses colored tile icons like System Settings.
 - README with real screenshots.

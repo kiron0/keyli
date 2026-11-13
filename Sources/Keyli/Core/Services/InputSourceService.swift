@@ -76,6 +76,15 @@ public final class InputSourceService: ObservableObject {
         return status == noErr
     }
 
+    @discardableResult
+    public func selectNext() -> Bool {
+        refresh()
+        guard sources.count > 1 else { return false }
+        let index = sources.firstIndex(where: { $0.id == currentId }) ?? -1
+        let next = sources[(index + 1) % sources.count]
+        return select(id: next.id)
+    }
+
     public func openInputSourceSettings() {
         if let url = URL(string: "x-apple.systempreferences:com.apple.Keyboard-Settings.extension") {
             NSWorkspace.shared.open(url)

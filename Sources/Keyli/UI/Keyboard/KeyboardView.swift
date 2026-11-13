@@ -4,6 +4,7 @@ import AppKit
 final class KeyboardInteractionState: ObservableObject {
     @Published var hoveredKeyId: String?
     @Published var pressedKeyId: String?
+    var pressBegan: Date?
 
     private var repeatTimer: Timer?
 
@@ -152,7 +153,11 @@ public struct KeyboardView: View {
 
     private func begin(_ key: KeyboardKey) {
         interaction.pressedKeyId = key.id
+        interaction.pressBegan = Date()
         guard isInteractive else { return }
+        if key.modifierType == .fn {
+            return
+        }
         state.virtualPressedKeyId = key.id
         let repeatState = state.detachedCopy()
         let issue = KeyboardInputDispatcher.shared.dispatchKey(key, state: state)
@@ -165,11 +170,25 @@ public struct KeyboardView: View {
 
     private func end() {
         interaction.stopRepeating()
+        if isInteractive,
+           let id = interaction.pressedKeyId,
+           let key = state.currentLayout.keys.first(where: { $0.id == id }),
+           key.modifierType == .fn {
+            let held = Date().timeIntervalSince(interaction.pressBegan ?? Date())
+            if held >= KeyboardView.fnLatchHoldDuration || state.isFnActive {
+                state.toggleModifier(.fn)
+                SoundService.shared.playModifierClick()
+            } else {
+                KeyboardInputDispatcher.shared.handleGlobeTap(state: state)
+            }
+        }
         if let id = interaction.pressedKeyId, state.virtualPressedKeyId == id {
             state.virtualPressedKeyId = nil
         }
         interaction.pressedKeyId = nil
     }
+
+    static let fnLatchHoldDuration: TimeInterval = 0.4
 
     private func isRepeatable(_ key: KeyboardKey) -> Bool {
         guard ConfigStore.shared.config.keyRepeatEnabled else { return false }

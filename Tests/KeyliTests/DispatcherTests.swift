@@ -282,4 +282,14 @@ struct DispatcherTests {
         #expect(stateChanges == 1)
         cancellable.cancel()
     }
+
+    @Test("Tapping fn Follows The macOS Globe Key Setting")
+    func testGlobeTapPlan() {
+        let plan = KeyboardInputDispatcher.globeTapPlan
+        #expect(plan(.changeInputSource, 2) == .switchedInputSource)
+        #expect(plan(.changeInputSource, 1) == .latchedFn)
+        #expect(plan(.showEmojiAndSymbols, 1) == .showedEmoji)
+        #expect(plan(.doNothing, 3) == .latchedFn)
+        #expect(plan(.startDictation, 3) == .latchedFn)
+    }
 }

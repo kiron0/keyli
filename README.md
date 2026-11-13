@@ -30,13 +30,14 @@
 ## Features
 
 - Type into the app you're using by clicking keys. Keyli never steals its focus.
-- Shift, Option, Control, Command and fn latch for one key, or stay on until you tap them again.
+- Shift, Option, Control and Command latch for one key, or stay on until you tap them again.
+- Tap fn to do what your Globe key does, such as switching input source. Hold fn to latch it for F1–F12, Home, End and Page Up/Down.
 - Function row works like a Mac: brightness, Mission Control, Spotlight, media, volume and lock. Latch fn for F1–F12.
 - Hold a key to repeat it at your system key-repeat speed.
 - Labels follow your input source live, including Shift and Option characters. Switch input source from Settings.
 - ANSI, ISO, JIS and compact layouts that resize in proportion and never stretch.
 - Optionally light up keys you press on your physical keyboard. Nothing is recorded or stored.
-- Click the menu bar icon to show or hide the keyboard.
+- Click the menu bar icon to show or hide the keyboard. Pin it to keep it above other windows.
 
 <p align="center">
   <img src="Support/Screenshots/themes.jpg" width="100%" alt="Three Keyli keyboards in the Porcelain, Classic Retro and Citrus Tide themes" />
@@ -72,19 +73,8 @@ Viewing the keyboard needs no permission. Keyli refuses to type into secure fiel
 
 Get the latest `.dmg` from [Releases](https://github.com/kiron0/keyli/releases/latest) and drag **Keyli** into Applications. Keyli isn't notarized by Apple, so the first time you open it, go to **System Settings › Privacy & Security** and click **Open Anyway**.
 
-## Build from source
-
-Requires macOS 14 or later and the Xcode command line tools.
-
-```bash
-cd app/project
-npm run build      # build the release .app
-npm test           # run the unit tests
-npm run ship       # test, build, install to /Applications and launch
-```
-
 Support development: [Buy me a coffee](https://buymeacoffee.com/_thk).
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE). Want to help? See [CONTRIBUTING.md](CONTRIBUTING.md).

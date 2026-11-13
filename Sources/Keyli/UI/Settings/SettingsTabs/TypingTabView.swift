@@ -41,8 +41,8 @@ public struct TypingTabView: View {
 
             SettingsInlineNote(
                 symbol: "fn",
-                title: "fn shortcuts",
-                detail: "Latch fn, then press an arrow for Home, End, Page Up or Page Down, delete for Forward Delete, or F1–F12 for function keys."
+                title: "The fn key",
+                detail: "Tap fn to do what your Globe key does in System Settings › Keyboard, such as switching input source. Hold fn to latch it, then press an arrow for Home, End, Page Up or Page Down, delete for Forward Delete, or F1–F12."
             )
             .padding(.leading, 33)
         }

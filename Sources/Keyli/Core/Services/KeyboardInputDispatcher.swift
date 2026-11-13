@@ -9,6 +9,18 @@ public enum KeyDispatchIssue: Equatable {
     case noTarget
 }
 
+public enum GlobeKeyAction: Int, Equatable {
+    case doNothing = 0
+    case changeInputSource = 1
+    case showEmojiAndSymbols = 2
+    case startDictation = 3
+
+    public static var current: GlobeKeyAction {
+        let value = CFPreferencesCopyAppValue("AppleFnUsageType" as CFString, "com.apple.HIToolbox" as CFString) as? Int
+        return value.flatMap(GlobeKeyAction.init(rawValue:)) ?? .changeInputSource
+    }
+}
+
 public enum KeyDispatchAction: Equatable {
     case none
     case toggleModifier(ModifierType)
@@ -115,6 +127,51 @@ public final class KeyboardInputDispatcher {
             return hasTarget ? .activateTargetThenSend : .refuse(.noTarget)
         }
         return hasTarget ? .send : .refuse(.noTarget)
+    }
+
+    public enum GlobeTapOutcome: Equatable {
+        case switchedInputSource
+        case showedEmoji
+        case latchedFn
+    }
+
+    public static func globeTapPlan(_ setting: GlobeKeyAction, inputSourceCount: Int) -> GlobeTapOutcome {
+        switch setting {
+        case .changeInputSource:
+            return inputSourceCount > 1 ? .switchedInputSource : .latchedFn
+        case .showEmojiAndSymbols:
+            return .showedEmoji
+        case .doNothing, .startDictation:
+            return .latchedFn
+        }
+    }
+
+    @discardableResult
+    public func handleGlobeTap(state: KeyboardState) -> GlobeTapOutcome {
+        let outcome = KeyboardInputDispatcher.globeTapPlan(GlobeKeyAction.current, inputSourceCount: InputSourceService.shared.sources.count)
+        switch outcome {
+        case .switchedInputSource:
+            if InputSourceService.shared.selectNext() {
+                SoundService.shared.playModifierClick()
+                if state.isFnActive { state.isFnActive = false }
+                return outcome
+            }
+            state.toggleModifier(.fn)
+            SoundService.shared.playModifierClick()
+            return .latchedFn
+        case .showedEmoji:
+            let shortcutState = KeyboardState()
+            shortcutState.isControlActive = true
+            shortcutState.isCommandActive = true
+            let space = KeyboardKey(id: "k_space", keyCode: 49, kind: .character, unitFrame: KeyUnitFrame(x: 0, y: 0), labels: KeyLabels(defaultLabel: " "))
+            dispatchKey(space, state: shortcutState)
+            if state.isFnActive { state.isFnActive = false }
+            return outcome
+        case .latchedFn:
+            state.toggleModifier(.fn)
+            SoundService.shared.playModifierClick()
+            return outcome
+        }
     }
 
     /// Dispatches a virtual key press into the active system application

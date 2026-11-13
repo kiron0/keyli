@@ -81,11 +81,35 @@ public final class PanelManager: NSObject, NSWindowDelegate {
     }
 
     public func toggleFloatingKeyboard() {
+        if isFloatingVisible, let panel = floatingPanel, !panel.occlusionState.contains(.visible) || isCoveredByOtherWindows(panel) {
+            panel.orderFrontRegardless()
+            return
+        }
         if isFloatingVisible {
             hideFloatingKeyboard()
         } else {
             showFloatingKeyboard()
         }
+    }
+
+    private func isCoveredByOtherWindows(_ panel: NSPanel) -> Bool {
+        guard panel.level == .normal else { return false }
+        let options: CGWindowListOption = [.optionOnScreenAboveWindow, .excludeDesktopElements]
+        guard let above = CGWindowListCopyWindowInfo(options, CGWindowID(panel.windowNumber)) as? [[String: Any]] else { return false }
+        let frame = panel.frame
+        let screenHeight = NSScreen.screens.first?.frame.height ?? frame.maxY
+        let panelRect = CGRect(x: frame.minX, y: screenHeight - frame.maxY, width: frame.width, height: frame.height)
+        for info in above {
+            guard (info[kCGWindowLayer as String] as? Int) == 0,
+                  let bounds = info[kCGWindowBounds as String] as? [String: CGFloat],
+                  (info[kCGWindowAlpha as String] as? CGFloat ?? 1) > 0.1 else { continue }
+            let rect = CGRect(x: bounds["X"] ?? 0, y: bounds["Y"] ?? 0, width: bounds["Width"] ?? 0, height: bounds["Height"] ?? 0)
+            let overlap = rect.intersection(panelRect)
+            if !overlap.isNull && overlap.width * overlap.height > panelRect.width * panelRect.height * 0.25 {
+                return true
+            }
+        }
+        return false
     }
 
     public func applyWindowConfig() {

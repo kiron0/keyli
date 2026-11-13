@@ -48,7 +48,9 @@ public struct FloatingKeyboardContainerView: View {
                     KeyboardChromeButton(
                         systemImage: configStore.config.isFloatingPinned ? "pin.fill" : "pin.slash",
                         tint: textColor,
-                        help: configStore.config.isFloatingPinned ? "Stop Keeping on Top" : "Keep on Top"
+                        help: configStore.config.isFloatingPinned
+                            ? "Pinned: stays above other windows. Click to let other windows cover it."
+                            : "Not pinned: other windows can cover the keyboard. Click to keep it on top."
                     ) {
                         configStore.config.isFloatingPinned.toggle()
                     }
