@@ -7,7 +7,11 @@ import SwiftUI
 struct ThemeTests {
     @Test("Built-in Themes Count and Presence")
     func testBuiltInThemesExist() {
-        #expect(KeyboardTheme.builtInThemes.count == 31)
+        #expect(KeyboardTheme.builtInThemes.count == 44)
+        #expect(KeyboardTheme.basalt.keycapStyle == .fluent)
+        #expect(KeyboardTheme.porcelain.keycapStyle == .fluent)
+        #expect(KeyboardTheme.basalt.isDarkBackground)
+        #expect(!KeyboardTheme.porcelain.isDarkBackground)
         #expect(Set(KeyboardTheme.builtInThemes.map { $0.id }).count == KeyboardTheme.builtInThemes.count)
         #expect(Set(KeyboardTheme.builtInThemes.map { $0.name }).count == KeyboardTheme.builtInThemes.count)
         for theme in KeyboardTheme.builtInThemes {
@@ -19,6 +23,8 @@ struct ThemeTests {
         }
         let ids = KeyboardTheme.builtInThemes.map { $0.id }
         #expect(ids.contains("apple_native"))
+        #expect(ids.contains("ember_graphite"))
+        #expect(!KeyboardTheme.builtInThemes.contains { $0.name.localizedCaseInsensitiveContains("windows") })
         #expect(ids.contains("dark_mechanical"))
         #expect(ids.contains("minimalist_light"))
         #expect(ids.contains("midnight_neon"))
@@ -98,7 +104,7 @@ struct ThemeTests {
         #expect(theme.schemaVersion == 1)
         #expect(theme.name == "Legacy")
         #expect(theme.isBuiltIn == false)
-        #expect(theme.keycapStyle == KeyboardTheme.appleNative.keycapStyle)
+        #expect(theme.keycapStyle == KeyboardTheme.defaultTheme.keycapStyle)
         #expect(theme.modifierKeyColorHex == "#202020")
     }
 
@@ -130,7 +136,7 @@ struct ThemeTests {
 
         manager.deleteCustomTheme(edited)
         #expect(manager.customThemes.isEmpty)
-        #expect(manager.currentTheme.id == KeyboardTheme.appleNative.id)
+        #expect(manager.currentTheme.id == KeyboardTheme.defaultTheme.id)
     }
 
     @Test("macOS Native Theme Follows System Appearance")

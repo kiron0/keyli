@@ -8,7 +8,7 @@ struct ConfigTests {
     func testDefaultConfigValues() {
         let config = KeyliConfig()
         #expect(config.version == 1)
-        #expect(config.themeId == "apple_native")
+        #expect(config.themeId == "ember_graphite")
         #expect(config.layoutGeometry == "ansi")
         #expect(config.isFloatingPinned == true)
         #expect(config.showMenuBarIcon == true)

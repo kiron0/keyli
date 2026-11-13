@@ -1,19 +1,41 @@
 import SwiftUI
 
+public enum SettingsCategory: String, CaseIterable {
+    case keyboard = "Keyboard"
+    case app = "App"
+    case info = ""
+}
+
 public enum SettingsTab: String, CaseIterable, Identifiable {
-    case general = "General"
+    case keyboard = "Keyboard"
     case typing = "Typing"
-    case appearance = "Appearance"
+    case themes = "Themes"
+    case general = "General"
     case permissions = "Permissions"
     case about = "About"
 
     public var id: String { rawValue }
 
+    public var category: SettingsCategory {
+        switch self {
+        case .keyboard, .typing, .themes: return .keyboard
+        case .general, .permissions: return .app
+        case .about: return .info
+        }
+    }
+
+    public static var byCategory: [(category: SettingsCategory, tabs: [SettingsTab])] {
+        SettingsCategory.allCases.map { category in
+            (category, SettingsTab.allCases.filter { $0.category == category })
+        }
+    }
+
     public var icon: String {
         switch self {
+        case .keyboard: return "keyboard"
+        case .typing: return "character.cursor.ibeam"
+        case .themes: return "paintpalette"
         case .general: return "gearshape"
-        case .typing: return "keyboard"
-        case .appearance: return "paintbrush"
         case .permissions: return "lock.shield"
         case .about: return "info.circle"
         }
@@ -21,23 +43,26 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
 
     public var headerSummary: String {
         switch self {
-        case .general: return "Startup, menu bar and the floating keyboard window."
+        case .keyboard: return "The floating keyboard window, layout and key highlighting."
         case .typing: return "How clicked keys are sent to the app you’re using."
-        case .appearance: return "Keyboard layout and theme."
+        case .themes: return "Pick a look for every keyboard, or design your own."
+        case .general: return "Startup, menu bar and reset."
         case .permissions: return "What macOS lets Keyli do, and why. Updates live."
-        case .about: return "Version and links."
+        case .about: return "Version, links and support."
         }
     }
 
-    public static let windowSize = NSSize(width: 780, height: 540)
-    public static let sidebarWidth: CGFloat = 200
+    public static let windowSize = NSSize(width: 820, height: 580)
+    public static let sidebarWidth: CGFloat = 210
     public static let detailWidth: CGFloat = windowSize.width - sidebarWidth
     public static let detailHorizontalPadding: CGFloat = 28
     public static let contentWidth: CGFloat = detailWidth - detailHorizontalPadding * 2
 }
 
 public enum KeyliChrome {
-    public static let accent = Color.accentColor
+    public static let accent = Color(hex: "#E8A33D")
+    public static let accentNSColor = NSColor(srgbRed: 232 / 255, green: 163 / 255, blue: 61 / 255, alpha: 1)
+    public static let onAccent = Color(hex: "#1F1A12")
     public static let cardBackground = Color.primary.opacity(0.035)
 
     public static var usesGlass: Bool {
@@ -256,7 +281,7 @@ public struct SettingsPrimaryButtonStyle: ButtonStyle {
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(Color.white)
+            .foregroundStyle(KeyliChrome.onAccent)
             .padding(.horizontal, 14)
             .frame(height: 28)
             .background(

@@ -298,6 +298,24 @@ struct KeyboardRenderer {
                 strokeBorder(.color(accent), width: lineWidth)
             }
 
+        case .fluent:
+            let isDarkSurface = KeyboardTheme.relativeLuminance(hex: key.kind == .modifier ? theme.modifierKeyColorHex : theme.keycapBaseColorHex) < 0.4
+            let restFill: Color = isHovered
+                ? (isDarkSurface ? base.opacity(0.82) : base.opacity(0.7))
+                : base
+            context.fill(shape, with: .color(isDown ? fill : restFill))
+            let borderTop = Color(hex: theme.borderColorHex).opacity(theme.borderOpacity)
+            let borderBottom = isDarkSurface ? Color.white.opacity(theme.borderOpacity * 0.55) : Color.black.opacity(min(1, theme.borderOpacity * 2.6))
+            strokeBorder(.linearGradient(
+                Gradient(stops: [
+                    .init(color: borderTop, location: 0),
+                    .init(color: borderTop, location: 0.9),
+                    .init(color: borderBottom, location: 1)
+                ]),
+                startPoint: CGPoint(x: rect.midX, y: rect.minY),
+                endPoint: CGPoint(x: rect.midX, y: rect.maxY)
+            ), width: max(1, lineWidth))
+
         case .chicklet:
             if elevation > 0 {
                 let plate = Path(roundedRect: rect.offsetBy(dx: 0, dy: isDown ? 0.5 : max(0.5, elevation * 0.6)), cornerRadius: radius, style: .continuous)

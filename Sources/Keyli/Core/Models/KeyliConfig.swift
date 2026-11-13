@@ -2,7 +2,7 @@ import Foundation
 
 public struct KeyliConfig: Codable, Equatable {
     public var version: Int = 1
-    public var themeId: String = "apple_native"
+    public var themeId: String = "ember_graphite"
     public var layoutGeometry: String = "ansi" // "ansi", "iso", "jis", "compact"
     public var isFloatingVisible: Bool = true
     public var isFloatingPinned: Bool = true

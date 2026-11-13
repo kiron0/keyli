@@ -60,6 +60,7 @@ public struct ThemeStudioView: View {
             detail
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .tint(KeyliChrome.accent)
         .background {
             GlassFill(shape: Rectangle())
                 .ignoresSafeArea()

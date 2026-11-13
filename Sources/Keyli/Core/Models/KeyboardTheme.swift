@@ -6,6 +6,7 @@ public enum KeycapStyle: String, Codable, CaseIterable {
     case flat = "flat"
     case glass = "glass"
     case chicklet = "chicklet"
+    case fluent = "fluent"
 
     public var displayName: String {
         switch self {
@@ -13,6 +14,7 @@ public enum KeycapStyle: String, Codable, CaseIterable {
         case .flat: return "Flat Minimal"
         case .glass: return "Frosted Glass"
         case .chicklet: return "Apple Chiclet"
+        case .fluent: return "Layered Flat"
         }
     }
 }
@@ -87,7 +89,7 @@ public struct KeyboardTheme: Identifiable, Codable, Equatable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let fallback = KeyboardTheme.appleNative
+        let fallback = KeyboardTheme.defaultTheme
         schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
         id = try container.decodeIfPresent(String.self, forKey: .id) ?? ""
         name = try container.decodeIfPresent(String.self, forKey: .name) ?? "Untitled"
@@ -848,7 +850,296 @@ extension KeyboardTheme {
         fontDesign: "rounded"
     )
 
+    public static let basalt = KeyboardTheme(
+        id: "basalt",
+        name: "Basalt",
+        isBuiltIn: true,
+        backgroundColorHex: "#202020",
+        backgroundOpacity: 0.82,
+        backgroundBlur: true,
+        keycapBaseColorHex: "#2D2D2D",
+        keycapActiveColorHex: "#4CC2FF",
+        keycapTextColorHex: "#FFFFFF",
+        accentColorHex: "#4CC2FF",
+        modifierKeyColorHex: "#272727",
+        cornerRadius: 4.0,
+        keySpacing: 4.0,
+        borderWidth: 1.0,
+        borderColorHex: "#FFFFFF",
+        borderOpacity: 0.09,
+        keyElevation: 0,
+        keycapStyle: .fluent,
+        fontDesign: "default"
+    )
+
+    public static let porcelain = KeyboardTheme(
+        id: "porcelain",
+        name: "Porcelain",
+        isBuiltIn: true,
+        backgroundColorHex: "#F3F3F3",
+        backgroundOpacity: 0.86,
+        backgroundBlur: true,
+        keycapBaseColorHex: "#FFFFFF",
+        keycapActiveColorHex: "#005FB8",
+        keycapTextColorHex: "#1A1A1A",
+        accentColorHex: "#005FB8",
+        modifierKeyColorHex: "#F9F9F9",
+        cornerRadius: 4.0,
+        keySpacing: 4.0,
+        borderWidth: 1.0,
+        borderColorHex: "#000000",
+        borderOpacity: 0.06,
+        keyElevation: 0,
+        keycapStyle: .fluent,
+        fontDesign: "default"
+    )
+
+    public static let emberGraphite = KeyboardTheme(
+        id: "ember_graphite",
+        name: "Ember Graphite",
+        isBuiltIn: true,
+        backgroundColorHex: "#1C1D20",
+        backgroundOpacity: 0.92,
+        backgroundBlur: true,
+        keycapBaseColorHex: "#2B2D31",
+        keycapActiveColorHex: "#E8A33D",
+        keycapTextColorHex: "#ECE6DA",
+        accentColorHex: "#E8A33D",
+        modifierKeyColorHex: "#242629",
+        cornerRadius: 6.0,
+        keySpacing: 4.5,
+        borderWidth: 1.0,
+        borderColorHex: "#FFFFFF",
+        borderOpacity: 0.07,
+        keyElevation: 2.0,
+        keycapStyle: .raised,
+        fontDesign: "default"
+    )
+
+    public static let inkAndPaper = KeyboardTheme(
+        id: "ink_and_paper",
+        name: "Ink & Paper",
+        isBuiltIn: true,
+        backgroundColorHex: "#F4F4F2",
+        backgroundOpacity: 0.94,
+        backgroundBlur: true,
+        keycapBaseColorHex: "#141414",
+        keycapActiveColorHex: "#FFFFFF",
+        keycapTextColorHex: "#FAFAFA",
+        accentColorHex: "#141414",
+        modifierKeyColorHex: "#262626",
+        cornerRadius: 4.0,
+        keySpacing: 4.0,
+        borderWidth: 1.0,
+        borderColorHex: "#000000",
+        borderOpacity: 0.25,
+        keyElevation: 0.0,
+        keycapStyle: .fluent,
+        fontDesign: "default"
+    )
+
+    public static let confettiPop = KeyboardTheme(
+        id: "confetti_pop",
+        name: "Confetti Pop",
+        isBuiltIn: true,
+        backgroundColorHex: "#1A1A1D",
+        backgroundOpacity: 0.9,
+        backgroundBlur: true,
+        keycapBaseColorHex: "#29292E",
+        keycapActiveColorHex: "#FFC83D",
+        keycapTextColorHex: "#FFFFFF",
+        accentColorHex: "#FF5C8A",
+        modifierKeyColorHex: "#222226",
+        cornerRadius: 4.0,
+        keySpacing: 4.0,
+        borderWidth: 1.0,
+        borderColorHex: "#FFFFFF",
+        borderOpacity: 0.08,
+        keyElevation: 0.0,
+        keycapStyle: .fluent,
+        fontDesign: "rounded"
+    )
+
+    public static let glacier = KeyboardTheme(
+        id: "glacier",
+        name: "Glacier",
+        isBuiltIn: true,
+        backgroundColorHex: "#D7E9F2",
+        backgroundOpacity: 0.9,
+        backgroundBlur: true,
+        keycapBaseColorHex: "#F3F9FC",
+        keycapActiveColorHex: "#2F8FBF",
+        keycapTextColorHex: "#0E3A52",
+        accentColorHex: "#2F8FBF",
+        modifierKeyColorHex: "#E6F2F8",
+        cornerRadius: 4.0,
+        keySpacing: 4.0,
+        borderWidth: 1.0,
+        borderColorHex: "#0E3A52",
+        borderOpacity: 0.1,
+        keyElevation: 0.0,
+        keycapStyle: .fluent,
+        fontDesign: "default"
+    )
+
+    public static let cottonCandy = KeyboardTheme(
+        id: "cotton_candy",
+        name: "Cotton Candy",
+        isBuiltIn: true,
+        backgroundColorHex: "#F5D3E4",
+        backgroundOpacity: 0.9,
+        backgroundBlur: true,
+        keycapBaseColorHex: "#FFF7FB",
+        keycapActiveColorHex: "#6CC0E0",
+        keycapTextColorHex: "#4A2B5E",
+        accentColorHex: "#6CC0E0",
+        modifierKeyColorHex: "#FBE6F0",
+        cornerRadius: 4.0,
+        keySpacing: 4.0,
+        borderWidth: 1.0,
+        borderColorHex: "#4A2B5E",
+        borderOpacity: 0.1,
+        keyElevation: 0.0,
+        keycapStyle: .fluent,
+        fontDesign: "rounded"
+    )
+
+    public static let quicksilver = KeyboardTheme(
+        id: "quicksilver",
+        name: "Quicksilver",
+        isBuiltIn: true,
+        backgroundColorHex: "#C6C8CB",
+        backgroundOpacity: 0.9,
+        backgroundBlur: true,
+        keycapBaseColorHex: "#ECEDEF",
+        keycapActiveColorHex: "#4E5157",
+        keycapTextColorHex: "#202225",
+        accentColorHex: "#6B6E75",
+        modifierKeyColorHex: "#DCDEE1",
+        cornerRadius: 4.0,
+        keySpacing: 4.0,
+        borderWidth: 1.0,
+        borderColorHex: "#000000",
+        borderOpacity: 0.1,
+        keyElevation: 0.0,
+        keycapStyle: .fluent,
+        fontDesign: "default"
+    )
+
+    public static let nightBreeze = KeyboardTheme(
+        id: "night_breeze",
+        name: "Night Breeze",
+        isBuiltIn: true,
+        backgroundColorHex: "#191C46",
+        backgroundOpacity: 0.92,
+        backgroundBlur: true,
+        keycapBaseColorHex: "#252A63",
+        keycapActiveColorHex: "#9AA8FF",
+        keycapTextColorHex: "#E8EAFF",
+        accentColorHex: "#9AA8FF",
+        modifierKeyColorHex: "#1F2356",
+        cornerRadius: 4.0,
+        keySpacing: 4.0,
+        borderWidth: 1.0,
+        borderColorHex: "#FFFFFF",
+        borderOpacity: 0.09,
+        keyElevation: 0.0,
+        keycapStyle: .fluent,
+        fontDesign: "default"
+    )
+
+    public static let orchidLeaf = KeyboardTheme(
+        id: "orchid_leaf",
+        name: "Orchid Leaf",
+        isBuiltIn: true,
+        backgroundColorHex: "#22342A",
+        backgroundOpacity: 0.92,
+        backgroundBlur: true,
+        keycapBaseColorHex: "#2E4538",
+        keycapActiveColorHex: "#C29BF5",
+        keycapTextColorHex: "#ECF6EE",
+        accentColorHex: "#C29BF5",
+        modifierKeyColorHex: "#283D31",
+        cornerRadius: 4.0,
+        keySpacing: 4.0,
+        borderWidth: 1.0,
+        borderColorHex: "#FFFFFF",
+        borderOpacity: 0.08,
+        keyElevation: 0.0,
+        keycapStyle: .fluent,
+        fontDesign: "default"
+    )
+
+    public static let citrusTide = KeyboardTheme(
+        id: "citrus_tide",
+        name: "Citrus Tide",
+        isBuiltIn: true,
+        backgroundColorHex: "#0E3A44",
+        backgroundOpacity: 0.92,
+        backgroundBlur: true,
+        keycapBaseColorHex: "#144A56",
+        keycapActiveColorHex: "#FF8A3D",
+        keycapTextColorHex: "#FFF2E4",
+        accentColorHex: "#FF8A3D",
+        modifierKeyColorHex: "#11414C",
+        cornerRadius: 4.0,
+        keySpacing: 4.0,
+        borderWidth: 1.0,
+        borderColorHex: "#FFFFFF",
+        borderOpacity: 0.08,
+        keyElevation: 0.0,
+        keycapStyle: .fluent,
+        fontDesign: "default"
+    )
+
+    public static let wisteriaStream = KeyboardTheme(
+        id: "wisteria_stream",
+        name: "Wisteria Stream",
+        isBuiltIn: true,
+        backgroundColorHex: "#E6DDF5",
+        backgroundOpacity: 0.92,
+        backgroundBlur: true,
+        keycapBaseColorHex: "#F7F3FD",
+        keycapActiveColorHex: "#7E5BC7",
+        keycapTextColorHex: "#3B2B5C",
+        accentColorHex: "#7E5BC7",
+        modifierKeyColorHex: "#EEE7F9",
+        cornerRadius: 4.0,
+        keySpacing: 4.0,
+        borderWidth: 1.0,
+        borderColorHex: "#3B2B5C",
+        borderOpacity: 0.1,
+        keyElevation: 0.0,
+        keycapStyle: .fluent,
+        fontDesign: "rounded"
+    )
+
+    public static let peachSorbet = KeyboardTheme(
+        id: "peach_sorbet",
+        name: "Peach Sorbet",
+        isBuiltIn: true,
+        backgroundColorHex: "#FFDCCB",
+        backgroundOpacity: 0.92,
+        backgroundBlur: true,
+        keycapBaseColorHex: "#FFF4EE",
+        keycapActiveColorHex: "#F2643F",
+        keycapTextColorHex: "#5A2A1B",
+        accentColorHex: "#F2643F",
+        modifierKeyColorHex: "#FFE9DE",
+        cornerRadius: 4.0,
+        keySpacing: 4.0,
+        borderWidth: 1.0,
+        borderColorHex: "#5A2A1B",
+        borderOpacity: 0.1,
+        keyElevation: 0.0,
+        keycapStyle: .fluent,
+        fontDesign: "rounded"
+    )
+
+    public static let defaultTheme: KeyboardTheme = .emberGraphite
+
     public static let builtInThemes: [KeyboardTheme] = [
+        .emberGraphite,
         .appleNative,
         .darkMechanical,
         .minimalistLight,
@@ -856,6 +1147,18 @@ extension KeyboardTheme {
         .cyberpunk,
         .classicRetro,
         .frostGlass,
+        .basalt,
+        .porcelain,
+        .inkAndPaper,
+        .confettiPop,
+        .glacier,
+        .cottonCandy,
+        .quicksilver,
+        .nightBreeze,
+        .orchidLeaf,
+        .citrusTide,
+        .wisteriaStream,
+        .peachSorbet,
         .graphite,
         .silverAluminum,
         .spaceBlack,

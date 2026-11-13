@@ -70,14 +70,15 @@ public struct ThemeCardView: View {
                     .padding(3)
                     .overlay(
                         RoundedRectangle(cornerRadius: 11, style: .continuous)
-                            .strokeBorder(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
+                            .strokeBorder(isSelected ? KeyliChrome.accent : Color.clear, lineWidth: 2)
                     )
 
                 Text(theme.name)
                     .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
                     .foregroundStyle(isSelected ? Color.primary : Color.secondary)
                     .lineLimit(1)
-                    .frame(width: 76)
+                    .truncationMode(.middle)
+                    .frame(width: 96)
             }
         }
         .buttonStyle(.plain)

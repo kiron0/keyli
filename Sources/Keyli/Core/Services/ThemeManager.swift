@@ -39,7 +39,7 @@ public final class ThemeManager: ObservableObject {
         self.themesDirectoryOverride = themesDirectory
         self.configStore = configStore
         self.state = state
-        self.currentTheme = .appleNative
+        self.currentTheme = .defaultTheme
         loadAllThemes()
         applySavedTheme()
 
@@ -103,7 +103,7 @@ public final class ThemeManager: ObservableObject {
         if let found = availableThemes.first(where: { $0.id == savedId }) {
             selectTheme(found)
         } else {
-            selectTheme(.appleNative)
+            selectTheme(.defaultTheme)
         }
     }
 
@@ -184,7 +184,7 @@ public final class ThemeManager: ObservableObject {
         try? fileManager.removeItem(at: fileURL)
         loadAllThemes()
         if currentTheme.id == theme.id {
-            selectTheme(.appleNative)
+            selectTheme(.defaultTheme)
         }
     }
 

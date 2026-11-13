@@ -37,20 +37,6 @@ public struct GeneralTabView: View {
                 isOn: $configStore.config.showMenuBarIcon
             )
 
-            SettingsSectionHeader(title: "Floating Keyboard", symbol: "macwindow")
-
-            SettingsToggle("Show floating keyboard", isOn: $configStore.config.isFloatingVisible)
-
-            SettingsToggle("Keep on top of other windows", isOn: $configStore.config.isFloatingPinned)
-
-            SettingsSliderRow(
-                "Opacity",
-                value: $configStore.config.floatingOpacity,
-                in: 0.4...1.0,
-                step: 0.05,
-                valueText: "\(Int((configStore.config.floatingOpacity * 100).rounded()))%"
-            )
-
             SettingsSectionHeader(title: "Reset", symbol: "arrow.counterclockwise")
 
             SettingsRow {

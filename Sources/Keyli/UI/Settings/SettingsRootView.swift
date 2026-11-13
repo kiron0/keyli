@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 public final class SettingsNavigationModel: ObservableObject {
-    @Published public private(set) var selection: SettingsTab = .general
+    @Published public private(set) var selection: SettingsTab = .keyboard
 
     public init() {}
 
@@ -26,6 +26,7 @@ public struct SettingsRootView: View {
             detail
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .tint(KeyliChrome.accent)
         .background {
             GlassFill(shape: Rectangle())
                 .ignoresSafeArea()
@@ -34,24 +35,30 @@ public struct SettingsRootView: View {
     }
 
     private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("KEYLI")
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(Color.secondary)
-                .padding(.horizontal, 10)
-                .padding(.bottom, 2)
-
-            ForEach(SettingsTab.allCases) { tab in
-                sidebarRow(tab)
+        VStack(alignment: .leading, spacing: 14) {
+            ForEach(SettingsTab.byCategory, id: \.category) { group in
+                VStack(alignment: .leading, spacing: 2) {
+                    if !group.category.rawValue.isEmpty {
+                        Text(group.category.rawValue.uppercased())
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Color.secondary)
+                            .padding(.horizontal, 10)
+                            .padding(.bottom, 2)
+                    }
+                    ForEach(group.tabs) { tab in
+                        sidebarRow(tab)
+                    }
+                }
+                if group.category == .app {
+                    Spacer(minLength: 0)
+                }
             }
-
-            Spacer(minLength: 0)
         }
         .padding(.horizontal, 8)
         .padding(.top, 46)
         .padding(.bottom, 12)
         .frame(width: SettingsTab.sidebarWidth)
-        .frame(maxHeight: .infinity)
+        .frame(maxHeight: .infinity, alignment: .top)
         .background(KeyliChrome.cardBackground)
     }
 
@@ -98,9 +105,10 @@ public struct SettingsRootView: View {
     @ViewBuilder
     private func page(for tab: SettingsTab) -> some View {
         switch tab {
-        case .general: GeneralTabView()
+        case .keyboard: KeyboardTabView()
         case .typing: TypingTabView()
-        case .appearance: AppearanceTabView()
+        case .themes: ThemesTabView()
+        case .general: GeneralTabView()
         case .permissions: PermissionsTabView()
         case .about: AboutTabView()
         }

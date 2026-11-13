@@ -63,7 +63,7 @@ public final class KeyboardState: ObservableObject {
     @Published public var currentTheme: KeyboardTheme
 
     public init() {
-        self.currentTheme = .appleNative
+        self.currentTheme = .defaultTheme
         self.currentLayout = KeyboardLayout(
             id: "ansi_default",
             name: "US ANSI",

@@ -29,6 +29,10 @@ All notable changes to Keyli will be documented in this file.
 - Function row uses full-width keys with working brightness, Mission Control, Spotlight, media, volume and lock actions; fn latches F1–F12.
 - Menu bar icon toggles the floating keyboard (click to show, click to hide).
 - Menu bar keyboard is a non-activating panel, so typing from it does not steal focus.
+- New app icon: brushed graphite body with a charcoal keycap and an amber backlit K. Source: `Scripts/render-icon.swift`.
+- Settings reorganized into Keyboard (Keyboard, Typing, Themes) and App (General, Permissions) sections, with About pinned at the bottom. New Themes page with a grid of every theme, and a QuitX-style About page.
+- New Layered Flat keycap style (flat 4 pt keys with a lighter top and darker bottom border) and 12 presets in that style, inspired by Windows 11 touch keyboard themes and named originally: Basalt, Porcelain, Ink & Paper, Confetti Pop, Glacier, Cotton Candy, Quicksilver, Night Breeze, Orchid Leaf, Citrus Tide, Wisteria Stream, Peach Sorbet.
+- New brand direction: graphite and amber. New default theme Ember Graphite; Settings and Theme Studio use the amber accent instead of the system blue. 44 built-in themes.
 - Keyboard renders in a single Canvas per keyboard instead of ~80 SwiftUI views.
 - fn + arrows, delete and return send Home/End/Page Up/Page Down, Forward Delete and Enter.
 - Brightness, volume, media and Mission Control keys work even when no other app is focused.

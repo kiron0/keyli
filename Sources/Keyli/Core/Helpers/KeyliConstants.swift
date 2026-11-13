@@ -5,6 +5,27 @@ public enum KeyliConstants {
     public static let bundleIdentifier = "io.coreify.keyli"
     public static let suiteName = "io.coreify.keyli"
 
+    public static let author = "Toufiq Hasan Kiron"
+    public static let tagline = "An on-screen keyboard that types without stealing focus."
+    public static let githubRepository = "kiron0/keyli"
+    public static let websiteURL = URL(string: "https://keyli.kiron.dev")!
+    public static let authorURL = URL(string: "https://kiron.dev")!
+    public static let repositoryURL = URL(string: "https://github.com/\(githubRepository)")!
+    public static let issuesURL = URL(string: "https://github.com/\(githubRepository)/issues/new")!
+    public static let buyMeACoffeeURL = URL(string: "https://buymeacoffee.com/_thk")!
+
+    public static var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+    }
+
+    public static var buildNumber: String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+    }
+
+    public static var copyright: String {
+        "Copyright © \(Calendar.current.component(.year, from: Date())) \(author)"
+    }
+
     /// Magic marker integer placed in CGEvent user data field to identify synthetic events
     /// produced by Keyli and avoid re-entrant event loops in the physical monitor.
     /// 'KEYL' in hex = 0x4B45594C
