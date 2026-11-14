@@ -113,7 +113,7 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
             return
         }
 
-        let available = Set(state.currentLayout.keys.map { $0.keyCode })
+        let available = state.availableKeyCodes
 
         if type.rawValue == PhysicalKeyMap.systemDefinedEventType {
             guard let nsEvent = NSEvent(cgEvent: event),

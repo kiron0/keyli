@@ -1,0 +1,182 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build & Publish Release
+    runs-on: macos-26
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+
+      - name: Resolve Version & Tag
+        id: meta
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION=$(cat package.json | grep '"version"' | head -1 | awk -F: '{ print $2 }' | sed 's/[", ]//g')
+            TAG="v$VERSION"
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+            if git rev-parse "$TAG" >/dev/null 2>&1 || git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+              echo "Tag $TAG already exists. Bump package.json before a manual release." >&2
+              exit 1
+            fi
+          else
+            TAG="${GITHUB_REF_NAME:-v1.0.0}"
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+            echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          fi
+
+          PACKAGE_VERSION=$(awk -F'"' '/"version"/ { print $4; exit }' package.json)
+          if [ "${TAG#v}" != "$PACKAGE_VERSION" ]; then
+            echo "Tag version ${TAG#v} does not match package.json version $PACKAGE_VERSION." >&2
+            exit 1
+          fi
+
+      - name: Select Xcode Version
+        run: |
+          XCODE_APP=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -n 1)
+          if [ -z "$XCODE_APP" ]; then
+            XCODE_APP=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -n 1)
+          fi
+          if [ -z "$XCODE_APP" ]; then
+            XCODE_APP="/Applications/Xcode.app"
+          fi
+          echo "Selected: $XCODE_APP"
+          sudo xcode-select -s "$XCODE_APP/Contents/Developer"
+          echo "DEVELOPER_DIR=$XCODE_APP/Contents/Developer" >> "$GITHUB_ENV"
+
+      - name: Run Tests
+        run: swift test || swift test --build-system native
+
+      - name: Import Signing Certificate
+        shell: bash
+        env:
+          CERT_P12: ${{ secrets.MACOS_SIGNING_CERT_P12 }}
+          CERT_PASSWORD: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
+          CERT_NAME: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CERT_P12}" ]; then
+            echo "No signing certificate configured; building with the stable ad-hoc requirement."
+            exit 0
+          fi
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          security create-keychain -p "" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "" "$KEYCHAIN"
+          echo "$CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "$CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN" >/dev/null
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          rm -f "$RUNNER_TEMP/cert.p12"
+          NAME="${CERT_NAME:-Keyli Code Signing}"
+          HASH="$(security find-identity -p codesigning "$KEYCHAIN" | awk -v n="\"$NAME\"" 'index($0, n) {print $2; exit}')"
+          if [ -z "$HASH" ]; then
+            security find-identity -p codesigning "$KEYCHAIN"
+            echo "::error::Signing identity \"$NAME\" was not found in the imported certificate."
+            exit 1
+          fi
+          echo "KEYLI_CODESIGN_IDENTITY=$HASH" >> "$GITHUB_ENV"
+
+      - name: Build and Bundle App
+        run: ./Scripts/build.sh
+
+      - name: Check the Signature
+        shell: bash
+        run: |
+          codesign -dvv .build/Keyli.app 2>&1 | grep -E "^(Authority|Signature|TeamIdentifier|Identifier)" || true
+          codesign -dr - .build/Keyli.app 2>&1 | tail -1
+          codesign --verify --strict --deep .build/Keyli.app
+          if [ -n "${KEYLI_CODESIGN_IDENTITY:-}" ] && codesign -dvv .build/Keyli.app 2>&1 | grep -q "Signature=adhoc"; then
+            echo "::error::A signing certificate is configured, but the app was signed ad hoc."
+            exit 1
+          fi
+
+      - name: Create DMG Installer
+        run: |
+          TAG="${{ steps.meta.outputs.tag }}"
+          echo "Packaging Keyli-${TAG}.dmg..."
+          ./Scripts/make-dmg.sh .build/Keyli.app ".build/Keyli-${TAG}.dmg"
+
+      - name: Create ZIP Archive
+        run: |
+          TAG="${{ steps.meta.outputs.tag }}"
+          echo "Packaging Keyli-${TAG}.zip..."
+          ditto -c -k --sequesterRsrc --keepParent .build/Keyli.app ".build/Keyli-${TAG}.zip"
+
+      - name: Write release notes
+        shell: bash
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          awk -v version="$VERSION" '
+            $0 == "## " version { found=1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > release-changes.md || true
+
+          cat > release-notes.md <<EOF
+          ## What's Changed
+
+          EOF
+
+          if [ -s release-changes.md ]; then
+            cat release-changes.md >> release-notes.md
+          else
+            echo "See commit history for changes included in this version." >> release-notes.md
+          fi
+
+          cat >> release-notes.md <<EOF
+
+          ## Install
+
+          1. Download \`Keyli-${{ steps.meta.outputs.tag }}.dmg\` (or \`.zip\`) from Assets below.
+          2. Open the disk image and drag **Keyli** to your \`/Applications\` folder. The zip contains the same app if you prefer archives.
+
+          Already using Keyli? Quit it, replace the app in \`/Applications\`, and open it again. Accessibility and Input Monitoring permissions carry over.
+
+          **Full changelog:** https://github.com/${{ github.repository }}/commits/${{ steps.meta.outputs.tag }}
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ steps.meta.outputs.tag }}
+          body_path: release-notes.md
+          files: |
+            .build/Keyli-*.dmg
+            .build/Keyli-*.zip
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
+
+      - name: Tell fixed issues about the release
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const run = require('./.github/scripts/issue-status.js');
+            const version = '${{ steps.meta.outputs.version }}';
+            await run({ github, context, core }, 'release', {
+              version: `v${version}`,
+              url: `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/tag/v${version}`,
+            });

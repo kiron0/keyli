@@ -32,6 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        PanelManager.shared.flushPendingFrameSave()
         ThemeManager.shared.flushPendingWrites()
         PhysicalKeyboardMonitor.shared.stop()
     }

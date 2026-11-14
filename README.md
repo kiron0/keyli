@@ -73,8 +73,6 @@ Viewing the keyboard needs no permission. Keyli refuses to type into secure fiel
 
 Get the latest `.dmg` from [Releases](https://github.com/kiron0/keyli/releases/latest) and drag **Keyli** into Applications. Keyli isn't notarized by Apple, so the first time you open it, go to **System Settings › Privacy & Security** and click **Open Anyway**.
 
-Support development: [Buy me a coffee](https://buymeacoffee.com/_thk).
-
 ## License
 
 MIT. See [LICENSE](LICENSE). Want to help? See [CONTRIBUTING.md](CONTRIBUTING.md).

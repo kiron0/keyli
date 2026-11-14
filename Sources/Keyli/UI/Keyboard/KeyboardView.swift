@@ -5,6 +5,7 @@ final class KeyboardInteractionState: ObservableObject {
     @Published var hoveredKeyId: String?
     @Published var pressedKeyId: String?
     var pressBegan: Date?
+    var pressStart: CGPoint?
 
     private var repeatTimer: Timer?
 
@@ -96,7 +97,11 @@ public struct KeyboardView: View {
                 .gesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .local)
                         .onChanged { value in
+                            if interaction.pressedKeyId != nil, interaction.pressStart != value.startLocation {
+                                end()
+                            }
                             if interaction.pressedKeyId == nil, let key = geometry.key(at: value.startLocation) {
+                                interaction.pressStart = value.startLocation
                                 begin(key)
                             }
                         }
@@ -162,7 +167,11 @@ public struct KeyboardView: View {
         let repeatState = state.detachedCopy()
         let issue = KeyboardInputDispatcher.shared.dispatchKey(key, state: state)
         if issue == nil && isRepeatable(key) {
-            interaction.startRepeating {
+            interaction.startRepeating { [weak interaction] in
+                guard NSEvent.pressedMouseButtons & 1 != 0 else {
+                    interaction?.stopRepeating()
+                    return
+                }
                 KeyboardInputDispatcher.shared.dispatchKey(key, state: repeatState)
             }
         }
@@ -186,6 +195,7 @@ public struct KeyboardView: View {
             state.virtualPressedKeyId = nil
         }
         interaction.pressedKeyId = nil
+        interaction.pressStart = nil
     }
 
     static let fnLatchHoldDuration: TimeInterval = 0.4
@@ -226,6 +236,41 @@ struct KeyboardRenderer {
     let localPressedKeyId: String?
     let hoveredKeyId: String?
 
+    private let keycapColor: Color
+    private let modifierColor: Color
+    private let activeColor: Color
+    private let accentColor: Color
+    private let borderColor: Color
+    private let textColor: Color
+    private let activeTextColor: Color
+    private let keycapIsDark: Bool
+    private let modifierIsDark: Bool
+
+    init(
+        theme: KeyboardTheme,
+        modifiers: KeyModifierSnapshot,
+        physicalKeyCodes: Set<UInt16>,
+        virtualKeyId: String?,
+        localPressedKeyId: String?,
+        hoveredKeyId: String?
+    ) {
+        self.theme = theme
+        self.modifiers = modifiers
+        self.physicalKeyCodes = physicalKeyCodes
+        self.virtualKeyId = virtualKeyId
+        self.localPressedKeyId = localPressedKeyId
+        self.hoveredKeyId = hoveredKeyId
+        self.keycapColor = Color(hex: theme.keycapBaseColorHex)
+        self.modifierColor = Color(hex: theme.modifierKeyColorHex)
+        self.activeColor = Color(hex: theme.keycapActiveColorHex)
+        self.accentColor = Color(hex: theme.accentColorHex)
+        self.borderColor = Color(hex: theme.borderColorHex).opacity(theme.borderOpacity)
+        self.textColor = Color(hex: theme.keycapTextColorHex)
+        self.activeTextColor = Color(hex: theme.activeTextColorHex)
+        self.keycapIsDark = theme.keycapStyle == .fluent && KeyboardTheme.relativeLuminance(hex: theme.keycapBaseColorHex) < 0.4
+        self.modifierIsDark = theme.keycapStyle == .fluent && KeyboardTheme.relativeLuminance(hex: theme.modifierKeyColorHex) < 0.4
+    }
+
     private var fontDesign: Font.Design {
         switch theme.fontDesign {
         case "monospaced": return .monospaced
@@ -262,18 +307,17 @@ struct KeyboardRenderer {
 
         drawBackground(key: key, rect: rect, isDown: isDown, isHovered: isHovered, showsAccentTint: showsAccentTint, context: context)
 
-        let baseText = Color(hex: theme.keycapTextColorHex)
-        let textColor = isDown ? (showsAccentTint ? baseText : Color(hex: theme.activeTextColorHex)) : baseText
-        drawLabel(key: key, rect: rect, isDown: isDown, textColor: textColor, context: context)
+        let labelColor = isDown ? (showsAccentTint ? textColor : activeTextColor) : textColor
+        drawLabel(key: key, rect: rect, isDown: isDown, textColor: labelColor, context: context)
     }
 
     // MARK: - Background
 
     private func drawBackground(key: KeyboardKey, rect: CGRect, isDown: Bool, isHovered: Bool, showsAccentTint: Bool, context: GraphicsContext) {
-        let base = Color(hex: key.kind == .modifier ? theme.modifierKeyColorHex : theme.keycapBaseColorHex)
-        let active = Color(hex: theme.keycapActiveColorHex)
-        let accent = Color(hex: theme.accentColorHex)
-        let border = Color(hex: theme.borderColorHex).opacity(theme.borderOpacity)
+        let base = key.kind == .modifier ? modifierColor : keycapColor
+        let active = activeColor
+        let accent = accentColor
+        let border = borderColor
         let radius = min(CGFloat(theme.cornerRadius), min(rect.width, rect.height) / 2)
         let lineWidth = CGFloat(theme.borderWidth)
         let elevation = CGFloat(theme.keyElevation)
@@ -318,12 +362,12 @@ struct KeyboardRenderer {
             }
 
         case .fluent:
-            let isDarkSurface = KeyboardTheme.relativeLuminance(hex: key.kind == .modifier ? theme.modifierKeyColorHex : theme.keycapBaseColorHex) < 0.4
+            let isDarkSurface = key.kind == .modifier ? modifierIsDark : keycapIsDark
             let restFill: Color = isHovered
                 ? (isDarkSurface ? base.opacity(0.82) : base.opacity(0.7))
                 : base
             context.fill(shape, with: .color(isDown ? fill : restFill))
-            let borderTop = Color(hex: theme.borderColorHex).opacity(theme.borderOpacity)
+            let borderTop = borderColor
             let borderBottom = isDarkSurface ? Color.white.opacity(theme.borderOpacity * 0.55) : Color.black.opacity(min(1, theme.borderOpacity * 2.6))
             strokeBorder(.linearGradient(
                 Gradient(stops: [
@@ -416,7 +460,7 @@ struct KeyboardRenderer {
         if hasDualLabels(key) {
             let inner = rect.insetBy(dx: 2, dy: 2)
             let sz = min(inner.width, inner.height)
-            let accent = Color(hex: theme.accentColorHex)
+            let accent = accentColor
             let shiftColor = modifiers.shift ? (isDown ? accent : accent.opacity(0.85)) : textColor.opacity(0.55)
             let baseColor = (!modifiers.shift || isDown) ? textColor : textColor.opacity(0.55)
 
@@ -463,7 +507,7 @@ struct KeyboardRenderer {
             if modifiers.capsLock {
                 let dot = sz * 0.15
                 let led = CGRect(x: rect.minX + sz * 0.15, y: rect.minY + sz * 0.15, width: dot, height: dot)
-                context.fill(Path(ellipseIn: led), with: .color(Color(hex: theme.accentColorHex)))
+                context.fill(Path(ellipseIn: led), with: .color(accentColor))
             }
 
         case "k_tab":

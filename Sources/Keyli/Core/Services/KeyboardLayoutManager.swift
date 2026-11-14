@@ -28,7 +28,7 @@ public final class KeyboardLayoutManager: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.reloadActiveLayout()
+            self?.scheduleReload()
         }
 
         distributedInputSourceObserver = DistributedNotificationCenter.default().addObserver(
@@ -36,12 +36,23 @@ public final class KeyboardLayoutManager: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.reloadActiveLayout()
+            self?.scheduleReload()
+        }
+    }
+
+    private var reloadScheduled = false
+
+    private func scheduleReload() {
+        guard !reloadScheduled else { return }
+        reloadScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.reloadScheduled = false
+            self.reloadActiveLayout()
         }
     }
 
     public func reloadActiveLayout() {
-        CharacterTranslator.shared.refreshInputSource()
         let geometry = GeometryType(rawValue: ConfigStore.shared.config.layoutGeometry) ?? .ansi
         let layout = generateLayout(geometry: geometry)
         if KeyboardState.shared.currentLayout != layout {

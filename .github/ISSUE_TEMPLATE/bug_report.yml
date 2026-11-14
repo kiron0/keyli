@@ -1,0 +1,39 @@
+name: Bug report
+description: Something in Keyli doesn't work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the Keyli keyboard
+        2. Press a key
+        3. …
+  - type: input
+    id: version
+    attributes:
+      label: Keyli version
+      description: Shown in Settings → About
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version and Mac
+      placeholder: "macOS 15.1, MacBook Air M2"
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or logs
+      description: Optional. Console.app messages starting with "Keyli:" are especially helpful.

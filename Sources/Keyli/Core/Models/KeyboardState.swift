@@ -59,8 +59,14 @@ public final class KeyboardState: ObservableObject {
     @Published public var dispatchIssue: KeyDispatchIssue? = nil
 
     /// Active layout and theme
-    @Published public var currentLayout: KeyboardLayout
+    @Published public var currentLayout: KeyboardLayout {
+        didSet {
+            availableKeyCodes = Set(currentLayout.keys.map { $0.keyCode })
+        }
+    }
     @Published public var currentTheme: KeyboardTheme
+
+    public private(set) var availableKeyCodes: Set<UInt16> = []
 
     public init() {
         self.currentTheme = .defaultTheme

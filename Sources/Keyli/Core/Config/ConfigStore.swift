@@ -9,7 +9,9 @@ public final class ConfigStore: ObservableObject {
 
     @Published public var config: KeyliConfig {
         didSet {
-            save()
+            if config != oldValue {
+                save()
+            }
         }
     }
 

@@ -214,6 +214,13 @@ public final class PanelManager: NSObject, NSWindowDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: item)
     }
 
+    public func flushPendingFrameSave() {
+        guard let item = pendingFrameSave, !item.isCancelled else { return }
+        item.cancel()
+        pendingFrameSave = nil
+        savePanelFrame()
+    }
+
     private func savePanelFrame() {
         guard let panel = floatingPanel else { return }
         let f = panel.frame
