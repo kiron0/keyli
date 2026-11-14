@@ -56,4 +56,20 @@ struct ShortcutTests {
         let ids = ShortcutAction.allCases.map(\.hotKeyId)
         #expect(Set(ids).count == ids.count)
     }
+
+    @Test func recognizesEmojiMenuItemShortcutInAnyLanguage() {
+        #expect(InputSourceService.isEmojiMenuShortcut(character: "E", modifiers: 24))
+        #expect(InputSourceService.isEmojiMenuShortcut(character: " ", modifiers: 4))
+        #expect(!InputSourceService.isEmojiMenuShortcut(character: "E", modifiers: 0))
+        #expect(!InputSourceService.isEmojiMenuShortcut(character: "🎤", modifiers: 8))
+        #expect(!InputSourceService.isEmojiMenuShortcut(character: " ", modifiers: 12))
+    }
+
+    @Test func positionLockDefaultsOffAndDecodesFromOlderConfigs() throws {
+        #expect(KeyliConfig().isFloatingPositionLocked == false)
+        let old = try JSONDecoder().decode(KeyliConfig.self, from: Data(#"{"isFloatingPinned": false}"#.utf8))
+        #expect(old.isFloatingPositionLocked == false)
+        #expect(old.isFloatingPinned == false)
+        #expect(ShortcutAction.togglePositionLock.group == .window)
+    }
 }

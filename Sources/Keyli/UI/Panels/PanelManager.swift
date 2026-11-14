@@ -116,7 +116,19 @@ public final class PanelManager: NSObject, NSWindowDelegate {
         guard let panel = floatingPanel else { return }
         let config = ConfigStore.shared.config
         panel.level = config.isFloatingPinned ? .floating : .normal
+        panel.isMovable = !config.isFloatingPositionLocked
+        applySizeLock(to: panel)
         panel.alphaValue = CGFloat(min(1.0, max(0.3, config.floatingOpacity)))
+    }
+
+    private func applySizeLock(to panel: NSPanel) {
+        if ConfigStore.shared.config.isFloatingPositionLocked {
+            panel.minSize = panel.frame.size
+            panel.maxSize = panel.frame.size
+        } else {
+            panel.minSize = minimumSize(for: KeyboardState.shared.currentLayout)
+            panel.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        }
     }
 
     private func updateMonitorVisibility() {
@@ -142,6 +154,7 @@ public final class PanelManager: NSObject, NSWindowDelegate {
         guard let panel = floatingPanel else { return }
         let layout = KeyboardState.shared.currentLayout
         panel.minSize = minimumSize(for: layout)
+        panel.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
 
         let frame = panel.frame
         let width = max(KeyliConstants.minFloatingWidth, frame.width)
@@ -150,6 +163,7 @@ public final class PanelManager: NSObject, NSWindowDelegate {
             let fitted = NSRect(x: frame.minX, y: frame.maxY - height, width: width, height: height)
             panel.setFrame(WindowPositioner.clampToVisibleScreen(frame: fitted), display: true)
         }
+        applySizeLock(to: panel)
     }
 
     public static func proportionalSize(
@@ -178,6 +192,9 @@ public final class PanelManager: NSObject, NSWindowDelegate {
 
     public func windowWillResize(_ sender: NSWindow, to frameSize: NSSize) -> NSSize {
         guard sender === floatingPanel else { return frameSize }
+        if ConfigStore.shared.config.isFloatingPositionLocked {
+            return sender.frame.size
+        }
         let visible = (sender.screen ?? NSScreen.main)?.visibleFrame.size ?? NSSize(width: 2000, height: 1200)
         return PanelManager.proportionalSize(
             proposed: frameSize,

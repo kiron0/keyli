@@ -118,7 +118,6 @@ public final class SoundPackCatalog: ObservableObject {
     private var pageCache: [String: CachedPage] = [:]
     private var installQueue: [CatalogPack] = []
     private var activeInstalls = 0
-    private var cancellables: Set<AnyCancellable> = []
     private let session: URLSession
     private let diskCacheURL: URL?
 
@@ -137,15 +136,6 @@ public final class SoundPackCatalog: ObservableObject {
         }
         self.diskCacheURL = diskCacheURL
         loadDiskCache()
-        $query
-            .dropFirst()
-            .removeDuplicates()
-            .debounce(for: .milliseconds(450), scheduler: DispatchQueue.main)
-            .sink { [weak self] value in
-                guard let self, value.trimmingCharacters(in: .whitespacesAndNewlines) != self.loadedQuery else { return }
-                self.reload()
-            }
-            .store(in: &cancellables)
     }
 
     public static var defaultDiskCacheURL: URL? {
@@ -344,6 +334,7 @@ public final class SoundPackCatalog: ObservableObject {
     }
 
     private var pendingSelection: String?
+    private static let importQueue = DispatchQueue(label: "io.coreify.keyli.catalog.import", qos: .userInitiated)
 
     private func startQueuedInstalls() {
         while activeInstalls < Self.maxConcurrentInstalls, !installQueue.isEmpty {
@@ -362,6 +353,7 @@ public final class SoundPackCatalog: ObservableObject {
             let retryAfter = (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Retry-After")
             var failure: Error?
             var downloaded: URL?
+            var installed: SoundPackInfo?
             let folder = FileManager.default.temporaryDirectory.appendingPathComponent("keyli-download-\(UUID().uuidString)", isDirectory: true)
             if let error {
                 failure = error
@@ -381,6 +373,15 @@ public final class SoundPackCatalog: ObservableObject {
                     failure = error
                 }
             }
+            if failure == nil, let downloaded {
+                Self.importQueue.sync {
+                    do {
+                        installed = try SoundPackLibrary.shared.importPack(from: downloaded)
+                    } catch {
+                        failure = error
+                    }
+                }
+            }
             DispatchQueue.main.async {
                 defer { try? FileManager.default.removeItem(at: folder) }
                 guard let self else { return }
@@ -392,8 +393,7 @@ public final class SoundPackCatalog: ObservableObject {
                         self.pacer.block(for: TimeInterval(seconds))
                     }
                     if let failure { throw failure }
-                    guard let downloaded else { return }
-                    let info = try SoundPackLibrary.shared.importPack(from: downloaded)
+                    guard let info = installed else { return }
                     if self.pendingSelection == pack.id {
                         self.pendingSelection = nil
                         ConfigStore.shared.config.keySoundPackId = info.id

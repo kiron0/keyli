@@ -1,5 +1,6 @@
 import Foundation
 import Carbon
+import ApplicationServices
 import AppKit
 
 public struct InputSourceOption: Identifiable, Equatable, Hashable {
@@ -135,9 +136,64 @@ public final class InputSourceService: ObservableObject {
     }
 
     public func showEmojiAndSymbols() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            KeyboardInputDispatcher.shared.showEmojiAndSymbols()
+        let ownPID = ProcessInfo.processInfo.processIdentifier
+        let candidate = FocusManager.shared.isTargetValid ? FocusManager.shared.targetApplication : NSWorkspace.shared.frontmostApplication
+        guard let target = candidate, target.processIdentifier != ownPID else {
+            KeyboardInputDispatcher.shared.postEmojiShortcut()
+            return
         }
+        let needsActivation = NSRunningApplication.current.isActive || !target.isActive
+        if needsActivation {
+            target.activate()
+        }
+        let pid = target.processIdentifier
+        let delay: TimeInterval = needsActivation ? 0.12 : 0
+        DispatchQueue.global(qos: .userInteractive).asyncAfter(deadline: .now() + delay) {
+            let pressed = PermissionsManager.canTypeNow && Self.pressEmojiMenuItem(pid: pid)
+            if !pressed {
+                DispatchQueue.main.async {
+                    KeyboardInputDispatcher.shared.postEmojiShortcut()
+                }
+            }
+        }
+    }
+
+    static func isEmojiMenuShortcut(character: String, modifiers: Int) -> Bool {
+        let key = character.lowercased()
+        let globe = 16
+        let control = 4
+        let noCommand = 8
+        if key == "e" && modifiers & globe != 0 { return true }
+        if key == " " && modifiers & control != 0 && modifiers & noCommand == 0 { return true }
+        return false
+    }
+
+    static func pressEmojiMenuItem(pid: pid_t) -> Bool {
+        let app = AXUIElementCreateApplication(pid)
+        AXUIElementSetMessagingTimeout(app, 0.4)
+        func value(_ element: AXUIElement, _ attribute: String) -> CFTypeRef? {
+            var result: CFTypeRef?
+            return AXUIElementCopyAttributeValue(element, attribute as CFString, &result) == .success ? result : nil
+        }
+        func children(_ element: AXUIElement) -> [AXUIElement] {
+            (value(element, kAXChildrenAttribute) as? [AXUIElement]) ?? []
+        }
+        guard let barValue = value(app, kAXMenuBarAttribute), CFGetTypeID(barValue) == AXUIElementGetTypeID() else { return false }
+        let topItems = children(barValue as! AXUIElement)
+        guard !topItems.isEmpty else { return false }
+        let preferred = [3, 2, 4, 1].filter { $0 < topItems.count }
+        let order = preferred + topItems.indices.filter { !preferred.contains($0) && $0 > 0 }
+        for index in order {
+            guard let menu = children(topItems[index]).first else { continue }
+            for item in children(menu).reversed().prefix(4) {
+                let character = (value(item, kAXMenuItemCmdCharAttribute) as? String) ?? ""
+                let modifiers = (value(item, kAXMenuItemCmdModifiersAttribute) as? Int) ?? 0
+                guard isEmojiMenuShortcut(character: character, modifiers: modifiers) else { continue }
+                if (value(item, kAXEnabledAttribute) as? Bool) == false { return false }
+                return AXUIElementPerformAction(item, kAXPressAction as CFString) == .success
+            }
+        }
+        return false
     }
 
     public func openInputSourceSettings() {

@@ -6,6 +6,7 @@ public struct KeyliConfig: Codable, Equatable {
     public var layoutGeometry: String = "ansi"
     public var isFloatingVisible: Bool = true
     public var isFloatingPinned: Bool = true
+    public var isFloatingPositionLocked: Bool = false
     public var floatingOpacity: Double = 1.0
     public var isPhysicalMonitoringEnabled: Bool = false
     public var playKeyClickSound: Bool = true
@@ -35,6 +36,7 @@ public struct KeyliConfig: Codable, Equatable {
         layoutGeometry = try container.decodeIfPresent(String.self, forKey: .layoutGeometry) ?? fallback.layoutGeometry
         isFloatingVisible = try container.decodeIfPresent(Bool.self, forKey: .isFloatingVisible) ?? fallback.isFloatingVisible
         isFloatingPinned = try container.decodeIfPresent(Bool.self, forKey: .isFloatingPinned) ?? fallback.isFloatingPinned
+        isFloatingPositionLocked = try container.decodeIfPresent(Bool.self, forKey: .isFloatingPositionLocked) ?? fallback.isFloatingPositionLocked
         floatingOpacity = try container.decodeIfPresent(Double.self, forKey: .floatingOpacity) ?? fallback.floatingOpacity
         isPhysicalMonitoringEnabled = try container.decodeIfPresent(Bool.self, forKey: .isPhysicalMonitoringEnabled) ?? fallback.isPhysicalMonitoringEnabled
         playKeyClickSound = try container.decodeIfPresent(Bool.self, forKey: .playKeyClickSound) ?? fallback.playKeyClickSound

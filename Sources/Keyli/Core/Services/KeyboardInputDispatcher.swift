@@ -158,7 +158,7 @@ public final class KeyboardInputDispatcher {
             state.toggleModifier(.fn)
             return .latchedFn
         case .showedEmoji:
-            showEmojiAndSymbols()
+            InputSourceService.shared.showEmojiAndSymbols()
             if state.isFnActive { state.isFnActive = false }
             return outcome
         case .latchedFn:
@@ -167,7 +167,7 @@ public final class KeyboardInputDispatcher {
         }
     }
 
-    public func showEmojiAndSymbols() {
+    public func postEmojiShortcut() {
         let shortcutState = KeyboardState()
         shortcutState.isControlActive = true
         shortcutState.isCommandActive = true

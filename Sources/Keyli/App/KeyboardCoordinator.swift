@@ -83,7 +83,9 @@ public final class KeyboardCoordinator {
             ThemeManager.shared.applySavedTheme()
         }
 
-        if previous.isFloatingPinned != config.isFloatingPinned || previous.floatingOpacity != config.floatingOpacity {
+        if previous.isFloatingPinned != config.isFloatingPinned
+            || previous.isFloatingPositionLocked != config.isFloatingPositionLocked
+            || previous.floatingOpacity != config.floatingOpacity {
             PanelManager.shared.applyWindowConfig()
         }
 

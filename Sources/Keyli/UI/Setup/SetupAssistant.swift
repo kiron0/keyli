@@ -5,6 +5,7 @@ public enum SetupStep: Int, CaseIterable, Identifiable {
     case welcome
     case accessibility
     case inputMonitoring
+    case sounds
     case loginItem
     case done
 
@@ -15,6 +16,7 @@ public enum SetupStep: Int, CaseIterable, Identifiable {
         case .welcome: return "Welcome"
         case .accessibility: return "Typing"
         case .inputMonitoring: return "Key Lighting"
+        case .sounds: return "Sounds"
         case .loginItem: return "Login"
         case .done: return "Ready"
         }
@@ -175,6 +177,7 @@ struct SetupAssistantView: View {
     @ObservedObject var model: SetupAssistantModel
     @ObservedObject private var permissions = PermissionsManager.shared
     @ObservedObject private var configStore = ConfigStore.shared
+    @ObservedObject private var soundPacks = SoundPackLibrary.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let onFinish: () -> Void
 
@@ -289,10 +292,12 @@ struct SetupAssistantView: View {
                     "If macOS asks, relaunch Keyli."
                 ]
             )
+        case .sounds:
+            soundsStep
         case .loginItem:
             permissionStep(
                 .loginItem,
-                eyebrow: "Step 3 · Optional",
+                eyebrow: "Step 4 · Optional",
                 title: "Open Keyli when you log in",
                 detail: "Keyli waits in the menu bar so the keyboard is one click away. You can change this any time in Settings.",
                 steps: []
@@ -303,7 +308,7 @@ struct SetupAssistantView: View {
     }
 
     private var welcome: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 14) {
             appIcon
                 .modifier(entrance(0))
             VStack(alignment: .leading, spacing: 8) {
@@ -315,13 +320,15 @@ struct SetupAssistantView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .modifier(entrance(1))
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
                 checklistRow(symbol: "accessibility", title: "Typing", detail: "Required. Lets Keyli press keys in other apps.")
                     .modifier(entrance(2))
                 checklistRow(symbol: "keyboard", title: "Key lighting", detail: "Recommended. Mirrors your physical keyboard on screen.")
                     .modifier(entrance(3))
-                checklistRow(symbol: "power", title: "Open at login", detail: "Optional.")
+                checklistRow(symbol: "speaker.wave.2", title: "Key sounds", detail: "Optional. Pick a sound pack for every key press.")
                     .modifier(entrance(4))
+                checklistRow(symbol: "power", title: "Open at login", detail: "Optional.")
+                    .modifier(entrance(5))
             }
             .padding(.top, 4)
             if KeyliChrome.supportsGlass {
@@ -332,7 +339,7 @@ struct SetupAssistantView: View {
                     AppearancePicker(width: 190)
                 }
                 .padding(.top, 6)
-                .modifier(entrance(5))
+                .modifier(entrance(6))
             }
         }
     }
@@ -349,9 +356,11 @@ struct SetupAssistantView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             VStack(alignment: .leading, spacing: 10) {
-                ForEach([PermissionKind.accessibility, .inputMonitoring, .loginItem]) { kind in
+                ForEach([PermissionKind.accessibility, .inputMonitoring]) { kind in
                     summaryRow(kind)
                 }
+                soundsSummaryRow
+                summaryRow(.loginItem)
             }
             .padding(.top, 4)
         }
@@ -386,6 +395,134 @@ struct SetupAssistantView: View {
                 Text(detail).font(.system(size: 11)).foregroundStyle(Color.secondary)
             }
         }
+    }
+
+    private var soundsSummaryRow: some View {
+        let isOn = configStore.config.playKeyClickSound
+        let packName = soundPacks.pack(id: configStore.config.keySoundPackId)?.name
+        return HStack(spacing: 12) {
+            Image(systemName: isOn ? "checkmark.circle.fill" : "minus.circle")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(isOn ? Color.green : Color.secondary)
+                .frame(width: 30)
+                .accessibilityHidden(true)
+            Text("Key Sounds").font(.system(size: 12.5, weight: .semibold))
+            Spacer(minLength: 0)
+            Text(isOn ? (packName ?? "On") : "Off")
+                .font(.system(size: 11.5))
+                .foregroundStyle(Color.secondary)
+                .lineLimit(1)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private var soundsStep: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 14) {
+                Image(systemName: "speaker.wave.2")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(KeyliChrome.accent)
+                    .frame(width: 52, height: 52)
+                    .background(KeyliChrome.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("STEP 3 · OPTIONAL")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color.secondary)
+                    Text("Hear every key")
+                        .font(.system(size: 22, weight: .bold))
+                }
+            }
+
+            Text("Keyli can play a keycap sound for each key you press. Pick a pack you like; you can browse and install more later in Settings › Sounds.")
+                .font(.system(size: 12.5))
+                .foregroundStyle(Color.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(alignment: .leading, spacing: 12) {
+                setupToggle("Play keycap sounds", isOn: $configStore.config.playKeyClickSound)
+
+                HStack(spacing: 10) {
+                    Text("Sound pack")
+                        .font(.system(size: 12, weight: .medium))
+                        .frame(width: 84, alignment: .leading)
+                    SettingsMenuPicker(
+                        "Sound pack",
+                        selection: Binding(
+                            get: { soundPacks.pack(id: configStore.config.keySoundPackId)?.id ?? configStore.config.keySoundPackId },
+                            set: { configStore.config.keySoundPackId = $0 }
+                        ),
+                        options: soundPacks.packs.map { SettingsMenuOption($0.id, $0.name) },
+                        width: 230
+                    )
+                    Button("Preview") {
+                        KeySoundEngine.shared.preview()
+                    }
+                    .buttonStyle(SettingsSecondaryButtonStyle())
+                    Spacer(minLength: 0)
+                }
+                .disabled(!configStore.config.playKeyClickSound)
+                .opacity(configStore.config.playKeyClickSound ? 1 : 0.45)
+
+                HStack(spacing: 10) {
+                    Text("Volume")
+                        .font(.system(size: 12, weight: .medium))
+                        .frame(width: 84, alignment: .leading)
+                    Slider(value: $configStore.config.keySoundVolume, in: 0...1, step: 0.05)
+                        .controlSize(.small)
+                        .frame(width: 230)
+                        .accessibilityLabel("Volume")
+                    Text("\(Int((configStore.config.keySoundVolume * 100).rounded()))%")
+                        .font(.system(size: 11.5, weight: .medium))
+                        .monospacedDigit()
+                        .foregroundStyle(Color.secondary)
+                    Spacer(minLength: 0)
+                }
+                .disabled(!configStore.config.playKeyClickSound)
+                .opacity(configStore.config.playKeyClickSound ? 1 : 0.45)
+
+                setupToggle(
+                    "Also play sounds for my Mac's keyboard",
+                    detail: "Uses Input Monitoring from the previous step.",
+                    isOn: $configStore.config.keySoundsForPhysicalTyping
+                )
+                .disabled(!configStore.config.playKeyClickSound)
+                .opacity(configStore.config.playKeyClickSound ? 1 : 0.45)
+            }
+            .padding(14)
+            .background(KeyliChrome.cardBackground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+            )
+        }
+    }
+
+    private func setupToggle(_ title: String, detail: String? = nil, isOn: Binding<Bool>) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.16)) {
+                isOn.wrappedValue.toggle()
+            }
+        } label: {
+            HStack(spacing: 10) {
+                SettingsSwitchIndicator(isOn: isOn.wrappedValue)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Color.primary)
+                    if let detail {
+                        Text(detail)
+                            .font(.system(size: 10.5))
+                            .foregroundStyle(Color.secondary)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityValue(isOn.wrappedValue ? "On" : "Off")
     }
 
     private func summaryRow(_ kind: PermissionKind) -> some View {
@@ -563,6 +700,10 @@ struct SetupAssistantView: View {
                     .buttonStyle(SettingsPrimaryButtonStyle())
                     .disabled(!model.canAdvance(accessibilityGranted: accessibilityGranted))
                     .opacity(model.canAdvance(accessibilityGranted: accessibilityGranted) ? 1 : 0.45)
+                    .keyboardShortcut(.defaultAction)
+            case .sounds:
+                Button("Continue") { go { model.next() } }
+                    .buttonStyle(SettingsPrimaryButtonStyle())
                     .keyboardShortcut(.defaultAction)
             case .inputMonitoring, .loginItem:
                 let kind: PermissionKind = model.step == .inputMonitoring ? .inputMonitoring : .loginItem

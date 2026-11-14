@@ -190,13 +190,12 @@ public final class StatusItemController: NSObject {
 
         addInputSourceItems(to: menu)
 
-        let emojiItem = NSMenuItem(title: "Show Emoji & Symbols", action: #selector(showEmojiAndSymbols), keyEquivalent: " ")
-        emojiItem.keyEquivalentModifierMask = [.control, .command]
+        let emojiItem = NSMenuItem(title: "Emoji & Symbols", action: #selector(showEmojiAndSymbols), keyEquivalent: "")
         emojiItem.image = Self.symbol("face.smiling")
         menu.addItem(emojiItem)
 
         let isVisible = PanelManager.shared.isFloatingVisible
-        let keyboardItem = NSMenuItem(title: isVisible ? "Hide Keyli Keyboard" : "Show Keyli Keyboard", action: #selector(toggleFloating), keyEquivalent: "")
+        let keyboardItem = NSMenuItem(title: isVisible ? "Hide Keyboard" : "Show Keyboard", action: #selector(toggleFloating), keyEquivalent: "")
         keyboardItem.image = Self.symbol(isVisible ? "keyboard.fill" : "keyboard")
         keyboardItem.toolTip = "Tip: ⌥-click the menu bar icon to toggle the keyboard directly."
         menu.addItem(keyboardItem)
@@ -205,7 +204,7 @@ public final class StatusItemController: NSObject {
         let studioItem = NSMenuItem(title: "Theme Studio…", action: #selector(openThemeStudio), keyEquivalent: "")
         studioItem.image = Self.symbol("paintpalette")
         menu.addItem(studioItem)
-        let settingsItem = NSMenuItem(title: "Keyli Settings…", action: #selector(openSettings), keyEquivalent: ",")
+        let settingsItem = NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.image = Self.symbol("gearshape")
         menu.addItem(settingsItem)
         let setupPending = !PermissionsManager.shared.canType || !SetupAssistantModel.isCompleted()
@@ -220,7 +219,7 @@ public final class StatusItemController: NSObject {
         let systemItem = NSMenuItem(title: "Open Keyboard Settings…", action: #selector(openKeyboardSettings), keyEquivalent: "")
         systemItem.image = Self.symbol("switch.2")
         menu.addItem(systemItem)
-        let quitItem = NSMenuItem(title: "Quit Keyli", action: #selector(quitApp), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
         quitItem.image = Self.symbol("power")
         menu.addItem(quitItem)
 
