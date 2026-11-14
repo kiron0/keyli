@@ -144,7 +144,6 @@ public struct KeyboardTheme: Identifiable, Codable, Equatable {
     }
 }
 
-// Built-in presets
 extension KeyboardTheme {
     public static let appleNative = KeyboardTheme(
         id: "apple_native",

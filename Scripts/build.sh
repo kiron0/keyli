@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Build and package Keyli .app bundle
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -27,9 +26,6 @@ cp "$ROOT_DIR"/Support/Icons/*.png "$ROOT_DIR"/Support/Icons/*.icns "$RESOURCES_
 cp "$ROOT_DIR"/Support/Sounds/*.aiff "$RESOURCES_DIR"/ 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Set :CFBundleIconFile AppIcon" "$CONTENTS/Info.plist" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$CONTENTS/Info.plist" 2>/dev/null || true
-# A stable designated requirement lets macOS recognize local ad-hoc rebuilds as
-# the same app, so privacy grants do not bind to a changing CDHash.
-# Release builds should set KEYLI_CODESIGN_IDENTITY to a Developer ID identity.
 if [[ -n "${KEYLI_CODESIGN_IDENTITY:-}" ]]; then
     codesign --force --deep --sign "$KEYLI_CODESIGN_IDENTITY" "$APP_DIR"
 else

@@ -19,17 +19,11 @@ struct KeyModelTests {
             )
         )
 
-        // Normal
         #expect(key.displayedLabel(shift: false, option: false) == "a")
-        // Shift
         #expect(key.displayedLabel(shift: true, option: false) == "A")
-        // Option
         #expect(key.displayedLabel(shift: false, option: true) == "å")
-        // Shift + Option
         #expect(key.displayedLabel(shift: true, option: true) == "Å")
-        // CapsLock ON
         #expect(key.displayedLabel(shift: false, option: false, capsLock: true) == "A")
-        // CapsLock ON + Shift ON
         #expect(key.displayedLabel(shift: true, option: false, capsLock: true) == "a")
     }
 

@@ -53,7 +53,6 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
             }
             let monitor = Unmanaged<PhysicalKeyboardMonitor>.fromOpaque(refcon).takeUnretainedValue()
 
-            // Automatically re-enable tap if disabled by system timeout or user input
             if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
                 if let tap = monitor.eventTap {
                     CGEvent.tapEnable(tap: tap, enable: true)

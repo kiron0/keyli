@@ -65,7 +65,6 @@ public final class KeyboardLayoutManager: ObservableObject {
         let translator = CharacterTranslator.shared
 
         let keys: [KeyboardKey]
-        // Unit grid: 15 wide x 6.5 tall — matches macOS Keyboard Viewer proportions
         let width: Double = 15.0
         let height: Double
 
@@ -96,22 +95,9 @@ public final class KeyboardLayoutManager: ObservableObject {
         )
     }
 
-    // MARK: - ANSI MBP Layout (exact macOS Keyboard Viewer replica)
-    //
-    // Grid unit = 1.0 = one standard key width/height
-    // Total width = 15.0 units, total height = 6.5 units
-    // Row Y positions (top of each row):
-    //   Row 0 (Fn)  : y=0.00, h=0.75
-    //   Row 1 (Num) : y=0.85, h=1.00
-    //   Row 2 (Tab) : y=1.95, h=1.00
-    //   Row 3 (Caps): y=3.05, h=1.00
-    //   Row 4 (Shft): y=4.15, h=1.00
-    //   Row 5 (Mod) : y=5.25, h=1.00 (arrows half-height within)
-
     private func buildANSIKeys(translator: CharacterTranslator) -> [KeyboardKey] {
         var list: [KeyboardKey] = []
 
-        // ── Row 0: Function / Media row ──────────────────────────────────────
         let fh: Double = 0.75
         list.append(KeyboardKey(id: "k_esc",  keyCode: 53,  kind: .system,   unitFrame: KeyUnitFrame(x: 0.0,   y: 0, width: 1.5,   height: fh), labels: KeyLabels(defaultLabel: "esc")))
 
@@ -131,13 +117,10 @@ public final class KeyboardLayoutManager: ObservableObject {
                 unitFrame: KeyUnitFrame(x: x, y: 0, width: fW, height: fh),
                 labels: KeyLabels(defaultLabel: label), symbolIcon: icon, systemAction: action))
         }
-        // Power/Lock key at right end
         list.append(KeyboardKey(id: "k_lock", keyCode: KeyliConstants.noKeyCode, kind: .system,
             unitFrame: KeyUnitFrame(x: fStart + 12 * fW, y: 0, width: 1.5, height: fh),
             labels: KeyLabels(defaultLabel: "lock"), symbolIcon: "lock.fill", systemAction: .lockScreen))
 
-        // ── Row 1: Number row ─────────────────────────────────────────────────
-        // ` 1 2 3 4 5 6 7 8 9 0 - = delete(2.0)  → total 15.0
         let ny: Double = 0.85
         let nh: Double = 1.0
         let numCodes: [UInt16] = [50, 18, 19, 20, 21, 23, 22, 26, 28, 25, 29, 27, 24]
@@ -151,8 +134,6 @@ public final class KeyboardLayoutManager: ObservableObject {
             unitFrame: KeyUnitFrame(x: 13.0, y: ny, width: 2.0, height: nh),
             labels: KeyLabels(defaultLabel: "delete"), symbolIcon: "delete.left.fill"))
 
-        // ── Row 2: QWERTY row ─────────────────────────────────────────────────
-        // tab(1.5) q w e r t y u i o p [ ] \(1.5) → total 15.0
         let qy: Double = 1.95
         let qh: Double = 1.0
         list.append(KeyboardKey(id: "k_tab", keyCode: 48, kind: .system,
@@ -165,14 +146,11 @@ public final class KeyboardLayoutManager: ObservableObject {
                 unitFrame: KeyUnitFrame(x: 1.5 + Double(i), y: qy, width: 1.0, height: qh),
                 labels: labels))
         }
-        // backslash at x=13.5, width=1.5
         let bslashLabels = translator.translateKeycode(42)
         list.append(KeyboardKey(id: "k_42", keyCode: 42, kind: .character,
             unitFrame: KeyUnitFrame(x: 13.5, y: qy, width: 1.5, height: qh),
             labels: bslashLabels))
 
-        // ── Row 3: Home / ASDF row ─────────────────────────────────────────────
-        // caps(1.75) a s d f g h j k l ; '  return(2.25) → total 15.0
         let hy: Double = 3.05
         let hh: Double = 1.0
         list.append(KeyboardKey(id: "k_caps", keyCode: 57, kind: .modifier, modifierType: .capsLock,
@@ -189,8 +167,6 @@ public final class KeyboardLayoutManager: ObservableObject {
             unitFrame: KeyUnitFrame(x: 12.75, y: hy, width: 2.25, height: hh),
             labels: KeyLabels(defaultLabel: "return"), symbolIcon: "return"))
 
-        // ── Row 4: Shift / ZXCV row ───────────────────────────────────────────
-        // lshift(2.25) z x c v b n m , . /  rshift(2.75) → total 15.0
         let sy: Double = 4.15
         let sh: Double = 1.0
         list.append(KeyboardKey(id: "k_lshift", keyCode: 56, kind: .modifier, modifierType: .shift,
@@ -207,12 +183,9 @@ public final class KeyboardLayoutManager: ObservableObject {
             unitFrame: KeyUnitFrame(x: 12.25, y: sy, width: 2.75, height: sh),
             labels: KeyLabels(defaultLabel: "shift"), symbolIcon: "shift.fill"))
 
-        // ── Row 5: Modifier / Bottom row ──────────────────────────────────────
-        // fn(1.0) ctrl(1.25) opt(1.25) cmd(1.5) space(5.625) cmd(1.5) opt(1.25) ←(0.875) ↑↓(0.875 stacked) →(0.875)
-        // Total: 1.0+1.25+1.25+1.5+5.625+1.5+1.25+0.875+0.875+0.875 = 15.0  ✓ (arrows share column)
         let my: Double = 5.25
         let mh: Double = 1.0
-        let ah: Double = 0.5   // half-height arrow keys
+        let ah: Double = 0.5
         let aw: Double = 0.875
 
         list.append(KeyboardKey(id: "k_fn",    keyCode: 63,  kind: .modifier, modifierType: .fn,
@@ -228,7 +201,6 @@ public final class KeyboardLayoutManager: ObservableObject {
             unitFrame: KeyUnitFrame(x: 3.5,   y: my, width: 1.5,  height: mh),
             labels: KeyLabels(defaultLabel: "command"), symbolIcon: "command"))
 
-        // Space bar
         list.append(KeyboardKey(id: "k_space", keyCode: 49, kind: .character,
             unitFrame: KeyUnitFrame(x: 5.0, y: my, width: 4.625, height: mh),
             labels: KeyLabels(defaultLabel: " ")))
@@ -240,7 +212,6 @@ public final class KeyboardLayoutManager: ObservableObject {
             unitFrame: KeyUnitFrame(x: 11.125, y: my, width: 1.25, height: mh),
             labels: KeyLabels(defaultLabel: "option"), symbolIcon: "option"))
 
-        // Arrow cluster: ← at left, ↑ top-right, ↓ bottom-right, → far right
         let arrowX: Double = 12.375
         list.append(KeyboardKey(id: "k_larrow", keyCode: 123, kind: .navigation,
             unitFrame: KeyUnitFrame(x: arrowX,        y: my + ah, width: aw, height: ah),
@@ -322,7 +293,6 @@ public final class KeyboardLayoutManager: ObservableObject {
     }
 
     private func buildCompactKeys(translator: CharacterTranslator) -> [KeyboardKey] {
-        // 60% compact: no function row, shift all rows up by 0.85
         var ansi = buildANSIKeys(translator: translator)
         ansi.removeAll { $0.unitFrame.y < 0.85 }
         return ansi.map { key in

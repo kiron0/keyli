@@ -34,7 +34,6 @@ public final class CharacterTranslator {
         }
     }
 
-    /// Translates a physical keycode into its corresponding characters for default, shift, option, and shift+option states
     public func translateKeycode(_ keyCode: UInt16) -> KeyLabels {
         guard let data = cachedLayoutData else {
             return fallbackLabels(for: keyCode)

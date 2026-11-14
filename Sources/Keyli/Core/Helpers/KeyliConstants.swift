@@ -26,9 +26,6 @@ public enum KeyliConstants {
         "Copyright © \(Calendar.current.component(.year, from: Date())) \(author)"
     }
 
-    /// Magic marker integer placed in CGEvent user data field to identify synthetic events
-    /// produced by Keyli and avoid re-entrant event loops in the physical monitor.
-    /// 'KEYL' in hex = 0x4B45594C
     public static let syntheticEventUserData: Int64 = 0x4B45594C
 
     public static let noKeyCode: UInt16 = 0xFFFF

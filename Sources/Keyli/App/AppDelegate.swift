@@ -4,7 +4,6 @@ import SwiftUI
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Run as accessory app (no Dock icon, menu bar agent)
         NSApp.setActivationPolicy(.accessory)
 
         guard SingleInstanceService.shared.ensureSingleInstance() else {
@@ -15,7 +14,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         KeyboardCoordinator.shared.start()
         StatusItemController.shared.setup()
 
-        // If floating keyboard is preferred or was visible, restore
         if ConfigStore.shared.config.isFloatingVisible && SetupAssistantModel.isCompleted() {
             PanelManager.shared.showFloatingKeyboard()
         }

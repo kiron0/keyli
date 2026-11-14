@@ -45,7 +45,6 @@ public final class FocusManager: ObservableObject {
     }
 
     private func handleApplicationActivation(_ app: NSRunningApplication) {
-        // Never treat Keyli itself as the typing target
         if app.processIdentifier == ProcessInfo.processInfo.processIdentifier
             || app.bundleIdentifier == Bundle.main.bundleIdentifier
             || app.bundleIdentifier == KeyliConstants.bundleIdentifier {
@@ -62,13 +61,11 @@ public final class FocusManager: ObservableObject {
         self.targetAppIcon = app.icon
         self.targetPID = app.processIdentifier
 
-        // Update shared KeyboardState
         KeyboardState.shared.targetAppName = self.targetAppName
         KeyboardState.shared.targetAppBundleId = app.bundleIdentifier ?? ""
         KeyboardState.shared.targetAppIcon = self.targetAppIcon
     }
 
-    /// Validates if target is still alive and running
     public var isTargetValid: Bool {
         guard let app = targetApplication else { return false }
         return !app.isTerminated

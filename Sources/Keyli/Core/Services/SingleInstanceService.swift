@@ -11,7 +11,6 @@ public final class SingleInstanceService {
         let currentPID = ProcessInfo.processInfo.processIdentifier
 
         for app in runningApps where app.processIdentifier != currentPID {
-            // Another instance is already running
             if #available(macOS 14.0, *) {
                 app.activate()
             } else {

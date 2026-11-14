@@ -95,7 +95,6 @@ public struct KeyboardKey: Identifiable, Codable, Equatable {
         self.systemAction = systemAction
     }
 
-    /// Resolves the label to display given modifier states
     public func displayedLabel(shift: Bool, option: Bool, capsLock: Bool = false) -> String {
         if option {
             if shift, let so = labels.shiftOptionLabel, !so.isEmpty {

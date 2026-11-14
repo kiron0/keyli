@@ -166,8 +166,6 @@ public final class PanelManager: NSObject, NSWindowDelegate {
         return NSSize(width: width, height: KeyliConstants.panelHeight(forWidth: width, layout: layout))
     }
 
-    // MARK: - NSWindowDelegate
-
     public func windowWillStartLiveResize(_ notification: Notification) {
         guard (notification.object as? NSWindow) === floatingPanel, let panel = floatingPanel else { return }
         isLiveResizing = true

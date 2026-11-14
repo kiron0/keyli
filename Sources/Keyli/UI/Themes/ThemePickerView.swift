@@ -65,7 +65,6 @@ public struct ThemeCardView: View {
     public var body: some View {
         Button(action: onSelect) {
             VStack(spacing: 5) {
-                // Miniature color preview
                 ThemeSwatchView(theme: theme)
                     .padding(3)
                     .overlay(

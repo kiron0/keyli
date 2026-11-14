@@ -13,7 +13,6 @@ public final class KeyboardCoordinator {
     private init() {}
 
     public func start() {
-        // Initialize Core Services
         PermissionsManager.shared.checkPermissions()
         FocusManager.shared.startObserving()
         KeyboardLayoutManager.shared.startObservingInputSource()

@@ -12,11 +12,11 @@ struct LayoutTests {
         #expect(!layout.keys.isEmpty)
 
         let keyCodes = Set(layout.keys.map { $0.keyCode })
-        #expect(keyCodes.contains(0)) // 'a'
-        #expect(keyCodes.contains(12)) // 'q'
-        #expect(keyCodes.contains(49)) // Space
-        #expect(keyCodes.contains(36)) // Return
-        #expect(keyCodes.contains(51)) // Delete
+        #expect(keyCodes.contains(0))
+        #expect(keyCodes.contains(12))
+        #expect(keyCodes.contains(49))
+        #expect(keyCodes.contains(36))
+        #expect(keyCodes.contains(51))
     }
 
     @Test("Test Every Key in ANSI Layout")
@@ -25,16 +25,13 @@ struct LayoutTests {
         #expect(layout.keys.count >= 70)
 
         for key in layout.keys {
-            // Frame validation
             #expect(key.unitFrame.x >= 0.0)
             #expect(key.unitFrame.y >= 0.0)
             #expect(key.unitFrame.width > 0.0)
             #expect(key.unitFrame.height > 0.0)
 
-            // Labels validation
             #expect(!key.labels.defaultLabel.isEmpty || key.symbolIcon != nil)
 
-            // Displayed label resolution
             let normalLabel = key.displayedLabel(shift: false, option: false, capsLock: false)
             #expect(!normalLabel.isEmpty)
 
@@ -51,7 +48,7 @@ struct LayoutTests {
         let layout = KeyboardLayoutManager.shared.generateLayout(geometry: .iso)
         #expect(layout.geometryType == .iso)
         let keyCodes = Set(layout.keys.map { $0.keyCode })
-        #expect(keyCodes.contains(10)) // Extra ISO key
+        #expect(keyCodes.contains(10))
     }
 
     @Test("JIS Layout Generation")
@@ -59,8 +56,8 @@ struct LayoutTests {
         let layout = KeyboardLayoutManager.shared.generateLayout(geometry: .jis)
         #expect(layout.geometryType == .jis)
         let keyCodes = Set(layout.keys.map { $0.keyCode })
-        #expect(keyCodes.contains(102)) // Eisu
-        #expect(keyCodes.contains(104)) // Kana
+        #expect(keyCodes.contains(102))
+        #expect(keyCodes.contains(104))
     }
 
     @Test("Compact Layout Generation")

@@ -1,8 +1,6 @@
 import SwiftUI
 import AppKit
 
-/// Transparent drag-through region — lets the window move when dragged.
-/// Uses `mouseDownCanMoveWindow` protocol so SwiftUI passes drags to NSPanel.
 struct DragHandleView: NSViewRepresentable {
     func makeNSView(context: Context) -> _DragPassthroughView {
         _DragPassthroughView()
@@ -29,9 +27,7 @@ public struct FloatingKeyboardContainerView: View {
         let textColor = Color(hex: theme.keycapTextColorHex)
 
         VStack(spacing: 0) {
-            // ── Title / drag bar ──────────────────────────────────────────────
             ZStack {
-                // Full-width drag target (transparent, behind buttons)
                 DragHandleView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -63,7 +59,6 @@ public struct FloatingKeyboardContainerView: View {
             }
             .frame(height: 30)
 
-            // ── Keyboard ─────────────────────────────────────────────────────
             KeyboardView(state: state, showStatusBar: true)
                 .padding(.horizontal, 10)
                 .padding(.bottom, 8)

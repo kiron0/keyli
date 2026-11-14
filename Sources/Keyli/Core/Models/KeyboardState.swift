@@ -39,26 +39,22 @@ public final class KeyboardState: ObservableObject {
 
     public let presses = KeyPressState()
 
-    /// Keycodes currently physically pressed down (from PhysicalKeyboardMonitor)
     public var pressedPhysicalKeyCodes: Set<UInt16> {
         get { presses.physicalKeyCodes }
         set { presses.physicalKeyCodes = newValue }
     }
 
-    /// Virtual keycap ID currently depressed via mouse/pointer click
     public var virtualPressedKeyId: String? {
         get { presses.virtualKeyId }
         set { presses.virtualKeyId = newValue }
     }
 
-    /// Target application information
     @Published public var targetAppName: String = "No Target Selected"
     @Published public var targetAppBundleId: String = ""
     @Published public var targetAppIcon: NSImage? = nil
 
     @Published public var dispatchIssue: KeyDispatchIssue? = nil
 
-    /// Active layout and theme
     @Published public var currentLayout: KeyboardLayout {
         didSet {
             availableKeyCodes = Set(currentLayout.keys.map { $0.keyCode })

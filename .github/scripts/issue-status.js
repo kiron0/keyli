@@ -1,14 +1,3 @@
-// Keeps issues up to date as work on them moves along. Used by actions/github-script.
-//
-// push:    a commit that mentions #N on a work branch → "Work has started", label `in progress`.
-//          "Fixes #N" (or closes/resolves) landing on the default branch → "Fixed", label
-//          `fixed (unreleased)`. Every mentioning commit is listed in one status comment.
-// release: every issue labelled `fixed (unreleased)` gets "Released in vX", label `released`,
-//          and is closed.
-//
-// Milestones get their own comment (so people watching the issue are notified); the
-// commit log lives in a single status comment that is edited in place.
-
 const MARKER = '<!-- keyli-issue-status -->';
 const FOOTER = '<sub>Updated automatically from commits and releases.</sub>';
 const LABELS = {

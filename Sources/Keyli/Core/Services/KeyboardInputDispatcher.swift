@@ -174,7 +174,6 @@ public final class KeyboardInputDispatcher {
         }
     }
 
-    /// Dispatches a virtual key press into the active system application
     @discardableResult
     public func dispatchKey(_ key: KeyboardKey, state: KeyboardState) -> KeyDispatchIssue? {
         let action = action(for: key, state: state)
@@ -247,7 +246,6 @@ public final class KeyboardInputDispatcher {
         handlePostTypingModifiers(state: state)
     }
 
-    /// Injects Unicode text into the target application
     public func typeText(_ text: String, keyCode: UInt16 = 0, state: KeyboardState) {
         guard !text.isEmpty, PermissionsManager.canTypeNow else { return }
 
@@ -266,7 +264,6 @@ public final class KeyboardInputDispatcher {
         }
     }
 
-    /// Sends a virtual keycode event (e.g. Return, Backspace, Arrows, Tab, Esc)
     public func sendKeycode(_ keyCode: UInt16, state: KeyboardState) {
         guard PermissionsManager.canTypeNow else { return }
         postKeyPair(keyCode: keyCode, flags: currentEventFlags(from: state), configure: nil)
@@ -348,7 +345,6 @@ public final class KeyboardInputDispatcher {
     }
 
     private func handlePostTypingModifiers(state: KeyboardState) {
-        // In sticky modifier mode, reset temporary modifiers (Shift, Option) after character dispatch
         if ConfigStore.shared.config.modifierStickyMode {
             if state.isShiftActive { state.isShiftActive = false }
             if state.isOptionActive { state.isOptionActive = false }

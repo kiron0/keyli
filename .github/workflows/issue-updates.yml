@@ -1,9 +1,5 @@
 name: Issue updates
 
-# Posts progress on issues mentioned in commit messages. See .github/scripts/issue-status.js.
-# Release announcements happen in release.yml (a release made with GITHUB_TOKEN doesn't
-# trigger other workflows).
-
 on:
   push:
     branches: ["**"]

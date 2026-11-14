@@ -84,8 +84,6 @@ public struct ThemeStudioView: View {
         }
     }
 
-    // MARK: - Sidebar
-
     private var sidebar: some View {
         VStack(spacing: 0) {
             HStack(spacing: 6) {
@@ -168,8 +166,6 @@ public struct ThemeStudioView: View {
         .equatable()
     }
 
-    // MARK: - Detail
-
     private var detail: some View {
         VStack(alignment: .leading, spacing: 14) {
             header
@@ -250,8 +246,6 @@ public struct ThemeStudioView: View {
         ThemeStudioPreview()
     }
 
-    // MARK: - Inspector
-
     private var inspector: some View {
         HStack(alignment: .top, spacing: ThemeStudioLayout.columnSpacing) {
             column {
@@ -311,8 +305,6 @@ public struct ThemeStudioView: View {
         }
         .frame(width: ThemeStudioLayout.columnWidth, alignment: .topLeading)
     }
-
-    // MARK: - Row Helpers
 
     private func binding<Value>(_ keyPath: WritableKeyPath<KeyboardTheme, Value>) -> Binding<Value> {
         Binding(
@@ -412,8 +404,6 @@ public struct ThemeStudioView: View {
         .accessibilityValue(isOn.wrappedValue ? "On" : "Off")
         .padding(.leading, 33)
     }
-
-    // MARK: - Actions
 
     private func importTheme() {
         let panel = NSOpenPanel()

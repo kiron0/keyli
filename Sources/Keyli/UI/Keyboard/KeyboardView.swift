@@ -311,8 +311,6 @@ struct KeyboardRenderer {
         drawLabel(key: key, rect: rect, isDown: isDown, textColor: labelColor, context: context)
     }
 
-    // MARK: - Background
-
     private func drawBackground(key: KeyboardKey, rect: CGRect, isDown: Bool, isHovered: Bool, showsAccentTint: Bool, context: GraphicsContext) {
         let base = key.kind == .modifier ? modifierColor : keycapColor
         let active = activeColor
@@ -388,8 +386,6 @@ struct KeyboardRenderer {
             strokeBorder(.color(strokeColor), width: lineWidth)
         }
     }
-
-    // MARK: - Labels
 
     private func text(_ string: String, size: CGFloat, weight: Font.Weight, design: Font.Design = .default, color: Color) -> Text {
         Text(string)
