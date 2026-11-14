@@ -4,7 +4,8 @@ import SwiftUI
 public enum WindowActivationCoordinator {
     public static func update() {
         guard let application = NSApp else { return }
-        let hasOpenWindow = SettingsWindowController.shared.isOpen || ThemeStudioWindowController.shared.isOpen || SetupAssistantController.shared.isOpen
+        let updateWindowOpen = MainActor.assumeIsolated { AppUpdateWindowController.shared.isOpen }
+        let hasOpenWindow = SettingsWindowController.shared.isOpen || ThemeStudioWindowController.shared.isOpen || SetupAssistantController.shared.isOpen || updateWindowOpen
         let policy: NSApplication.ActivationPolicy = hasOpenWindow ? .regular : .accessory
         guard application.activationPolicy() != policy else { return }
         application.setActivationPolicy(policy)

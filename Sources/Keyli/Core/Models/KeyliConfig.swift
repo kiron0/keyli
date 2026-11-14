@@ -12,6 +12,8 @@ public struct KeyliConfig: Codable, Equatable {
     public var liquidGlassEnabled: Bool = true
     public var launchAtLogin: Bool = false
     public var showMenuBarIcon: Bool = true
+    public var autoUpdate: Bool = true
+    public var autoInstallUpdates: Bool = false
     public var modifierStickyMode: Bool = true
     public var keyRepeatEnabled: Bool = true
     public var syntheticTypingDelayMs: Int = 5
@@ -36,6 +38,8 @@ public struct KeyliConfig: Codable, Equatable {
         liquidGlassEnabled = try container.decodeIfPresent(Bool.self, forKey: .liquidGlassEnabled) ?? fallback.liquidGlassEnabled
         launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? fallback.launchAtLogin
         showMenuBarIcon = try container.decodeIfPresent(Bool.self, forKey: .showMenuBarIcon) ?? fallback.showMenuBarIcon
+        autoUpdate = try container.decodeIfPresent(Bool.self, forKey: .autoUpdate) ?? fallback.autoUpdate
+        autoInstallUpdates = try container.decodeIfPresent(Bool.self, forKey: .autoInstallUpdates) ?? fallback.autoInstallUpdates
         modifierStickyMode = try container.decodeIfPresent(Bool.self, forKey: .modifierStickyMode) ?? fallback.modifierStickyMode
         keyRepeatEnabled = try container.decodeIfPresent(Bool.self, forKey: .keyRepeatEnabled) ?? fallback.keyRepeatEnabled
         syntheticTypingDelayMs = try container.decodeIfPresent(Int.self, forKey: .syntheticTypingDelayMs) ?? fallback.syntheticTypingDelayMs

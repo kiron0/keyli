@@ -51,6 +51,11 @@ public struct KeyboardOptionsMenuItems: View {
         Button("Settings…") {
             NotificationCenter.default.post(name: KeyliConstants.NotificationName.openSettings, object: nil)
         }
+        Button("Check for Updates…") {
+            Task { @MainActor in
+                await UpdateChecker.shared.checkForUpdates(isUserInitiated: true)
+            }
+        }
     }
 }
 

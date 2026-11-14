@@ -6,6 +6,7 @@ All notable changes to Keyli will be documented in this file.
 
 ### Added
 - Initial release of Keyli.
+- Verified in-app updates from GitHub Releases: checks a few times a day, can download and prepare updates in the background, and installs with Restart to Update. Options in Settings › General, plus Check for Updates in the menu bar, keyboard options menu and About.
 - Menu Bar quick keyboard viewer.
 - Non-activating floating interactive keyboard panel.
 - Focus-safe typing into target applications using Unicode and keycode synthesis.

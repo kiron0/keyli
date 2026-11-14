@@ -8,6 +8,7 @@ final class GeneralTabUIState: ObservableObject {
 public struct GeneralTabView: View {
     @ObservedObject public var configStore: ConfigStore = .shared
     @StateObject private var uiState = GeneralTabUIState()
+    @ObservedObject private var updateChecker = UpdateChecker.shared
 
     public init() {}
 
@@ -48,6 +49,50 @@ public struct GeneralTabView: View {
                     : "Open Keyli again from Finder or Spotlight to reach the keyboard and these settings.",
                 isOn: $configStore.config.showMenuBarIcon
             )
+
+            SettingsSectionHeader(title: "Updates", symbol: "arrow.down.circle")
+
+            SettingsToggle(
+                "Check for updates automatically",
+                detail: "Looks for new Keyli releases on GitHub a few times a day.",
+                isOn: Binding(
+                    get: { configStore.config.autoUpdate },
+                    set: {
+                        configStore.config.autoUpdate = $0
+                        if $0 {
+                            UpdateChecker.shared.startAutomaticChecks()
+                        }
+                    }
+                )
+            )
+
+            SettingsToggle(
+                "Download and prepare updates automatically",
+                detail: "Downloads and verifies updates in the background so you can restart when ready.",
+                isOn: Binding(
+                    get: { configStore.config.autoUpdate && configStore.config.autoInstallUpdates },
+                    set: {
+                        configStore.config.autoInstallUpdates = $0
+                        if $0 {
+                            UpdateChecker.shared.startAutomaticChecks()
+                        }
+                    }
+                )
+            )
+            .disabled(!configStore.config.autoUpdate)
+            .opacity(configStore.config.autoUpdate ? 1 : 0.45)
+
+            SettingsRow {
+                Button(updateChecker.isChecking ? "Checking…" : "Check Now") {
+                    Task { await updateChecker.checkForUpdates(isUserInitiated: true) }
+                }
+                .buttonStyle(SettingsSecondaryButtonStyle())
+                .disabled(updateChecker.isChecking)
+
+                Text("Version \(KeyliConstants.appVersion)")
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(Color.secondary)
+            }
 
             SettingsSectionHeader(title: "Reset", symbol: "arrow.counterclockwise")
 

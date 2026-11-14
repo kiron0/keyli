@@ -79,6 +79,17 @@ private struct AboutResourceCard: View {
 
 public struct AboutTabView: View {
     @StateObject private var presentationState = AboutTabPresentationState()
+    @ObservedObject private var updateChecker = UpdateChecker.shared
+
+    private var status: (symbol: String, text: String, color: Color) {
+        switch updateChecker.checkState {
+        case .idle: return ("checkmark.seal", "Ready", .secondary)
+        case .checking: return ("arrow.triangle.2.circlepath", "Checking…", KeyliChrome.accent)
+        case .available(let version, _, _): return ("arrow.down.circle.fill", "Version \(version) available", KeyliChrome.accent)
+        case .upToDate: return ("checkmark.circle.fill", "Up to date", .green)
+        case .failed: return ("exclamationmark.circle.fill", "Check unavailable", .red)
+        }
+    }
 
     public init() {}
 
@@ -183,14 +194,25 @@ public struct AboutTabView: View {
                 }
                 Text(KeyliConstants.tagline)
                     .font(.system(size: 12.5, weight: .medium))
+                Label(status.text, systemImage: status.symbol)
+                    .font(.system(size: 10.5, weight: .medium))
+                    .foregroundStyle(status.color)
             }
 
             Spacer(minLength: 8)
 
-            Button("Show Keyboard") {
-                PanelManager.shared.showFloatingKeyboard()
+            VStack(alignment: .trailing, spacing: 8) {
+                Button("Show Keyboard") {
+                    PanelManager.shared.showFloatingKeyboard()
+                }
+                .buttonStyle(SettingsPrimaryButtonStyle())
+
+                Button(updateChecker.isChecking ? "Checking…" : "Check for Updates") {
+                    Task { await updateChecker.checkForUpdates(isUserInitiated: true) }
+                }
+                .buttonStyle(SettingsSecondaryButtonStyle())
+                .disabled(updateChecker.isChecking)
             }
-            .buttonStyle(SettingsPrimaryButtonStyle())
         }
         .padding(14)
         .background(

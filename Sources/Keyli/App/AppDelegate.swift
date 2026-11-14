@@ -13,6 +13,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         KeyboardCoordinator.shared.start()
         StatusItemController.shared.setup()
+        UpdateNotifier.installDelegate()
+        UpdateChecker.shared.startAutomaticChecks()
 
         if ConfigStore.shared.config.isFloatingVisible && SetupAssistantModel.isCompleted() {
             PanelManager.shared.showFloatingKeyboard()
@@ -30,6 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        UpdateChecker.shared.stopAutomaticChecks()
         PanelManager.shared.flushPendingFrameSave()
         ThemeManager.shared.flushPendingWrites()
         PhysicalKeyboardMonitor.shared.stop()

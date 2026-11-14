@@ -151,7 +151,7 @@ jobs:
           1. Download \`Keyli-${{ steps.meta.outputs.tag }}.dmg\` (or \`.zip\`) from Assets below.
           2. Open the disk image and drag **Keyli** to your \`/Applications\` folder. The zip contains the same app if you prefer archives.
 
-          Already using Keyli? Quit it, replace the app in \`/Applications\`, and open it again. Accessibility and Input Monitoring permissions carry over.
+          Already using Keyli? It updates itself from this page: choose **Check for Updates** in the menu bar, or turn on automatic updates in Settings → General.
 
           **Full changelog:** https://github.com/${{ github.repository }}/commits/${{ steps.meta.outputs.tag }}
           EOF

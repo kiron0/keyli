@@ -3,6 +3,8 @@ import Foundation
 public enum KeyliConstants {
     public static let appName = "Keyli"
     public static let bundleIdentifier = "io.coreify.keyli"
+    public static let primaryBundleId = bundleIdentifier
+    public static let supportedBundleIdentifiers: Set<String> = [primaryBundleId]
     public static let suiteName = "io.coreify.keyli"
 
     public static let author = "Toufiq Hasan Kiron"
@@ -11,6 +13,7 @@ public enum KeyliConstants {
     public static let websiteURL = URL(string: "https://keyli.kiron.dev")!
     public static let authorURL = URL(string: "https://kiron.dev")!
     public static let repositoryURL = URL(string: "https://github.com/\(githubRepository)")!
+    public static let releasesPageURL = URL(string: "https://github.com/\(githubRepository)/releases/latest")!
     public static let issuesURL = URL(string: "https://github.com/\(githubRepository)/issues/new")!
     public static let buyMeACoffeeURL = URL(string: "https://buymeacoffee.com/_thk")!
 
@@ -51,6 +54,11 @@ public enum KeyliConstants {
 
     public static func panelWidth(forHeight height: CGFloat, layout: KeyboardLayout) -> CGFloat {
         (keyboardHorizontalPadding + (height - keyboardChromeHeight) * keyboardAspect(layout)).rounded()
+    }
+
+    public enum UserDefaultsKeys {
+        public static let lastAutomaticUpdateCheck = "keyli_last_automatic_update_check"
+        public static let lastAutomaticUpdateCheckFailed = "keyli_last_automatic_update_check_failed"
     }
 
     public enum NotificationName {
