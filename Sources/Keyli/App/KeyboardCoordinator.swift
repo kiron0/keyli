@@ -104,9 +104,11 @@ public final class KeyboardCoordinator {
             StatusItemController.shared.applyVisibility(config.showMenuBarIcon)
         }
 
-        if previous.isPhysicalMonitoringEnabled != config.isPhysicalMonitoringEnabled {
+        let physicalSoundsChanged = (previous.playKeyClickSound && previous.keySoundsForPhysicalTyping)
+            != (config.playKeyClickSound && config.keySoundsForPhysicalTyping)
+        if previous.isPhysicalMonitoringEnabled != config.isPhysicalMonitoringEnabled || physicalSoundsChanged {
             PhysicalKeyboardMonitor.shared.refresh()
-            if config.isPhysicalMonitoringEnabled && !PermissionsManager.shared.hasInputMonitoringPermission {
+            if PhysicalKeyboardMonitor.shared.needsEventTap && !PermissionsManager.shared.hasInputMonitoringPermission {
                 PermissionsManager.shared.requestInputMonitoring()
             }
             PermissionsManager.shared.checkPermissions()

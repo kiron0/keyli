@@ -137,6 +137,7 @@ public struct KeyboardView: View {
                                 .accessibilityAddTraits(.isButton)
                                 .accessibilityAction {
                                     if isInteractive {
+                                        KeySoundEngine.shared.tap(key.keyCode)
                                         KeyboardInputDispatcher.shared.dispatchKey(key, state: state)
                                     }
                                 }
@@ -153,6 +154,7 @@ public struct KeyboardView: View {
         }
         .onDisappear {
             interaction.stopRepeating()
+            KeySoundEngine.shared.releaseAll(source: .onScreen)
         }
     }
 
@@ -160,6 +162,7 @@ public struct KeyboardView: View {
         interaction.pressedKeyId = key.id
         interaction.pressBegan = Date()
         guard isInteractive else { return }
+        KeySoundEngine.shared.keyDown(key.keyCode, source: .onScreen)
         if key.modifierType == .fn {
             return
         }
@@ -179,14 +182,14 @@ public struct KeyboardView: View {
 
     private func end() {
         interaction.stopRepeating()
-        if isInteractive,
-           let id = interaction.pressedKeyId,
-           let key = state.currentLayout.keys.first(where: { $0.id == id }),
-           key.modifierType == .fn {
+        let pressedKey = isInteractive ? interaction.pressedKeyId.flatMap { id in state.currentLayout.keys.first { $0.id == id } } : nil
+        if let pressedKey {
+            KeySoundEngine.shared.keyUp(pressedKey.keyCode, source: .onScreen)
+        }
+        if let key = pressedKey, key.modifierType == .fn {
             let held = Date().timeIntervalSince(interaction.pressBegan ?? Date())
             if held >= KeyboardView.fnLatchHoldDuration || state.isFnActive {
                 state.toggleModifier(.fn)
-                SoundService.shared.playModifierClick()
             } else {
                 KeyboardInputDispatcher.shared.handleGlobeTap(state: state)
             }

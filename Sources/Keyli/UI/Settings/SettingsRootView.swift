@@ -107,6 +107,8 @@ public struct SettingsRootView: View {
         switch tab {
         case .keyboard: KeyboardTabView()
         case .typing: TypingTabView()
+        case .sounds: SoundsTabView()
+        case .shortcuts: ShortcutsTabView()
         case .themes: ThemesTabView()
         case .general: GeneralTabView()
         case .permissions: PermissionsTabView()

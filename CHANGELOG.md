@@ -2,6 +2,29 @@
 
 All notable changes to Keyli will be documented in this file.
 
+## 1.0.1
+
+### Added
+
+- **Keycap sounds**: every key plays its own press and release sound, on the on-screen keyboard and, optionally, while you type on your Mac's keyboard. Sounds overlap without cutting each other off, held keys don't repeat, and playback runs with about 5 ms of output latency.
+- **Sound packs**: seven built-in packs, including two original synthesized packs (Slate Thock and Quartz Tick) and five top-rated community packs. Both community pack formats are supported, with single-file sprites, one file per key, and separate release sounds.
+- **Sounds settings**: a new Sounds page with on/off, volume, pack picker, preview, and import of a pack as a .zip file or a folder. Imports are checked, and anything wrong gets a clear message.
+- **Browse Packs**: search and install community packs from inside Keyli, sorted by Top Rated, Most Downloaded or Newest. Downloads are checksum-verified, and installed packs can be previewed before you use them.
+- **Shortcuts**: a new Shortcuts page with global shortcuts for showing the keyboard, keep on top, physical key highlighting, input sources, Emoji & Symbols, key sounds, next sound pack, next theme, Settings, Theme Studio and update checks.
+- **Input source menu**: the menu bar icon shows your current input source and lists your input sources, with Emoji & Symbols and Open Keyboard Settings.
+
+### Changed
+
+- **Faster pack browsing**: results are cached, search runs as you type, more packs load as you scroll, and requests are paced so the catalog is never flooded.
+- **Lighter background typing**: when key sounds are on but the keyboard is hidden, Keyli no longer redraws the keyboard for every key you type, and switching apps only refreshes what changed.
+- **Menu bar icon**: input source icons are cached instead of being looked up on every change.
+
+### Fixed
+
+- **Stuck key sounds**: a key no longer goes silent after a missed key release, such as when Secure Input turns on or the keyboard closes mid-press.
+- **Audio device changes**: key sounds come back right away after switching speakers or headphones.
+- **Rare crash on layout refresh**: reading the current input source from two places at once could crash Keyli. It's now serialized.
+
 ## 1.0.0
 
 First release of Keyli, an on-screen keyboard for macOS that types without stealing focus.

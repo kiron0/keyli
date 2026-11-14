@@ -9,6 +9,9 @@ public struct KeyliConfig: Codable, Equatable {
     public var floatingOpacity: Double = 1.0
     public var isPhysicalMonitoringEnabled: Bool = false
     public var playKeyClickSound: Bool = true
+    public var keySoundPackId: String = "keyli-slate-thock"
+    public var keySoundVolume: Double = 0.6
+    public var keySoundsForPhysicalTyping: Bool = false
     public var liquidGlassEnabled: Bool = true
     public var launchAtLogin: Bool = false
     public var showMenuBarIcon: Bool = true
@@ -35,6 +38,9 @@ public struct KeyliConfig: Codable, Equatable {
         floatingOpacity = try container.decodeIfPresent(Double.self, forKey: .floatingOpacity) ?? fallback.floatingOpacity
         isPhysicalMonitoringEnabled = try container.decodeIfPresent(Bool.self, forKey: .isPhysicalMonitoringEnabled) ?? fallback.isPhysicalMonitoringEnabled
         playKeyClickSound = try container.decodeIfPresent(Bool.self, forKey: .playKeyClickSound) ?? fallback.playKeyClickSound
+        keySoundPackId = try container.decodeIfPresent(String.self, forKey: .keySoundPackId) ?? fallback.keySoundPackId
+        keySoundVolume = try container.decodeIfPresent(Double.self, forKey: .keySoundVolume) ?? fallback.keySoundVolume
+        keySoundsForPhysicalTyping = try container.decodeIfPresent(Bool.self, forKey: .keySoundsForPhysicalTyping) ?? fallback.keySoundsForPhysicalTyping
         liquidGlassEnabled = try container.decodeIfPresent(Bool.self, forKey: .liquidGlassEnabled) ?? fallback.liquidGlassEnabled
         launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? fallback.launchAtLogin
         showMenuBarIcon = try container.decodeIfPresent(Bool.self, forKey: .showMenuBarIcon) ?? fallback.showMenuBarIcon

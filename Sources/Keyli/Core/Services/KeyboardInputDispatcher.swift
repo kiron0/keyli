@@ -152,12 +152,10 @@ public final class KeyboardInputDispatcher {
         switch outcome {
         case .switchedInputSource:
             if InputSourceService.shared.selectNext() {
-                SoundService.shared.playModifierClick()
                 if state.isFnActive { state.isFnActive = false }
                 return outcome
             }
             state.toggleModifier(.fn)
-            SoundService.shared.playModifierClick()
             return .latchedFn
         case .showedEmoji:
             showEmojiAndSymbols()
@@ -165,7 +163,6 @@ public final class KeyboardInputDispatcher {
             return outcome
         case .latchedFn:
             state.toggleModifier(.fn)
-            SoundService.shared.playModifierClick()
             return outcome
         }
     }
@@ -187,7 +184,6 @@ public final class KeyboardInputDispatcher {
             return nil
         case .toggleModifier(let mod):
             state.toggleModifier(mod)
-            SoundService.shared.playModifierClick()
             return nil
         default:
             break
@@ -234,7 +230,6 @@ public final class KeyboardInputDispatcher {
         if state.dispatchIssue != nil {
             state.dispatchIssue = nil
         }
-        SoundService.shared.playKeyClick()
 
         switch action {
         case .text(let text, let keyCode):

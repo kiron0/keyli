@@ -4,6 +4,7 @@ import Carbon
 public final class CharacterTranslator {
     public static let shared = CharacterTranslator()
 
+    private static let inputSourceLock = NSRecursiveLock()
     private var cachedLayoutData: Data?
     public private(set) var activeInputSourceName: String = "US"
     public private(set) var activeInputSourceID: String = ""
@@ -13,6 +14,8 @@ public final class CharacterTranslator {
     }
 
     public func refreshInputSource() {
+        Self.inputSourceLock.lock()
+        defer { Self.inputSourceLock.unlock() }
         let source = TISCopyCurrentKeyboardInputSource().takeRetainedValue()
 
         if let namePtr = TISGetInputSourceProperty(source, kTISPropertyLocalizedName) {
@@ -35,6 +38,8 @@ public final class CharacterTranslator {
     }
 
     public func translateKeycode(_ keyCode: UInt16) -> KeyLabels {
+        Self.inputSourceLock.lock()
+        defer { Self.inputSourceLock.unlock() }
         guard let data = cachedLayoutData else {
             return fallbackLabels(for: keyCode)
         }

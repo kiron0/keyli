@@ -24,6 +24,9 @@ chmod +x "$MACOS_DIR/$APP_NAME"
 cp "$ROOT_DIR/Support/Info.plist" "$CONTENTS/Info.plist"
 cp "$ROOT_DIR"/Support/Icons/*.png "$ROOT_DIR"/Support/Icons/*.icns "$RESOURCES_DIR"/ 2>/dev/null || true
 cp "$ROOT_DIR"/Support/Sounds/*.aiff "$RESOURCES_DIR"/ 2>/dev/null || true
+if [[ -d "$ROOT_DIR/Support/SoundPacks" ]]; then
+    ditto "$ROOT_DIR/Support/SoundPacks" "$RESOURCES_DIR/SoundPacks"
+fi
 /usr/libexec/PlistBuddy -c "Set :CFBundleIconFile AppIcon" "$CONTENTS/Info.plist" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$CONTENTS/Info.plist" 2>/dev/null || true
 if [[ -n "${KEYLI_CODESIGN_IDENTITY:-}" ]]; then

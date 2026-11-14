@@ -1,0 +1,676 @@
+{
+  "audio_file": "concatenated_audio.wav",
+  "config_version": "2",
+  "created_at": "2026-09-16T09:08:23.939718800+00:00",
+  "definition_method": "single",
+  "definitions": {
+    "AltLeft": {
+      "timing": [
+        [
+          0,
+          144
+        ]
+      ]
+    },
+    "ArrowDown": {
+      "timing": [
+        [
+          456,
+          672
+        ]
+      ]
+    },
+    "ArrowLeft": {
+      "timing": [
+        [
+          312,
+          456
+        ]
+      ]
+    },
+    "ArrowRight": {
+      "timing": [
+        [
+          672,
+          864
+        ]
+      ]
+    },
+    "ArrowUp": {
+      "timing": [
+        [
+          0,
+          144
+        ]
+      ]
+    },
+    "Backquote": {
+      "timing": [
+        [
+          672,
+          864
+        ]
+      ]
+    },
+    "Backslash": {
+      "timing": [
+        [
+          456,
+          672
+        ]
+      ]
+    },
+    "Backspace": {
+      "timing": [
+        [
+          312,
+          456
+        ]
+      ]
+    },
+    "BracketLeft": {
+      "timing": [
+        [
+          0,
+          144
+        ]
+      ]
+    },
+    "BracketRight": {
+      "timing": [
+        [
+          312,
+          456
+        ]
+      ]
+    },
+    "CapsLock": {
+      "timing": [
+        [
+          672,
+          864
+        ]
+      ]
+    },
+    "Comma": {
+      "timing": [
+        [
+          144,
+          312
+        ]
+      ]
+    },
+    "ControlLeft": {
+      "timing": [
+        [
+          672,
+          864
+        ]
+      ]
+    },
+    "Delete": {
+      "timing": [
+        [
+          0,
+          144
+        ]
+      ]
+    },
+    "Digit0": {
+      "timing": [
+        [
+          672,
+          864
+        ]
+      ]
+    },
+    "Digit1": {
+      "timing": [
+        [
+          144,
+          312
+        ]
+      ]
+    },
+    "Digit2": {
+      "timing": [
+        [
+          0,
+          144
+        ]
+      ]
+    },
+    "Digit3": {
+      "timing": [
+        [
+          312,
+          456
+        ]
+      ]
+    },
+    "Digit4": {
+      "timing": [
+        [
+          456,
+          672
+        ]
+      ]
+    },
+    "Digit5": {
+      "timing": [
+        [
+          672,
+          864
+        ]
+      ]
+    },
+    "Digit6": {
+      "timing": [
+        [
+          144,
+          312
+        ]
+      ]
+    },
+    "Digit7": {
+      "timing": [
+        [
+          0,
+          144
+        ]
+      ]
+    },
+    "Digit8": {
+      "timing": [
+        [
+          312,
+          456
+        ]
+      ]
+    },
+    "Digit9": {
+      "timing": [
+        [
+          456,
+          672
+        ]
+      ]
+    },
+    "End": {
+      "timing": [
+        [
+          312,
+          456
+        ]
+      ]
+    },
+    "Enter": {
+      "timing": [
+        [
+          0,
+          144
+        ]
+      ]
+    },
+    "Equal": {
+      "timing": [
+        [
+          0,
+          144
+        ]
+      ]
+    },
+    "Escape": {
+      "timing": [
+        [
+          0,
+          144
+        ]
+      ]
+    },
+    "F1": {
+      "timing": [
+        [
+          312,
+          456
+        ]
+      ]
+    },
+    "F10": {
+      "timing": [
+        [
+          0,
+          144
+        ]
+      ]
+    },
+    "F11": {
+      "timing": [
+        [
+          312,
+          456
+        ]
+      ]
+    },
+    "F12": {
+      "timing": [
+        [
+          456,
+          672
+        ]
+      ]
+    },
+    "F2": {
+      "timing": [
+        [
+          456,
+          672
+        ]
+      ]
+    },
+    "F3": {
+      "timing": [
+        [
+          672,
+          864
+        ]
+      ]
+    },
+    "F4": {
+      "timing": [
+        [
+          144,
+          312
+        ]
+      ]
+    },
+    "F5": {
+      "timing": [
+        [
+          0,
+          144
+        ]
+      ]
+    },
+    "F6": {
+      "timing": [
+        [
+          312,
+          456
+        ]
+      ]
+    },
+    "F7": {
+      "timing": [
+        [
+          456,
+          672
+        ]
+      ]
+    },
+    "F8": {
+      "timing": [
+        [
+          672,
+          864
+        ]
+      ]
+    },
+    "F9": {
+      "timing": [
+        [
+          144,
+          312
+        ]
+      ]
+    },
+    "KeyA": {
+      "timing": [
+        [
+          144,
+          312
+        ]
+      ]
+    },
+    "KeyB": {
+      "timing": [
+        [
+          312,
+          456
+        ]
+      ]
+    },
+    "KeyC": {
+      "timing": [
+        [
+          144,
+          312
+        ]
+      ]
+    },
+    "KeyD": {
+      "timing": [
+        [
+          312,
+          456
+        ]
+      ]
+    },
+    "KeyE": {
+      "timing": [
+        [
+          312,
+          456
+        ]
+      ]
+    },
+    "KeyF": {
+      "timing": [
+        [
+          456,
+          672
+        ]
+      ]
+    },
+    "KeyG": {
+      "timing": [
+        [
+          672,
+          864
+        ]
+      ]
+    },
+    "KeyH": {
+      "timing": [
+        [
+          144,
+          312
+        ]
+      ]
+    },
+    "KeyI": {
+      "timing": [
+        [
+          456,
+          672
+        ]
+      ]
+    },
+    "KeyJ": {
+      "timing": [
+        [
+          0,
+          144
+        ]
+      ]
+    },
+    "KeyK": {
+      "timing": [
+        [
+          312,
+          456
+        ]
+      ]
+    },
+    "KeyL": {
+      "timing": [
+        [
+          456,
+          672
+        ]
+      ]
+    },
+    "KeyM": {
+      "timing": [
+        [
+          672,
+          864
+        ]
+      ]
+    },
+    "KeyN": {
+      "timing": [
+        [
+          456,
+          672
+        ]
+      ]
+    },
+    "KeyO": {
+      "timing": [
+        [
+          672,
+          864
+        ]
+      ]
+    },
+    "KeyP": {
+      "timing": [
+        [
+          144,
+          312
+        ]
+      ]
+    },
+    "KeyQ": {
+      "timing": [
+        [
+          672,
+          864
+        ]
+      ]
+    },
+    "KeyR": {
+      "timing": [
+        [
+          672,
+          864
+        ]
+      ]
+    },
+    "KeyS": {
+      "timing": [
+        [
+          0,
+          144
+        ]
+      ]
+    },
+    "KeyT": {
+      "timing": [
+        [
+          144,
+          312
+        ]
+      ]
+    },
+    "KeyU": {
+      "timing": [
+        [
+          312,
+          456
+        ]
+      ]
+    },
+    "KeyV": {
+      "timing": [
+        [
+          0,
+          144
+        ]
+      ]
+    },
+    "KeyW": {
+      "timing": [
+        [
+          144,
+          312
+        ]
+      ]
+    },
+    "KeyX": {
+      "timing": [
+        [
+          672,
+          864
+        ]
+      ]
+    },
+    "KeyY": {
+      "timing": [
+        [
+          0,
+          144
+        ]
+      ]
+    },
+    "KeyZ": {
+      "timing": [
+        [
+          312,
+          456
+        ]
+      ]
+    },
+    "Minus": {
+      "timing": [
+        [
+          144,
+          312
+        ]
+      ]
+    },
+    "Numpad0": {
+      "timing": [
+        [
+          672,
+          864
+        ]
+      ]
+    },
+    "Numpad3": {
+      "timing": [
+        [
+          144,
+          312
+        ]
+      ]
+    },
+    "Numpad8": {
+      "timing": [
+        [
+          312,
+          456
+        ]
+      ]
+    },
+    "NumpadEnter": {
+      "timing": [
+        [
+          456,
+          672
+        ]
+      ]
+    },
+    "NumpadMultiply": {
+      "timing": [
+        [
+          144,
+          312
+        ]
+      ]
+    },
+    "PageUp": {
+      "timing": [
+        [
+          672,
+          864
+        ]
+      ]
+    },
+    "Period": {
+      "timing": [
+        [
+          0,
+          144
+        ]
+      ]
+    },
+    "PrintScreen": {
+      "timing": [
+        [
+          456,
+          672
+        ]
+      ]
+    },
+    "Quote": {
+      "timing": [
+        [
+          144,
+          312
+        ]
+      ]
+    },
+    "Semicolon": {
+      "timing": [
+        [
+          672,
+          864
+        ]
+      ]
+    },
+    "ShiftLeft": {
+      "timing": [
+        [
+          456,
+          672
+        ]
+      ]
+    },
+    "ShiftRight": {
+      "timing": [
+        [
+          456,
+          672
+        ]
+      ]
+    },
+    "Slash": {
+      "timing": [
+        [
+          312,
+          456
+        ]
+      ]
+    },
+    "Space": {
+      "timing": [
+        [
+          864,
+          1080
+        ]
+      ]
+    },
+    "Tab": {
+      "timing": [
+        [
+          456,
+          672
+        ]
+      ]
+    }
+  },
+  "name": "(the creamiest one) Zoom TKL morandi switches Lubed",
+  "options": {
+    "random_pitch": false,
+    "recommended_volume": 1
+  },
+  "author": "laika_raika300years_otomad",
+  "id": "mv-db386766332040438b7985b75eb73736",
+  "version": "1",
+  "description": "https://youtube.com/shorts/IlYkEFUjb8Y?si=hftlBUtah2baVZel (the first one)\nI'm actually lock in now bruh",
+  "tags": [
+    "creamy"
+  ]
+}

@@ -9,6 +9,8 @@ public enum SettingsCategory: String, CaseIterable {
 public enum SettingsTab: String, CaseIterable, Identifiable {
     case keyboard = "Keyboard"
     case typing = "Typing"
+    case sounds = "Sounds"
+    case shortcuts = "Shortcuts"
     case themes = "Themes"
     case general = "General"
     case permissions = "Permissions"
@@ -18,7 +20,7 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
 
     public var category: SettingsCategory {
         switch self {
-        case .keyboard, .typing, .themes: return .keyboard
+        case .keyboard, .typing, .themes, .sounds, .shortcuts: return .keyboard
         case .general, .permissions: return .app
         case .about: return .info
         }
@@ -34,6 +36,8 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .keyboard: return "keyboard"
         case .typing: return "character.cursor.ibeam"
+        case .sounds: return "speaker.wave.2"
+        case .shortcuts: return "command"
         case .themes: return "paintpalette"
         case .general: return "gearshape"
         case .permissions: return "lock.shield"
@@ -45,6 +49,8 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .keyboard: return ("#6B6E75", "#3E4046")
         case .typing: return ("#F2B552", "#D9891F")
+        case .sounds: return ("#E987A8", "#C2557C")
+        case .shortcuts: return ("#A884D8", "#7552B0")
         case .themes: return ("#F07A62", "#D2493A")
         case .general: return ("#A3A6AC", "#7B7E85")
         case .permissions: return ("#5BC27A", "#2F9150")
@@ -56,6 +62,8 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .keyboard: return "The floating keyboard window, layout and key highlighting."
         case .typing: return "How clicked keys are sent to the app you’re using."
+        case .sounds: return "Keycap sounds, sound packs and the community catalog."
+        case .shortcuts: return "Global shortcuts for every Keyli action."
         case .themes: return "Pick a look for every keyboard, or design your own."
         case .general: return "Startup, menu bar and reset."
         case .permissions: return "What macOS lets Keyli do, and why. Updates live."

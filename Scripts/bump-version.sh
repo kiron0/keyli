@@ -40,23 +40,79 @@ if [ -z "$INPUT_VERSION" ]; then
     read -r -p "Enter choice [1-4] (default: 1): " CHOICE
 
     case "$CHOICE" in
-        2) TARGET_VERSION="$SUGGESTED_MINOR" ;;
-        3) TARGET_VERSION="$SUGGESTED_MAJOR" ;;
-        4) read -r -p "Enter new version: " TARGET_VERSION ;;
-        *) TARGET_VERSION="$SUGGESTED_PATCH" ;;
+        2)
+            TARGET_VERSION="$SUGGESTED_MINOR"
+            ;;
+        3)
+            TARGET_VERSION="$SUGGESTED_MAJOR"
+            ;;
+        4)
+            read -r -p "Enter new version (e.g. 1.0.3): " CUSTOM_VER
+            TARGET_VERSION="$CUSTOM_VER"
+            ;;
+        *)
+            TARGET_VERSION="$SUGGESTED_PATCH"
+            ;;
     esac
 else
     TARGET_VERSION="$INPUT_VERSION"
 fi
 
+if [[ ! "$TARGET_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+    echo "Error: Invalid version format '$TARGET_VERSION'. Must match semver (e.g. 1.0.3 or 1.0.3-beta.1)." >&2
+    exit 1
+fi
+
 if [ -z "$INPUT_BUILD" ]; then
-    TARGET_BUILD="$SUGGESTED_BUILD"
+    read -r -p "Enter build number (default: $SUGGESTED_BUILD): " ENTERED_BUILD
+    TARGET_BUILD="${ENTERED_BUILD:-$SUGGESTED_BUILD}"
 else
     TARGET_BUILD="$INPUT_BUILD"
 fi
 
+if [[ ! "$TARGET_BUILD" =~ ^[0-9]+$ ]]; then
+    echo "Error: Invalid build number '$TARGET_BUILD'. Must be an integer." >&2
+    exit 1
+fi
+
+echo ""
+echo "Summary of changes:"
+echo "  Version: $CURRENT_VERSION -> $TARGET_VERSION"
+echo "  Build:   $CURRENT_BUILD -> $TARGET_BUILD"
+echo ""
+
+if [ -z "${1:-}" ]; then
+    read -r -p "Apply changes? [Y/n]: " CONFIRM
+    CONFIRM="${CONFIRM:-Y}"
+    if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
+        echo "Aborted."
+        exit 0
+    fi
+fi
+
 sed -i '' -E 's/("version": ")[^"]+(")/\1'"$TARGET_VERSION"'\2/' "$PACKAGE_JSON"
+echo "  ✓ Updated $PACKAGE_JSON"
+
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $TARGET_VERSION" "$PLIST_FILE"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $TARGET_BUILD" "$PLIST_FILE"
+echo "  ✓ Updated $PLIST_FILE"
 
+if [ -f "$CHANGELOG_FILE" ]; then
+    if grep -q "^## Unreleased" "$CHANGELOG_FILE" && ! grep -q "^## $TARGET_VERSION\$" "$CHANGELOG_FILE"; then
+        sed -i '' -E "s/^## Unreleased$/## $TARGET_VERSION/" "$CHANGELOG_FILE"
+        echo "  ✓ Renamed Unreleased section to $TARGET_VERSION in $CHANGELOG_FILE"
+    elif ! grep -q "^## $TARGET_VERSION\$" "$CHANGELOG_FILE"; then
+        awk -v ver="$TARGET_VERSION" '
+            BEGIN { inserted = 0 }
+            /^## / && !inserted {
+                print "## " ver "\n\n### Changed\n\n- \n"
+                inserted = 1
+            }
+            { print }
+        ' "$CHANGELOG_FILE" > "$CHANGELOG_FILE.tmp" && mv "$CHANGELOG_FILE.tmp" "$CHANGELOG_FILE"
+        echo "  ✓ Added release section to $CHANGELOG_FILE"
+    fi
+fi
+
+echo ""
 echo "✅ Version bumped to $TARGET_VERSION (build $TARGET_BUILD) successfully!"

@@ -182,7 +182,7 @@ public final class PermissionsManager: ObservableObject {
         case .accessibility:
             return status != .granted
         case .inputMonitoring:
-            return ConfigStore.shared.config.isPhysicalMonitoringEnabled && status != .granted
+            return PhysicalKeyboardMonitor.shared.needsEventTap && status != .granted
         case .loginItem:
             return status == .requiresApproval || (ConfigStore.shared.config.launchAtLogin && status != .granted)
         }
@@ -219,7 +219,7 @@ public final class PermissionsManager: ObservableObject {
         )
 
         let access = PermissionsManager.inputMonitoringAccess
-        let tapNeeded = config.isPhysicalMonitoringEnabled && monitor.hasVisibleKeyboard
+        let tapNeeded = monitor.needsEventTap
         if access == kIOHIDAccessTypeGranted {
             waiting.remove(.inputMonitoring)
             defaults.set(true, forKey: grantedKey(.inputMonitoring))
