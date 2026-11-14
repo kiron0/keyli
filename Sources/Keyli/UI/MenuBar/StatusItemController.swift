@@ -37,6 +37,13 @@ public final class StatusItemController: NSObject {
 
     @MainActor
     private func observeUpdates() {
+        InputSourceService.shared.$currentId
+            .combineLatest(InputSourceService.shared.$sources)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.updateIcon(isKeyboardVisible: PanelManager.shared.isFloatingVisible)
+            }
+            .store(in: &updateObservers)
         UpdateChecker.shared.$availableUpdate
             .map { $0 != nil }
             .combineLatest(UpdateDownloadService.shared.$state.map { state -> Bool in
@@ -103,13 +110,19 @@ public final class StatusItemController: NSObject {
 
     private func updateIcon(isKeyboardVisible: Bool) {
         guard let button = statusItem?.button else { return }
-        let symbol = isKeyboardVisible ? "keyboard.fill" : "keyboard"
-        let image = NSImage(systemSymbolName: symbol, accessibilityDescription: "Keyli")
-        image?.isTemplate = true
-        button.image = image
+        let service = InputSourceService.shared
+        let current = service.sources.first { $0.id == service.currentId }
+        if let current {
+            button.image = service.icon(for: current.id) ?? Self.letterBadge(current.name)
+        } else {
+            let image = NSImage(systemSymbolName: isKeyboardVisible ? "keyboard.fill" : "keyboard", accessibilityDescription: "Keyli")
+            image?.isTemplate = true
+            button.image = image
+        }
         guard !showsUpdateBadge else { return }
-        button.toolTip = isKeyboardVisible ? "Hide Keyboard" : "Show Keyboard"
-        button.setAccessibilityLabel(isKeyboardVisible ? "Hide Keyli keyboard" : "Show Keyli keyboard")
+        let sourceName = current?.name ?? KeyliConstants.appName
+        button.toolTip = sourceName
+        button.setAccessibilityLabel("\(sourceName), \(KeyliConstants.appName) input menu")
     }
 
     @objc private func statusBarButtonClicked(_ sender: NSStatusBarButton) {
