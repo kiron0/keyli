@@ -89,20 +89,49 @@ public final class InputSourceService: ObservableObject {
         guard let source = InputSourceService.enabledKeyboardSources().first(where: { InputSourceService.string($0, kTISPropertyInputSourceID) == id }) else {
             return nil
         }
+        if let pointer = TISGetInputSourceProperty(source, InputSourceService.iconLabelsKey),
+           let labels = Unmanaged<AnyObject>.fromOpaque(pointer).takeUnretainedValue() as? [String: Any],
+           let primary = labels["Primary"] as? String, !primary.isEmpty {
+            return InputSourceService.labelBadge(primary)
+        }
+        if let pointer = TISGetInputSourceProperty(source, InputSourceService.iconImageKey),
+           let shared = Unmanaged<AnyObject>.fromOpaque(pointer).takeUnretainedValue() as? NSImage,
+           let image = shared.copy() as? NSImage {
+            image.size = NSSize(width: 16, height: 16)
+            image.isTemplate = InputSourceService.bool(source, InputSourceService.iconShouldBeTemplateKey)
+            return image
+        }
         if let pointer = TISGetInputSourceProperty(source, kTISPropertyIconImageURL) {
             let url = Unmanaged<CFURL>.fromOpaque(pointer).takeUnretainedValue() as URL
-            if let image = NSImage(contentsOf: url) {
-                image.isTemplate = url.deletingPathExtension().lastPathComponent.hasSuffix("Template")
+            let candidates = [url] + ["pdf", "tiff", "png", "icns"].map { url.appendingPathExtension($0) }
+            if let image = candidates.lazy.compactMap({ NSImage(contentsOf: $0) }).first {
+                image.isTemplate = url.lastPathComponent.hasSuffix("Template")
                 image.size = NSSize(width: 16, height: 16)
                 return image
             }
         }
-        if let pointer = TISGetInputSourceProperty(source, kTISPropertyIconRef) {
-            let image = NSImage(iconRef: OpaquePointer(pointer))
-            image.size = NSSize(width: 16, height: 16)
-            return image
-        }
         return nil
+    }
+
+    private static let iconLabelsKey = "TISPropertyInputSourceIconLabels" as CFString
+    private static let iconImageKey = "TSMInputSourcePropertyIconImage" as CFString
+    private static let iconShouldBeTemplateKey = "TSMInputSourcePropertyIconShouldBeTemplate" as CFString
+
+    public static func labelBadge(_ label: String) -> NSImage {
+        let height: CGFloat = 16
+        let font = NSFont.systemFont(ofSize: label.count > 1 ? 10 : 11.5, weight: .semibold)
+        let text = NSAttributedString(string: label, attributes: [.font: font, .foregroundColor: NSColor.black])
+        let textSize = text.size()
+        let width = max(ceil(textSize.width) + 10, 22)
+        let image = NSImage(size: NSSize(width: width, height: height), flipped: false) { rect in
+            NSColor.black.setFill()
+            NSBezierPath(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), xRadius: 4.5, yRadius: 4.5).fill()
+            NSGraphicsContext.current?.compositingOperation = .destinationOut
+            text.draw(at: NSPoint(x: (rect.width - textSize.width) / 2, y: (rect.height - textSize.height) / 2 + 0.5))
+            return true
+        }
+        image.isTemplate = true
+        return image
     }
 
     public func showEmojiAndSymbols() {

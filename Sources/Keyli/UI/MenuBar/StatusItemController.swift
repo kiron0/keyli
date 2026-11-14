@@ -16,7 +16,7 @@ public final class StatusItemController: NSObject {
     public func setup() {
         guard statusItem == nil else { return }
 
-        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         item.autosaveName = "io.coreify.keyli.statusItem"
         if let button = item.button {
             button.target = self
@@ -143,24 +143,7 @@ public final class StatusItemController: NSObject {
     }
 
     private static func letterBadge(_ name: String) -> NSImage {
-        let letter = String(name.prefix(1)).uppercased()
-        let size = NSSize(width: 18, height: 16)
-        let image = NSImage(size: size, flipped: false) { rect in
-            let path = NSBezierPath(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), xRadius: 4, yRadius: 4)
-            NSColor.black.setFill()
-            path.fill()
-            let attributes: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: 11, weight: .bold),
-                .foregroundColor: NSColor.black
-            ]
-            let text = NSAttributedString(string: letter, attributes: attributes)
-            let textSize = text.size()
-            NSGraphicsContext.current?.compositingOperation = .destinationOut
-            text.draw(at: NSPoint(x: (rect.width - textSize.width) / 2, y: (rect.height - textSize.height) / 2))
-            return true
-        }
-        image.isTemplate = true
-        return image
+        InputSourceService.labelBadge(String(name.prefix(1)).uppercased())
     }
 
     private func addInputSourceItems(to menu: NSMenu) {
