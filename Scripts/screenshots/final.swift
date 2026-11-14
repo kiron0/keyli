@@ -20,7 +20,7 @@ func paste(_ ctx: CGContext, _ src: CGImage, _ r: CGRect) {
     let destY = CGFloat(ctx.height) - (r.maxY - cropTop) * scale
     ctx.draw(piece, in: CGRect(x: px.minX, y: destY, width: px.width, height: px.height))
 }
-for (src, file) in [("cap_hero.png", "hero.jpg"), ("cap_settings.png", "settings.jpg"), ("cap_studio.png", "theme-studio.jpg")] {
+for (src, file) in [("cap_hero.png", "hero.jpg"), ("cap_settings.png", "settings.jpg"), ("cap_studio.png", "theme-studio.jpg"), ("cap_keyboard.png", "keyboard.jpg")] {
     save(canvas(from: cg(src)), file)
 }
 let themes = canvas(from: cg("cap_theme_kiln.png"))

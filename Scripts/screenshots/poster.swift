@@ -108,6 +108,9 @@ case "themes":
 case "studio":
     kicker("02", "THEME STUDIO", top: 822)
     headline("Make every key yours.", top: 866)
+case "keyboard":
+    kicker("04", "FLOATING KEYBOARD", top: 822)
+    headline("Floats above your work.", top: 866)
 case "settings":
     kicker("03", "SETTINGS", top: 822)
     headline("Native, calm, organized.", top: 866)
