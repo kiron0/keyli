@@ -29,6 +29,7 @@ All notable changes to Keyli will be documented in this file.
 
 - **Stuck key sounds**: a key no longer goes silent after a missed key release, such as when Secure Input turns on or the keyboard closes mid-press.
 - **Audio device changes**: key sounds come back right away after switching speakers or headphones.
+- **ISO Return key**: the ISO layout now has a real L-shaped Return key with its label in the top part, a full-width caps lock, and the key beside Return in the right place.
 - **Window buttons on the keyboard**: locking the keyboard's position no longer brings back the macOS close, minimize and zoom buttons. The lock now only blocks moving and resizing.
 - **Smooth pack installs**: installing a pack from Browse Packs no longer freezes Settings while the pack is unpacked and checked.
 - **Rare crash on layout refresh**: reading the current input source from two places at once could crash Keyli. It's now serialized.

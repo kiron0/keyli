@@ -162,4 +162,24 @@ struct LayoutTests {
         let uniqueIds = Set(ids)
         #expect(ids.count == uniqueIds.count)
     }
+
+    @Test("ISO Return Is An L-Shaped Key Beside The Backslash Key")
+    func testISOReturnShape() throws {
+        let layout = KeyboardLayoutManager.shared.generateLayout(geometry: .iso)
+        let returnKey = try #require(layout.keys.first { $0.id == "k_return" })
+        let backslash = try #require(layout.keys.first { $0.id == "k_42" })
+        let caps = try #require(layout.keys.first { $0.id == "k_caps" })
+        let rightBracket = try #require(layout.keys.first { $0.id == "k_30" })
+        #expect(returnKey.topLeftExtension == 0.25)
+        #expect(abs(returnKey.unitFrame.x - returnKey.topLeftExtension! - (rightBracket.unitFrame.x + rightBracket.unitFrame.width)) < 0.001)
+        #expect(abs(backslash.unitFrame.x + backslash.unitFrame.width - returnKey.unitFrame.x) < 0.001)
+        #expect(caps.unitFrame.width == 1.75)
+
+        let geometry = KeyboardGeometry(layout: layout, size: CGSize(width: 1500, height: 650), spacing: 0)
+        let unit = 1500.0 / layout.unitWidth
+        let extensionPoint = CGPoint(x: (returnKey.unitFrame.x - 0.1) * unit, y: (returnKey.unitFrame.y + 0.5) * 100)
+        #expect(geometry.key(at: extensionPoint)?.id == "k_return")
+        let notchPoint = CGPoint(x: (returnKey.unitFrame.x - 0.1) * unit, y: (returnKey.unitFrame.y + 1.6) * 100)
+        #expect(geometry.key(at: notchPoint)?.id == "k_42")
+    }
 }

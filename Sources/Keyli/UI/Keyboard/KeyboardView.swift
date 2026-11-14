@@ -54,7 +54,12 @@ public struct KeyboardGeometry {
     }
 
     public func key(at point: CGPoint) -> KeyboardKey? {
-        layout.keys.first { frame(for: $0).contains(point) }
+        layout.keys.first { key in
+            let rect = frame(for: key)
+            if rect.contains(point) { return true }
+            guard let extensionRect = KeyboardRenderer.extensionRect(for: key, in: rect) else { return false }
+            return extensionRect.contains(point)
+        }
     }
 }
 
@@ -295,6 +300,35 @@ struct KeyboardRenderer {
         }
     }
 
+    static func extensionWidth(for key: KeyboardKey, in rect: CGRect) -> CGFloat {
+        guard let ext = key.topLeftExtension, ext > 0, key.unitFrame.width > 0 else { return 0 }
+        return rect.width / CGFloat(key.unitFrame.width) * CGFloat(ext)
+    }
+
+    static func topPartHeight(for key: KeyboardKey, in rect: CGRect) -> CGFloat {
+        rect.height * CGFloat(1.0 / max(1.0, key.unitFrame.height))
+    }
+
+    static func extensionRect(for key: KeyboardKey, in rect: CGRect) -> CGRect? {
+        let width = extensionWidth(for: key, in: rect)
+        guard width > 0 else { return nil }
+        return CGRect(x: rect.minX - width, y: rect.minY, width: width, height: topPartHeight(for: key, in: rect))
+    }
+
+    static func labelRect(for key: KeyboardKey, in rect: CGRect) -> CGRect {
+        let width = extensionWidth(for: key, in: rect)
+        guard width > 0 else { return rect }
+        return CGRect(x: rect.minX - width, y: rect.minY, width: rect.width + width, height: topPartHeight(for: key, in: rect))
+    }
+
+    static func shape(for key: KeyboardKey, in rect: CGRect, radius: CGFloat) -> Path {
+        let body = Path(roundedRect: rect, cornerRadius: radius, style: .continuous)
+        let width = extensionWidth(for: key, in: rect)
+        guard width > 0 else { return body }
+        let top = Path(roundedRect: labelRect(for: key, in: rect), cornerRadius: radius, style: .continuous)
+        return Path(body.cgPath.union(top.cgPath))
+    }
+
     func draw(key: KeyboardKey, in baseRect: CGRect, context: GraphicsContext) {
         let isLocalPressed = localPressedKeyId == key.id
         let isPhysicallyPressed = virtualKeyId == key.id || physicalKeyCodes.contains(key.keyCode)
@@ -326,18 +360,18 @@ struct KeyboardRenderer {
         let fill: Color = isDown ? (showsAccentTint ? accent.opacity(0.35) : active) : (isHovered ? base.opacity(0.85) : base)
         let strokeColor = isDown ? accent : (isHovered ? accent.opacity(0.5) : border)
 
-        let shape = Path(roundedRect: rect, cornerRadius: radius, style: .continuous)
+        let shape = Self.shape(for: key, in: rect, radius: radius)
 
         func strokeBorder(_ shading: GraphicsContext.Shading, width: CGFloat) {
             guard width > 0 else { return }
             let inset = rect.insetBy(dx: width / 2, dy: width / 2)
-            let path = Path(roundedRect: inset, cornerRadius: max(0, radius - width / 2), style: .continuous)
+            let path = Self.shape(for: key, in: inset, radius: max(0, radius - width / 2))
             context.stroke(path, with: shading, lineWidth: width)
         }
 
         switch theme.keycapStyle {
         case .raised:
-            let plate = Path(roundedRect: rect.offsetBy(dx: 0, dy: isDown ? 0 : max(1, elevation * 0.8)), cornerRadius: radius, style: .continuous)
+            let plate = Self.shape(for: key, in: rect.offsetBy(dx: 0, dy: isDown ? 0 : max(1, elevation * 0.8)), radius: radius)
             context.fill(plate, with: .color(Color.black.opacity(0.35)))
             context.fill(shape, with: .color(fill))
             context.fill(shape, with: .linearGradient(
@@ -382,7 +416,7 @@ struct KeyboardRenderer {
 
         case .chicklet:
             if elevation > 0 {
-                let plate = Path(roundedRect: rect.offsetBy(dx: 0, dy: isDown ? 0.5 : max(0.5, elevation * 0.6)), cornerRadius: radius, style: .continuous)
+                let plate = Self.shape(for: key, in: rect.offsetBy(dx: 0, dy: isDown ? 0.5 : max(0.5, elevation * 0.6)), radius: radius)
                 context.fill(plate, with: .color(Color.black.opacity(isDown ? 0.06 : 0.22)))
             }
             context.fill(shape, with: .color(fill))
@@ -452,7 +486,8 @@ struct KeyboardRenderer {
         return shift != key.labels.defaultLabel
     }
 
-    private func drawLabel(key: KeyboardKey, rect: CGRect, isDown: Bool, textColor: Color, context: GraphicsContext) {
+    private func drawLabel(key: KeyboardKey, rect keyRect: CGRect, isDown: Bool, textColor: Color, context: GraphicsContext) {
+        let rect = Self.labelRect(for: key, in: keyRect)
         let center = CGPoint(x: rect.midX, y: rect.midY)
         let maxWidth = rect.width * 0.9
 
