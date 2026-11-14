@@ -20,10 +20,15 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
 
     private init() {}
 
+    public var needsEventTap: Bool {
+        let config = ConfigStore.shared.config
+        return (config.isPhysicalMonitoringEnabled && hasVisibleKeyboard)
+            || (config.playKeyClickSound && config.keySoundsForPhysicalTyping)
+    }
+
     public func refresh() {
         let oldIsRunningForRefresh = isRunning
-        let shouldRun = ConfigStore.shared.config.isPhysicalMonitoringEnabled
-            && hasVisibleKeyboard
+        let shouldRun = needsEventTap
 
         if shouldRun {
             start()
@@ -58,6 +63,7 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
                     CGEvent.tapEnable(tap: tap, enable: true)
                 }
                 monitor.clearPressedKeys()
+                KeySoundEngine.shared.releaseAll(source: .physical)
                 return Unmanaged.passUnretained(event)
             }
 
@@ -99,6 +105,7 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
         self.runLoopSource = nil
         self.isRunning = false
         clearPressedKeys()
+        KeySoundEngine.shared.releaseAll(source: .physical)
     }
 
     public func clearPressedKeys() {
@@ -115,6 +122,9 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
         let available = state.availableKeyCodes
 
         if type.rawValue == PhysicalKeyMap.systemDefinedEventType {
+            if isRunning && !(hasVisibleKeyboard && ConfigStore.shared.config.isPhysicalMonitoringEnabled) {
+                return
+            }
             guard let nsEvent = NSEvent(cgEvent: event),
                   nsEvent.subtype.rawValue == PhysicalKeyMap.auxControlButtonsSubtype,
                   let media = PhysicalKeyMap.mediaKeyCode(forData1: nsEvent.data1),
@@ -126,6 +136,14 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
         }
 
         let rawKeyCode = UInt16(truncatingIfNeeded: event.getIntegerValueField(.keyboardEventKeycode))
+
+        if isRunning && ConfigStore.shared.config.keySoundsForPhysicalTyping {
+            playSound(type: type, event: event, keyCode: rawKeyCode)
+        }
+
+        if isRunning && !(hasVisibleKeyboard && ConfigStore.shared.config.isPhysicalMonitoringEnabled) {
+            return
+        }
 
         switch type {
         case .keyDown, .keyUp:
@@ -143,6 +161,28 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
             guard let isDown = PhysicalKeyMap.isModifierDown(keyCode: rawKeyCode, flags: flags),
                   let keyCode = PhysicalKeyMap.displayKeyCode(for: rawKeyCode, availableKeyCodes: available) else { return }
             setPressed(keyCode, isDown, state: state)
+        default:
+            break
+        }
+    }
+
+    private func playSound(type: CGEventType, event: CGEvent, keyCode: UInt16) {
+        let sounds = KeySoundEngine.shared
+        switch type {
+        case .keyDown:
+            sounds.keyDown(keyCode, source: .physical, isRepeat: event.getIntegerValueField(.keyboardEventAutorepeat) != 0)
+        case .keyUp:
+            sounds.keyUp(keyCode, source: .physical)
+        case .flagsChanged:
+            if keyCode == 57 {
+                sounds.tap(keyCode, source: .physical)
+            } else if let isDown = PhysicalKeyMap.isModifierDown(keyCode: keyCode, flags: event.flags) {
+                if isDown {
+                    sounds.keyDown(keyCode, source: .physical)
+                } else {
+                    sounds.keyUp(keyCode, source: .physical)
+                }
+            }
         default:
             break
         }

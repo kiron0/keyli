@@ -8,6 +8,8 @@ public final class StatusItemController: NSObject {
     private var statusItem: NSStatusItem?
     private var updateObservers = Set<AnyCancellable>()
     private var showsUpdateBadge = false
+    private var iconCache: [String: NSImage] = [:]
+    private var iconCacheSources: [InputSourceOption] = []
 
     private override init() {
         super.init()
@@ -113,7 +115,13 @@ public final class StatusItemController: NSObject {
         let service = InputSourceService.shared
         let current = service.sources.first { $0.id == service.currentId }
         if let current {
-            button.image = service.icon(for: current.id) ?? Self.letterBadge(current.name)
+            if iconCacheSources != service.sources {
+                iconCacheSources = service.sources
+                iconCache.removeAll()
+            }
+            let image = iconCache[current.id] ?? service.icon(for: current.id) ?? Self.letterBadge(current.name)
+            iconCache[current.id] = image
+            button.image = image
         } else {
             let image = NSImage(systemSymbolName: isKeyboardVisible ? "keyboard.fill" : "keyboard", accessibilityDescription: "Keyli")
             image?.isTemplate = true

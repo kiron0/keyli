@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 public struct TypingTabView: View {
     @ObservedObject public var configStore: ConfigStore = .shared
@@ -22,8 +23,6 @@ public struct TypingTabView: View {
                 detail: "Uses the key repeat speed from System Settings › Keyboard.",
                 isOn: $configStore.config.keyRepeatEnabled
             )
-
-            SettingsToggle("Play sound on key press", isOn: $configStore.config.playKeyClickSound)
 
             SettingsSliderRow(
                 "Key press duration",

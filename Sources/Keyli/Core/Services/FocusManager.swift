@@ -56,14 +56,18 @@ public final class FocusManager: ObservableObject {
             KeyboardState.shared.dispatchIssue = nil
         }
 
-        self.targetApplication = app
-        self.targetAppName = app.localizedName ?? "Active App"
-        self.targetAppIcon = app.icon
-        self.targetPID = app.processIdentifier
+        let name = app.localizedName ?? "Active App"
+        let bundleId = app.bundleIdentifier ?? ""
+        let isSameApp = targetPID == app.processIdentifier && targetApplication != nil
+        targetApplication = app
+        if targetAppName != name { targetAppName = name }
+        if targetPID != app.processIdentifier { targetPID = app.processIdentifier }
+        if !isSameApp { targetAppIcon = app.icon }
 
-        KeyboardState.shared.targetAppName = self.targetAppName
-        KeyboardState.shared.targetAppBundleId = app.bundleIdentifier ?? ""
-        KeyboardState.shared.targetAppIcon = self.targetAppIcon
+        let state = KeyboardState.shared
+        if state.targetAppName != name { state.targetAppName = name }
+        if state.targetAppBundleId != bundleId { state.targetAppBundleId = bundleId }
+        if !isSameApp { state.targetAppIcon = targetAppIcon }
     }
 
     public var isTargetValid: Bool {

@@ -12,6 +12,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         KeyboardCoordinator.shared.start()
+        KeySoundEngine.shared.activate()
+        ShortcutManager.shared.start()
+        PhysicalKeyboardMonitor.shared.refresh()
         StatusItemController.shared.setup()
         UpdateNotifier.installDelegate()
         UpdateChecker.shared.startAutomaticChecks()
