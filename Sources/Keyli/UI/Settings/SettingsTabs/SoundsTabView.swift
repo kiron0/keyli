@@ -19,6 +19,16 @@ public struct SoundsTabView: View {
                 isOn: $configStore.config.playKeyClickSound
             )
 
+            soundOptions
+                .disabled(!configStore.config.playKeyClickSound)
+        }
+        .onChange(of: configStore.config.playKeyClickSound, initial: true) { _, enabled in
+            catalog.setFetchingEnabled(enabled)
+        }
+    }
+
+    private var soundControls: some View {
+        VStack(alignment: .leading, spacing: 6) {
             SettingsRow {
                 Text("Sound pack")
                     .font(.system(size: 12, weight: .medium))
@@ -37,7 +47,6 @@ public struct SoundsTabView: View {
                     KeySoundEngine.shared.preview()
                 }
                 .buttonStyle(SettingsSecondaryButtonStyle())
-                .disabled(!configStore.config.playKeyClickSound)
             }
 
             SettingsSliderRow(
@@ -118,7 +127,46 @@ public struct SoundsTabView: View {
             .padding(.leading, 33)
             .padding(.trailing, 10)
             .padding(.bottom, 4)
+        }
+    }
 
+    private var soundOptions: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            soundControls
+                .opacity(configStore.config.playKeyClickSound ? 1 : 0.45)
+
+            if configStore.config.playKeyClickSound {
+                catalogResults
+            } else {
+                VStack(spacing: 6) {
+                    Image(systemName: "speaker.slash")
+                        .font(.system(size: 24))
+                        .foregroundStyle(Color.secondary)
+                        .accessibilityHidden(true)
+                    Text("Key sounds are off")
+                        .font(.system(size: 12, weight: .medium))
+                    Text("Turn on “Play keycap sounds” to browse sound packs.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, minHeight: 160)
+                .padding(.leading, 33)
+                .padding(.trailing, 10)
+                .accessibilityElement(children: .combine)
+            }
+
+            Text("Community packs and the pack format by Mechvibes (mechvibes.com). Each pack keeps its maker's license.")
+                .font(.system(size: 10))
+                .foregroundStyle(Color.secondary.opacity(0.8))
+                .padding(.leading, 33)
+                .padding(.top, 8)
+        }
+    }
+
+    private var catalogResults: some View {
+        VStack(alignment: .leading, spacing: 6) {
             if let error = catalog.errorMessage {
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
@@ -170,14 +218,7 @@ public struct SoundsTabView: View {
                 Spacer()
             }
             .padding(.top, 6)
-
-            Text("Community packs and the pack format by Mechvibes (mechvibes.com). Each pack keeps its maker's license.")
-                .font(.system(size: 10))
-                .foregroundStyle(Color.secondary.opacity(0.8))
-                .padding(.leading, 33)
-                .padding(.top, 8)
         }
-        .onAppear { catalog.loadIfNeeded() }
     }
 
     private func catalogRow(_ pack: CatalogPack, installed: SoundPackInfo?, selectedId: String?) -> some View {
