@@ -60,9 +60,17 @@ Turn on keycap sounds in **Settings › Sounds**. Every key plays its own press 
 
 **Browse Packs** searches the community catalog at [mechvibes.com](https://mechvibes.com) and installs a pack in one click, with checksum verification. Packs in the Mechvibes format can also be imported as a `.zip` or a folder with `config.json`. Each community pack keeps its maker's license.
 
+<p align="center">
+  <img src="Support/Screenshots/sounds.jpg" width="100%" alt="Keyli Settings on the Sounds page with a sound pack selected, volume, physical keyboard sounds and Browse Packs" />
+</p>
+
 ## Shortcuts
 
 **Settings › Shortcuts** lists every action you can trigger from anywhere: show or hide the keyboard, keep on top, lock position, key highlighting, next input source, Emoji & Symbols, key sounds, next sound pack, next theme, Settings, Theme Studio and update checks. Click a shortcut to record it; Keyli warns about conflicts.
+
+<p align="center">
+  <img src="Support/Screenshots/shortcuts.jpg" width="100%" alt="Keyli Settings on the Shortcuts page with global shortcuts for keyboard, typing and sound actions" />
+</p>
 
 ## Settings
 

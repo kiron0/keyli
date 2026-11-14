@@ -114,6 +114,12 @@ case "keyboard":
 case "settings":
     kicker("03", "SETTINGS", top: 822)
     headline("Native, calm, organized.", top: 866)
+case "sounds":
+    kicker("05", "KEY SOUNDS", top: 822)
+    headline("Hear every key you press.", top: 866)
+case "shortcuts":
+    kicker("06", "SHORTCUTS", top: 822)
+    headline("Every action, one keystroke.", top: 866)
 default:
     break
 }
