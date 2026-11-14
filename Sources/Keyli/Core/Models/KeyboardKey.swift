@@ -74,6 +74,7 @@ public struct KeyboardKey: Identifiable, Codable, Equatable {
     public var labels: KeyLabels
     public var symbolIcon: String?
     public var systemAction: KeySystemAction?
+    public var topLeftExtension: Double?
 
     public init(
         id: String,
@@ -83,7 +84,8 @@ public struct KeyboardKey: Identifiable, Codable, Equatable {
         unitFrame: KeyUnitFrame,
         labels: KeyLabels,
         symbolIcon: String? = nil,
-        systemAction: KeySystemAction? = nil
+        systemAction: KeySystemAction? = nil,
+        topLeftExtension: Double? = nil
     ) {
         self.id = id
         self.keyCode = keyCode
@@ -93,6 +95,7 @@ public struct KeyboardKey: Identifiable, Codable, Equatable {
         self.labels = labels
         self.symbolIcon = symbolIcon
         self.systemAction = systemAction
+        self.topLeftExtension = topLeftExtension
     }
 
     public func displayedLabel(shift: Bool, option: Bool, capsLock: Bool = false) -> String {
