@@ -42,11 +42,21 @@ public struct FloatingKeyboardContainerView: View {
                     Spacer()
 
                     KeyboardChromeButton(
-                        systemImage: configStore.config.isFloatingPinned ? "pin.fill" : "pin.slash",
+                        systemImage: configStore.config.isFloatingPositionLocked ? "lock.fill" : "lock.open",
+                        tint: textColor,
+                        help: configStore.config.isFloatingPositionLocked
+                            ? "Position locked: the keyboard can't be moved or resized. Click to unlock."
+                            : "Lock position: keep the keyboard where it is so it can't be moved or resized by accident."
+                    ) {
+                        configStore.config.isFloatingPositionLocked.toggle()
+                    }
+
+                    KeyboardChromeButton(
+                        systemImage: configStore.config.isFloatingPinned ? "macwindow.on.rectangle" : "macwindow",
                         tint: textColor,
                         help: configStore.config.isFloatingPinned
-                            ? "Pinned: stays above other windows. Click to let other windows cover it."
-                            : "Not pinned: other windows can cover the keyboard. Click to keep it on top."
+                            ? "Keep on top is on: the keyboard stays above other windows. Click to let windows cover it."
+                            : "Keep on top is off: other windows can cover the keyboard. Click to keep it above them."
                     ) {
                         configStore.config.isFloatingPinned.toggle()
                     }

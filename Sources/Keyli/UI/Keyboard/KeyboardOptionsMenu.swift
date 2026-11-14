@@ -39,6 +39,7 @@ public struct KeyboardOptionsMenuItems: View {
             .pickerStyle(.menu)
 
             Toggle("Keep on Top", isOn: $configStore.config.isFloatingPinned)
+            Toggle("Lock Position", isOn: $configStore.config.isFloatingPositionLocked)
         }
 
         Toggle("Highlight Physical Keys", isOn: $configStore.config.isPhysicalMonitoringEnabled)

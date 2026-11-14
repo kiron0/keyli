@@ -202,15 +202,10 @@ public struct AboutTabView: View {
             Spacer(minLength: 8)
 
             VStack(alignment: .trailing, spacing: 8) {
-                Button("Show Keyboard") {
-                    PanelManager.shared.showFloatingKeyboard()
-                }
-                .buttonStyle(SettingsPrimaryButtonStyle())
-
                 Button(updateChecker.isChecking ? "Checking…" : "Check for Updates") {
                     Task { await updateChecker.checkForUpdates(isUserInitiated: true) }
                 }
-                .buttonStyle(SettingsSecondaryButtonStyle())
+                .buttonStyle(SettingsPrimaryButtonStyle())
                 .disabled(updateChecker.isChecking)
             }
         }

@@ -12,8 +12,14 @@ All notable changes to Keyli will be documented in this file.
 - **Browse Packs**: search and install community packs from inside Keyli, sorted by Top Rated, Most Downloaded or Newest. Downloads are checksum-verified, and installed packs can be previewed before you use them.
 - **Shortcuts**: a new Shortcuts page with global shortcuts for showing the keyboard, keep on top, physical key highlighting, input sources, Emoji & Symbols, key sounds, next sound pack, next theme, Settings, Theme Studio and update checks.
 - **Input source menu**: the menu bar icon shows your current input source and lists your input sources, with Emoji & Symbols and Open Keyboard Settings.
+- **Lock Position**: a lock button on the keyboard, a toggle in the keyboard menu and Settings › Keyboard, and a shortcut keep the keyboard from being moved or resized. Keep on Top now has its own window icon so the two are no longer confused.
+- **Sounds in Setup Assistant**: a new Sounds step to turn on keycap sounds, pick a pack, set the volume and preview it.
 
 ### Changed
+
+- **Emoji & Symbols opens natively**: Keyli now opens the Emoji & Symbols item from the menu of the app you're typing in, which is faster and works whatever your Globe key or shortcut settings are. It falls back to the keyboard shortcut only for apps without that menu item.
+- **Simpler menu bar menu**: items read Show Keyboard, Settings…, Emoji & Symbols and Quit.
+- **Search when you're ready**: Browse Packs searches when you press Return or click the Search button next to the field, and more packs appear as you scroll. The Mechvibes credit now sits at the top of the list.
 
 - **Faster pack browsing**: results are cached, search runs as you type, more packs load as you scroll, and requests are paced so the catalog is never flooded.
 - **Lighter background typing**: when key sounds are on but the keyboard is hidden, Keyli no longer redraws the keyboard for every key you type, and switching apps only refreshes what changed.
@@ -23,6 +29,8 @@ All notable changes to Keyli will be documented in this file.
 
 - **Stuck key sounds**: a key no longer goes silent after a missed key release, such as when Secure Input turns on or the keyboard closes mid-press.
 - **Audio device changes**: key sounds come back right away after switching speakers or headphones.
+- **Window buttons on the keyboard**: locking the keyboard's position no longer brings back the macOS close, minimize and zoom buttons. The lock now only blocks moving and resizing.
+- **Smooth pack installs**: installing a pack from Browse Packs no longer freezes Settings while the pack is unpacked and checked.
 - **Rare crash on layout refresh**: reading the current input source from two places at once could crash Keyli. It's now serialized.
 
 ## 1.0.0

@@ -4,6 +4,7 @@ import Carbon
 public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
     case toggleKeyboard
     case togglePin
+    case togglePositionLock
     case togglePhysicalHighlight
     case nextInputSource
     case showEmojiAndSymbols
@@ -34,7 +35,7 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
 
     public var group: Group {
         switch self {
-        case .toggleKeyboard, .togglePin, .togglePhysicalHighlight: return .window
+        case .toggleKeyboard, .togglePin, .togglePositionLock, .togglePhysicalHighlight: return .window
         case .nextInputSource, .showEmojiAndSymbols: return .typing
         case .toggleKeySounds, .nextSoundPack: return .sounds
         case .nextTheme, .openSettings, .openThemeStudio, .checkForUpdates: return .app
@@ -45,6 +46,7 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
         switch self {
         case .toggleKeyboard: return "Show or Hide Keyboard"
         case .togglePin: return "Keep Keyboard on Top"
+        case .togglePositionLock: return "Lock Keyboard Position"
         case .togglePhysicalHighlight: return "Highlight Physical Keys"
         case .nextInputSource: return "Next Input Source"
         case .showEmojiAndSymbols: return "Emoji & Symbols"
@@ -61,6 +63,7 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
         switch self {
         case .toggleKeyboard: return "Bring the floating keyboard up from anywhere."
         case .togglePin: return "Switch between floating above windows and normal."
+        case .togglePositionLock: return "Stop or allow moving and resizing the keyboard."
         case .togglePhysicalHighlight: return "Light up keys as you type on your Mac's keyboard."
         case .nextInputSource: return "Cycle through your keyboard input sources."
         case .showEmojiAndSymbols: return "Open the system character viewer."
@@ -76,7 +79,8 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
     public var symbol: String {
         switch self {
         case .toggleKeyboard: return "keyboard"
-        case .togglePin: return "pin"
+        case .togglePin: return "macwindow.on.rectangle"
+        case .togglePositionLock: return "lock"
         case .togglePhysicalHighlight: return "light.max"
         case .nextInputSource: return "globe"
         case .showEmojiAndSymbols: return "face.smiling"
@@ -286,6 +290,8 @@ public final class ShortcutManager: ObservableObject {
             PanelManager.shared.toggleFloatingKeyboard()
         case .togglePin:
             store.config.isFloatingPinned.toggle()
+        case .togglePositionLock:
+            store.config.isFloatingPositionLocked.toggle()
         case .togglePhysicalHighlight:
             store.config.isPhysicalMonitoringEnabled.toggle()
         case .nextInputSource:

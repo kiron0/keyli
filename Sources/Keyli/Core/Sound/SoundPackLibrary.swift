@@ -169,10 +169,11 @@ public final class SoundPackLibrary: ObservableObject {
         try Self.validateAudio(manifest, in: folder, sourceName: sourceName)
 
         var id = manifest.id
-        if packs.contains(where: { $0.id == id && $0.isBundled }) {
+        let current = onMain { packs }
+        if current.contains(where: { $0.id == id && $0.isBundled }) {
             id += "-imported"
         }
-        let existing = packs.first { $0.id == id && !$0.isBundled }
+        let existing = current.first { $0.id == id && !$0.isBundled }
         try fileManager.createDirectory(at: userRoot, withIntermediateDirectories: true)
 
         let baseName = SoundPackManifest.folderName(for: manifest.name)
@@ -200,8 +201,18 @@ public final class SoundPackLibrary: ObservableObject {
             }
         }
 
-        reload()
-        return packs.first { $0.id == id } ?? SoundPackInfo(id: id, name: manifest.name, author: manifest.author, folder: destination, isBundled: false)
+        let refreshed = onMain { () -> [SoundPackInfo] in
+            reload()
+            return packs
+        }
+        return refreshed.first { $0.id == id } ?? SoundPackInfo(id: id, name: manifest.name, author: manifest.author, folder: destination, isBundled: false)
+    }
+
+    private func onMain<T>(_ body: () throws -> T) rethrows -> T {
+        if Thread.isMainThread {
+            return try body()
+        }
+        return try DispatchQueue.main.sync(execute: body)
     }
 
     public func removePack(id: String) throws {

@@ -85,7 +85,14 @@ public struct SoundsTabView: View {
 
             SettingsSectionHeader(title: "Browse Packs", symbol: "square.and.arrow.down")
 
+            Text("Community sound packs from Mechvibes (mechvibes.com). Each pack keeps its maker's license.")
+                .font(.system(size: 10.5))
+                .foregroundStyle(Color.secondary)
+                .padding(.leading, 33)
+                .padding(.bottom, 2)
+
             HStack(spacing: 8) {
+            HStack(spacing: 0) {
                 HStack(spacing: 6) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 11, weight: .medium))
@@ -108,20 +115,37 @@ public struct SoundsTabView: View {
                         .accessibilityLabel("Clear search")
                     }
                 }
-                .padding(.horizontal, 10)
+                .padding(.leading, 10)
+                .padding(.trailing, 6)
                 .frame(height: 30)
                 .frame(maxWidth: .infinity)
-                .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)
-                )
+                .background(Color.primary.opacity(0.045))
+
+                Button {
+                    catalog.reload()
+                } label: {
+                    Text("Search")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(KeyliChrome.onAccent)
+                        .padding(.horizontal, 14)
+                        .frame(height: 30)
+                        .background(KeyliChrome.accent)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Search packs")
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.primary.opacity(0.09), lineWidth: 0.5)
+            )
 
                 SettingsMenuPicker(
                     "Sort packs",
                     selection: $catalog.sort,
                     options: CatalogSort.allCases.map { SettingsMenuOption($0, $0.title) },
-                    width: 170
+                    width: 150
                 )
             }
             .padding(.leading, 33)
@@ -156,12 +180,6 @@ public struct SoundsTabView: View {
                 .padding(.trailing, 10)
                 .accessibilityElement(children: .combine)
             }
-
-            Text("Community packs and the pack format by Mechvibes (mechvibes.com). Each pack keeps its maker's license.")
-                .font(.system(size: 10))
-                .foregroundStyle(Color.secondary.opacity(0.8))
-                .padding(.leading, 33)
-                .padding(.top, 8)
         }
     }
 
@@ -207,9 +225,6 @@ public struct SoundsTabView: View {
                 if catalog.isLoading {
                     ProgressView()
                         .controlSize(.small)
-                } else if catalog.hasMore {
-                    Button("Load More") { catalog.loadMore() }
-                        .buttonStyle(SettingsSecondaryButtonStyle())
                 } else if catalog.packs.isEmpty && catalog.errorMessage == nil {
                     Text("No packs found.")
                         .font(.system(size: 11))

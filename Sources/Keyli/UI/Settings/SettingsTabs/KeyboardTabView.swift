@@ -18,7 +18,17 @@ public struct KeyboardTabView: View {
                 isOn: $configStore.config.isFloatingVisible
             )
 
-            SettingsToggle("Keep on top of other windows", isOn: $configStore.config.isFloatingPinned)
+            SettingsToggle(
+                "Keep on top of other windows",
+                detail: "Other windows can't cover the keyboard.",
+                isOn: $configStore.config.isFloatingPinned
+            )
+
+            SettingsToggle(
+                "Lock keyboard position",
+                detail: "The keyboard can't be moved or resized until you unlock it.",
+                isOn: $configStore.config.isFloatingPositionLocked
+            )
 
             SettingsSliderRow(
                 "Opacity",
