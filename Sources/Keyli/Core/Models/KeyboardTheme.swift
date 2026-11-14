@@ -1135,6 +1135,182 @@ extension KeyboardTheme {
         fontDesign: "rounded"
     )
 
+    public static let kiln = KeyboardTheme(
+        id: "kiln",
+        name: "Kiln",
+        isBuiltIn: true,
+        backgroundColorHex: "#B9583A",
+        backgroundOpacity: 0.94,
+        backgroundBlur: true,
+        keycapBaseColorHex: "#D0704D",
+        keycapActiveColorHex: "#FBE3C8",
+        keycapTextColorHex: "#3A140A",
+        accentColorHex: "#FBE3C8",
+        modifierKeyColorHex: "#C4643F",
+        cornerRadius: 6.0,
+        keySpacing: 4.0,
+        borderWidth: 1.0,
+        borderColorHex: "#3A140A",
+        borderOpacity: 0.18,
+        keyElevation: 1.5,
+        keycapStyle: .raised,
+        fontDesign: "rounded"
+    )
+
+    public static let concrete = KeyboardTheme(
+        id: "concrete",
+        name: "Concrete",
+        isBuiltIn: true,
+        backgroundColorHex: "#8E8E88",
+        backgroundOpacity: 0.96,
+        backgroundBlur: false,
+        keycapBaseColorHex: "#B4B4AD",
+        keycapActiveColorHex: "#FFA36B",
+        keycapTextColorHex: "#1A1A1A",
+        accentColorHex: "#FFA36B",
+        modifierKeyColorHex: "#A3A39C",
+        cornerRadius: 0.0,
+        keySpacing: 3.0,
+        borderWidth: 1.0,
+        borderColorHex: "#1A1A1A",
+        borderOpacity: 0.35,
+        keyElevation: 0.0,
+        keycapStyle: .flat,
+        fontDesign: "monospaced"
+    )
+
+    public static let oxblood = KeyboardTheme(
+        id: "oxblood",
+        name: "Oxblood",
+        isBuiltIn: true,
+        backgroundColorHex: "#2A0A10",
+        backgroundOpacity: 0.94,
+        backgroundBlur: true,
+        keycapBaseColorHex: "#4A1220",
+        keycapActiveColorHex: "#E8C46A",
+        keycapTextColorHex: "#F1E3C8",
+        accentColorHex: "#E8C46A",
+        modifierKeyColorHex: "#3B0E19",
+        cornerRadius: 5.0,
+        keySpacing: 4.0,
+        borderWidth: 1.0,
+        borderColorHex: "#E8C46A",
+        borderOpacity: 0.22,
+        keyElevation: 2.0,
+        keycapStyle: .raised,
+        fontDesign: "serif"
+    )
+
+    public static let risoPrint = KeyboardTheme(
+        id: "riso_print",
+        name: "Riso Print",
+        isBuiltIn: true,
+        backgroundColorHex: "#F2EBDD",
+        backgroundOpacity: 0.96,
+        backgroundBlur: false,
+        keycapBaseColorHex: "#FFF8EC",
+        keycapActiveColorHex: "#FFA0D6",
+        keycapTextColorHex: "#00786B",
+        accentColorHex: "#FFA0D6",
+        modifierKeyColorHex: "#F7EFDF",
+        cornerRadius: 2.0,
+        keySpacing: 4.0,
+        borderWidth: 1.5,
+        borderColorHex: "#00786B",
+        borderOpacity: 0.55,
+        keyElevation: 0.0,
+        keycapStyle: .flat,
+        fontDesign: "monospaced"
+    )
+
+    public static let oliveGrove = KeyboardTheme(
+        id: "olive_grove",
+        name: "Olive Grove",
+        isBuiltIn: true,
+        backgroundColorHex: "#3D3D1F",
+        backgroundOpacity: 0.93,
+        backgroundBlur: true,
+        keycapBaseColorHex: "#55552C",
+        keycapActiveColorHex: "#E5D36B",
+        keycapTextColorHex: "#F0EDD0",
+        accentColorHex: "#E5D36B",
+        modifierKeyColorHex: "#494925",
+        cornerRadius: 6.0,
+        keySpacing: 4.0,
+        borderWidth: 1.0,
+        borderColorHex: "#F0EDD0",
+        borderOpacity: 0.1,
+        keyElevation: 1.0,
+        keycapStyle: .chicklet,
+        fontDesign: "default"
+    )
+
+    public static let blacklight = KeyboardTheme(
+        id: "blacklight",
+        name: "Blacklight",
+        isBuiltIn: true,
+        backgroundColorHex: "#12001F",
+        backgroundOpacity: 0.94,
+        backgroundBlur: true,
+        keycapBaseColorHex: "#24003D",
+        keycapActiveColorHex: "#B6FF3B",
+        keycapTextColorHex: "#E9D7FF",
+        accentColorHex: "#B6FF3B",
+        modifierKeyColorHex: "#1B002E",
+        cornerRadius: 7.0,
+        keySpacing: 4.0,
+        borderWidth: 1.0,
+        borderColorHex: "#B6FF3B",
+        borderOpacity: 0.25,
+        keyElevation: 0.0,
+        keycapStyle: .glass,
+        fontDesign: "rounded"
+    )
+
+    public static let dune = KeyboardTheme(
+        id: "dune",
+        name: "Dune",
+        isBuiltIn: true,
+        backgroundColorHex: "#E8D2B0",
+        backgroundOpacity: 0.94,
+        backgroundBlur: true,
+        keycapBaseColorHex: "#F5E6CC",
+        keycapActiveColorHex: "#B5462F",
+        keycapTextColorHex: "#4A2E1A",
+        accentColorHex: "#B5462F",
+        modifierKeyColorHex: "#EEDBBC",
+        cornerRadius: 8.0,
+        keySpacing: 5.0,
+        borderWidth: 1.0,
+        borderColorHex: "#4A2E1A",
+        borderOpacity: 0.15,
+        keyElevation: 1.5,
+        keycapStyle: .chicklet,
+        fontDesign: "default"
+    )
+
+    public static let mustard = KeyboardTheme(
+        id: "mustard",
+        name: "Mustard",
+        isBuiltIn: true,
+        backgroundColorHex: "#E1A92B",
+        backgroundOpacity: 0.95,
+        backgroundBlur: false,
+        keycapBaseColorHex: "#F0C14F",
+        keycapActiveColorHex: "#2B1E05",
+        keycapTextColorHex: "#2B1E05",
+        accentColorHex: "#2B1E05",
+        modifierKeyColorHex: "#E8B43A",
+        cornerRadius: 4.0,
+        keySpacing: 4.0,
+        borderWidth: 1.0,
+        borderColorHex: "#2B1E05",
+        borderOpacity: 0.2,
+        keyElevation: 0.0,
+        keycapStyle: .fluent,
+        fontDesign: "rounded"
+    )
+
     public static let defaultTheme: KeyboardTheme = .emberGraphite
 
     public static let builtInThemes: [KeyboardTheme] = [
@@ -1158,6 +1334,14 @@ extension KeyboardTheme {
         .citrusTide,
         .wisteriaStream,
         .peachSorbet,
+        .kiln,
+        .concrete,
+        .oxblood,
+        .risoPrint,
+        .oliveGrove,
+        .blacklight,
+        .dune,
+        .mustard,
         .graphite,
         .silverAluminum,
         .spaceBlack,

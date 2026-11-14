@@ -80,7 +80,7 @@ case "hero":
     headline("Keep your focus.", top: 340, size: 66, color: amber)
     body("An on-screen keyboard that lives in your menu bar. Click a key and it lands in the app you’re using, which never loses focus.", top: 444, width: 600)
     var chipX = left
-    for label in ["44 themes", "Every Mac layout", "Private & offline", "macOS 14+"] {
+    for label in ["52 themes", "Every Mac layout", "Private & offline", "macOS 14+"] {
         let f = font("Onest-SemiBold", 17)
         let sz = NSAttributedString(string: label, attributes: [.font: f]).size()
         let r = NSRect(x: chipX, y: H - 590 - 40, width: sz.width + 32, height: 40)
@@ -104,7 +104,7 @@ case "hero":
     c("#E8A33D").setFill(); rounded(NSRect(x: doc.minX + 40 + last.width + 5, y: H - 90 - 154 - last.height + 1, width: 3, height: last.height - 2), 1.5).fill()
 case "themes":
     kicker("01", "THEMES", top: 822)
-    headline("44 looks. One click.", top: 866)
+    headline("52 looks. One click.", top: 866)
 case "studio":
     kicker("02", "THEME STUDIO", top: 822)
     headline("Make every key yours.", top: 866)

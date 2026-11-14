@@ -7,7 +7,7 @@ import SwiftUI
 struct ThemeTests {
     @Test("Built-in Themes Count and Presence")
     func testBuiltInThemesExist() {
-        #expect(KeyboardTheme.builtInThemes.count == 44)
+        #expect(KeyboardTheme.builtInThemes.count == 52)
         #expect(KeyboardTheme.basalt.keycapStyle == .fluent)
         #expect(KeyboardTheme.porcelain.keycapStyle == .fluent)
         #expect(KeyboardTheme.basalt.isDarkBackground)

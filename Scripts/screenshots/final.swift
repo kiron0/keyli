@@ -23,8 +23,8 @@ func paste(_ ctx: CGContext, _ src: CGImage, _ r: CGRect) {
 for (src, file) in [("cap_hero.png", "hero.jpg"), ("cap_settings.png", "settings.jpg"), ("cap_studio.png", "theme-studio.jpg")] {
     save(canvas(from: cg(src)), file)
 }
-let themes = canvas(from: cg("cap_theme_porcelain.png"))
-paste(themes, cg("cap_theme_classic_retro.png"), CGRect(x: 862, y: 125, width: 818, height: 467))
-paste(themes, cg("cap_theme_citrus_tide.png"), CGRect(x: 898, y: 509, width: 782, height: 425))
+let themes = canvas(from: cg("cap_theme_kiln.png"))
+paste(themes, cg("cap_theme_riso_print.png"), CGRect(x: 862, y: 125, width: 818, height: 467))
+paste(themes, cg("cap_theme_blacklight.png"), CGRect(x: 898, y: 509, width: 782, height: 425))
 save(themes, "themes.jpg")
 print("ok")

@@ -40,12 +40,12 @@
 - Click the menu bar icon to show or hide the keyboard. Pin it to keep it above other windows.
 
 <p align="center">
-  <img src="Support/Screenshots/themes.jpg" width="100%" alt="Three Keyli keyboards in the Porcelain, Classic Retro and Citrus Tide themes" />
+  <img src="Support/Screenshots/themes.jpg" width="100%" alt="Three Keyli keyboards in the Kiln, Riso Print and Blacklight themes" />
 </p>
 
 ## Themes
 
-44 built-in themes, from macOS-native and mechanical looks to flat Windows-inspired styles, retro terminals and glass. Theme Studio lets you duplicate any theme and change its colors, key style, font, spacing, borders and background, then export or import it as JSON.
+52 built-in themes, from macOS-native and mechanical looks to flat Windows-inspired styles, retro terminals, glass, and bolder palettes like Kiln, Riso Print, Blacklight and Mustard. Theme Studio lets you duplicate any theme and change its colors, key style, font, spacing, borders and background, then export or import it as JSON.
 
 <p align="center">
   <img src="Support/Screenshots/theme-studio.jpg" width="100%" alt="Theme Studio with the theme list, a live keyboard preview and color, key and surface controls" />
