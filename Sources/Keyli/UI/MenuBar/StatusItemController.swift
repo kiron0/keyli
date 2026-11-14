@@ -114,14 +114,54 @@ public final class StatusItemController: NSObject {
 
     @objc private func statusBarButtonClicked(_ sender: NSStatusBarButton) {
         let event = NSApp.currentEvent
-        let isSecondaryClick = event?.type == .rightMouseUp
-            || (event?.type == .leftMouseUp && event?.modifierFlags.contains(.control) == true)
+        let isQuickToggle = event?.type == .leftMouseUp && event?.modifierFlags.contains(.option) == true
 
-        if isSecondaryClick {
-            showContextMenu(sender)
-        } else {
+        if isQuickToggle {
             PanelManager.shared.toggleFloatingKeyboard()
+        } else {
+            showContextMenu(sender)
         }
+    }
+
+    private static func symbol(_ name: String) -> NSImage? {
+        let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)
+        image?.isTemplate = true
+        return image
+    }
+
+    private static func letterBadge(_ name: String) -> NSImage {
+        let letter = String(name.prefix(1)).uppercased()
+        let size = NSSize(width: 18, height: 16)
+        let image = NSImage(size: size, flipped: false) { rect in
+            let path = NSBezierPath(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), xRadius: 4, yRadius: 4)
+            NSColor.black.setFill()
+            path.fill()
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: 11, weight: .bold),
+                .foregroundColor: NSColor.black
+            ]
+            let text = NSAttributedString(string: letter, attributes: attributes)
+            let textSize = text.size()
+            NSGraphicsContext.current?.compositingOperation = .destinationOut
+            text.draw(at: NSPoint(x: (rect.width - textSize.width) / 2, y: (rect.height - textSize.height) / 2))
+            return true
+        }
+        image.isTemplate = true
+        return image
+    }
+
+    private func addInputSourceItems(to menu: NSMenu) {
+        let service = InputSourceService.shared
+        service.refresh()
+        guard !service.sources.isEmpty else { return }
+        for source in service.sources {
+            let item = NSMenuItem(title: source.name, action: #selector(selectInputSource(_:)), keyEquivalent: "")
+            item.representedObject = source.id
+            item.state = source.id == service.currentId ? .on : .off
+            item.image = service.icon(for: source.id) ?? Self.letterBadge(source.name)
+            menu.addItem(item)
+        }
+        menu.addItem(NSMenuItem.separator())
     }
 
     private func showContextMenu(_ sender: NSStatusBarButton) {
@@ -144,16 +184,41 @@ public final class StatusItemController: NSObject {
             menu.addItem(NSMenuItem.separator())
         }
 
-        let floatingTitle = PanelManager.shared.isFloatingVisible ? "Hide Keyboard" : "Show Keyboard"
-        menu.addItem(NSMenuItem(title: floatingTitle, action: #selector(toggleFloating), keyEquivalent: ""))
+        addInputSourceItems(to: menu)
+
+        let emojiItem = NSMenuItem(title: "Show Emoji & Symbols", action: #selector(showEmojiAndSymbols), keyEquivalent: " ")
+        emojiItem.keyEquivalentModifierMask = [.control, .command]
+        emojiItem.image = Self.symbol("face.smiling")
+        menu.addItem(emojiItem)
+
+        let isVisible = PanelManager.shared.isFloatingVisible
+        let keyboardItem = NSMenuItem(title: isVisible ? "Hide Keyli Keyboard" : "Show Keyli Keyboard", action: #selector(toggleFloating), keyEquivalent: "")
+        keyboardItem.image = Self.symbol(isVisible ? "keyboard.fill" : "keyboard")
+        keyboardItem.toolTip = "Tip: ⌥-click the menu bar icon to toggle the keyboard directly."
+        menu.addItem(keyboardItem)
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Theme Studio…", action: #selector(openThemeStudio), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: ","))
+
+        let studioItem = NSMenuItem(title: "Theme Studio…", action: #selector(openThemeStudio), keyEquivalent: "")
+        studioItem.image = Self.symbol("paintpalette")
+        menu.addItem(studioItem)
+        let settingsItem = NSMenuItem(title: "Keyli Settings…", action: #selector(openSettings), keyEquivalent: ",")
+        settingsItem.image = Self.symbol("gearshape")
+        menu.addItem(settingsItem)
         let setupPending = !PermissionsManager.shared.canType || !SetupAssistantModel.isCompleted()
-        menu.addItem(NSMenuItem(title: setupPending ? "Finish Setup…" : "Setup Assistant…", action: #selector(openSetup), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "u"))
+        let setupItem = NSMenuItem(title: setupPending ? "Finish Setup…" : "Setup Assistant…", action: #selector(openSetup), keyEquivalent: "")
+        setupItem.image = Self.symbol(setupPending ? "exclamationmark.circle" : "checklist")
+        menu.addItem(setupItem)
+        let updatesItem = NSMenuItem(title: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "u")
+        updatesItem.image = Self.symbol("arrow.triangle.2.circlepath")
+        menu.addItem(updatesItem)
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Quit Keyli", action: #selector(quitApp), keyEquivalent: "q"))
+
+        let systemItem = NSMenuItem(title: "Open Keyboard Settings…", action: #selector(openKeyboardSettings), keyEquivalent: "")
+        systemItem.image = Self.symbol("switch.2")
+        menu.addItem(systemItem)
+        let quitItem = NSMenuItem(title: "Quit Keyli", action: #selector(quitApp), keyEquivalent: "q")
+        quitItem.image = Self.symbol("power")
+        menu.addItem(quitItem)
 
         for item in menu.items {
             item.target = self
@@ -162,6 +227,19 @@ public final class StatusItemController: NSObject {
         statusItem?.menu = menu
         statusItem?.button?.performClick(nil)
         statusItem?.menu = nil
+    }
+
+    @objc private func selectInputSource(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String else { return }
+        InputSourceService.shared.select(id: id)
+    }
+
+    @objc private func showEmojiAndSymbols() {
+        InputSourceService.shared.showEmojiAndSymbols()
+    }
+
+    @objc private func openKeyboardSettings() {
+        InputSourceService.shared.openInputSourceSettings()
     }
 
     @objc private func toggleFloating() {

@@ -160,11 +160,7 @@ public final class KeyboardInputDispatcher {
             SoundService.shared.playModifierClick()
             return .latchedFn
         case .showedEmoji:
-            let shortcutState = KeyboardState()
-            shortcutState.isControlActive = true
-            shortcutState.isCommandActive = true
-            let space = KeyboardKey(id: "k_space", keyCode: 49, kind: .character, unitFrame: KeyUnitFrame(x: 0, y: 0), labels: KeyLabels(defaultLabel: " "))
-            dispatchKey(space, state: shortcutState)
+            showEmojiAndSymbols()
             if state.isFnActive { state.isFnActive = false }
             return outcome
         case .latchedFn:
@@ -172,6 +168,14 @@ public final class KeyboardInputDispatcher {
             SoundService.shared.playModifierClick()
             return outcome
         }
+    }
+
+    public func showEmojiAndSymbols() {
+        let shortcutState = KeyboardState()
+        shortcutState.isControlActive = true
+        shortcutState.isCommandActive = true
+        let space = KeyboardKey(id: "k_space", keyCode: 49, kind: .character, unitFrame: KeyUnitFrame(x: 0, y: 0), labels: KeyLabels(defaultLabel: " "))
+        dispatchKey(space, state: shortcutState)
     }
 
     @discardableResult

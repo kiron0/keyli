@@ -85,6 +85,32 @@ public final class InputSourceService: ObservableObject {
         return select(id: next.id)
     }
 
+    public func icon(for id: String) -> NSImage? {
+        guard let source = InputSourceService.enabledKeyboardSources().first(where: { InputSourceService.string($0, kTISPropertyInputSourceID) == id }) else {
+            return nil
+        }
+        if let pointer = TISGetInputSourceProperty(source, kTISPropertyIconImageURL) {
+            let url = Unmanaged<CFURL>.fromOpaque(pointer).takeUnretainedValue() as URL
+            if let image = NSImage(contentsOf: url) {
+                image.isTemplate = url.deletingPathExtension().lastPathComponent.hasSuffix("Template")
+                image.size = NSSize(width: 16, height: 16)
+                return image
+            }
+        }
+        if let pointer = TISGetInputSourceProperty(source, kTISPropertyIconRef) {
+            let image = NSImage(iconRef: OpaquePointer(pointer))
+            image.size = NSSize(width: 16, height: 16)
+            return image
+        }
+        return nil
+    }
+
+    public func showEmojiAndSymbols() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            KeyboardInputDispatcher.shared.showEmojiAndSymbols()
+        }
+    }
+
     public func openInputSourceSettings() {
         if let url = URL(string: "x-apple.systempreferences:com.apple.Keyboard-Settings.extension") {
             NSWorkspace.shared.open(url)
