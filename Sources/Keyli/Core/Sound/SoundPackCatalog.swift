@@ -110,6 +110,7 @@ public final class SoundPackCatalog: ObservableObject {
     }
 
     private var nextCursor: String?
+    private var isFetchingEnabled = false
     private var generation = 0
     private var loadedQuery = ""
     private var listTask: URLSessionDataTask?
@@ -193,6 +194,19 @@ public final class SoundPackCatalog: ObservableObject {
         "\(sort.rawValue)|\(query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())|\(cursor ?? "")"
     }
 
+    public func setFetchingEnabled(_ enabled: Bool) {
+        guard enabled != isFetchingEnabled else { return }
+        isFetchingEnabled = enabled
+        if enabled {
+            loadIfNeeded()
+        } else {
+            generation += 1
+            listTask?.cancel()
+            listTask = nil
+            isLoading = false
+        }
+    }
+
     public func loadIfNeeded() {
         if packs.isEmpty && !isLoading {
             reload()
@@ -200,6 +214,7 @@ public final class SoundPackCatalog: ObservableObject {
     }
 
     public func reload() {
+        guard isFetchingEnabled else { return }
         generation += 1
         listTask?.cancel()
         listTask = nil
@@ -224,7 +239,7 @@ public final class SoundPackCatalog: ObservableObject {
     }
 
     public func loadMore() {
-        guard hasMore, !isLoading, let nextCursor else { return }
+        guard isFetchingEnabled, hasMore, !isLoading, let nextCursor else { return }
         if let cached = pageCache[cacheKey(cursor: nextCursor)],
            Date().timeIntervalSince(cached.storedAt) < Self.cacheLifetime {
             append(cached.packs, cursor: cached.cursor)
@@ -246,7 +261,7 @@ public final class SoundPackCatalog: ObservableObject {
         let url = Self.listURL(sort: sort, query: query, cursor: cursor)
         let delay = pacer.reserve()
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-            guard let self, generation == self.generation else { return }
+            guard let self, self.isFetchingEnabled, generation == self.generation else { return }
             let task = self.session.dataTask(with: url) { [weak self] data, response, error in
                 let status = (response as? HTTPURLResponse)?.statusCode ?? 0
                 let retryAfter = (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Retry-After")
