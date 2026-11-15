@@ -19,15 +19,20 @@ public final class ThemeManager: ObservableObject {
     private var pendingWriteItem: DispatchWorkItem?
     private var appearanceObserver: NSObjectProtocol?
 
-    private var customThemesDirectory: URL {
-        let dir: URL
+    private lazy var resolvedThemesDirectory: URL = {
         if let override = themesDirectoryOverride {
-            dir = override
-        } else {
-            let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            dir = appSupport.appendingPathComponent("Keyli/Themes", isDirectory: true)
+            return override
         }
-        try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
+        let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support")
+        return appSupport.appendingPathComponent("Keyli/Themes", isDirectory: true)
+    }()
+
+    private var customThemesDirectory: URL {
+        let dir = resolvedThemesDirectory
+        if !fileManager.fileExists(atPath: dir.path) {
+            try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
         return dir
     }
 
@@ -130,6 +135,8 @@ public final class ThemeManager: ObservableObject {
             copy.id = ThemeManager.makeCustomId()
         }
 
+        pendingWrites[copy.id] = nil
+        flushPendingWrites()
         write(copy)
         loadAllThemes()
         selectTheme(copy)
@@ -180,6 +187,7 @@ public final class ThemeManager: ObservableObject {
     public func deleteCustomTheme(_ theme: KeyboardTheme) {
         guard !theme.isBuiltIn else { return }
         pendingWrites[theme.id] = nil
+        flushPendingWrites()
         let fileURL = fileURL(forThemeId: theme.id)
         try? fileManager.removeItem(at: fileURL)
         loadAllThemes()
