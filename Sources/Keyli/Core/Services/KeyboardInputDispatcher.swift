@@ -234,8 +234,18 @@ public final class KeyboardInputDispatcher {
         switch action {
         case .text(let text, let keyCode):
             typeText(text, keyCode: keyCode, state: state)
+            if state.isCommandActive || state.isControlActive {
+                WordSuggestions.shared.reset()
+            } else {
+                WordSuggestions.shared.didType(text)
+            }
         case .keyCode(let keyCode):
             sendKeycode(keyCode, state: state)
+            if state.isCommandActive || state.isControlActive || state.isOptionActive {
+                WordSuggestions.shared.reset()
+            } else {
+                WordSuggestions.shared.didPressKey(keyCode)
+            }
         case .system(let systemAction):
             performSystemAction(systemAction)
         case .none, .toggleModifier:

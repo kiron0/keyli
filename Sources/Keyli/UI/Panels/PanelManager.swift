@@ -81,6 +81,7 @@ public final class PanelManager: NSObject, NSWindowDelegate {
     }
 
     public func toggleFloatingKeyboard() {
+        AutoShowService.shared.userToggledKeyboard()
         if isFloatingVisible, let panel = floatingPanel, !panel.occlusionState.contains(.visible) || isCoveredByOtherWindows(panel) {
             panel.orderFrontRegardless()
             return
@@ -110,6 +111,11 @@ public final class PanelManager: NSObject, NSWindowDelegate {
             }
         }
         return false
+    }
+
+    public var containsPointer: Bool {
+        guard let panel = floatingPanel, panel.isVisible else { return false }
+        return panel.frame.insetBy(dx: -8, dy: -8).contains(NSEvent.mouseLocation)
     }
 
     public func applyWindowConfig() {

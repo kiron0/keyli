@@ -11,6 +11,10 @@ struct DragHandleView: NSViewRepresentable {
 final class _DragPassthroughView: NSView {
     override var mouseDownCanMoveWindow: Bool { true }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+    override func mouseDown(with event: NSEvent) {
+        guard let window, window.isMovable else { return }
+        window.performDrag(with: event)
+    }
 }
 
 public struct FloatingKeyboardContainerView: View {
@@ -39,7 +43,11 @@ public struct FloatingKeyboardContainerView: View {
                         action: onClose
                     )
 
-                    Spacer()
+                    if configStore.config.wordSuggestionsEnabled {
+                        SuggestionStrip(theme: theme)
+                    }
+
+                    Spacer(minLength: 0)
 
                     KeyboardChromeButton(
                         systemImage: configStore.config.isFloatingPositionLocked ? "lock.fill" : "lock.open",

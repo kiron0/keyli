@@ -6,6 +6,7 @@ public struct SoundsTabView: View {
     @ObservedObject private var configStore: ConfigStore = .shared
     @ObservedObject private var soundPacks: SoundPackLibrary = .shared
     @ObservedObject private var catalog: SoundPackCatalog = .shared
+    @ObservedObject private var muteRules: KeySoundMuteRules = .shared
 
     public init() {}
 
@@ -19,11 +20,15 @@ public struct SoundsTabView: View {
                 isOn: $configStore.config.playKeyClickSound
             )
 
-            soundOptions
-                .disabled(!configStore.config.playKeyClickSound)
+            if configStore.config.playKeyClickSound {
+                soundOptions
+            }
         }
         .onChange(of: configStore.config.playKeyClickSound, initial: true) { _, enabled in
             catalog.setFetchingEnabled(enabled)
+        }
+        .onAppear {
+            muteRules.refreshMicrophoneIfNeeded(force: true)
         }
     }
 
@@ -34,14 +39,7 @@ public struct SoundsTabView: View {
                     .font(.system(size: 12, weight: .medium))
                     .frame(width: 130, alignment: .leading)
 
-                SettingsMenuPicker(
-                    "Sound pack",
-                    selection: Binding(
-                        get: { soundPacks.pack(id: configStore.config.keySoundPackId)?.id ?? configStore.config.keySoundPackId },
-                        set: { configStore.config.keySoundPackId = $0 }
-                    ),
-                    options: soundPacks.packs.map { SettingsMenuOption($0.id, $0.isBundled ? $0.name : "\($0.name) (installed)") }
-                )
+                SoundPackPicker()
 
                 Button("Preview") {
                     KeySoundEngine.shared.preview()
@@ -63,25 +61,62 @@ public struct SoundsTabView: View {
                 isOn: $configStore.config.keySoundsForPhysicalTyping
             )
 
-            SettingsRow {
-                Button("Import Pack…") {
-                    importSoundPack()
-                }
-                .buttonStyle(SettingsSecondaryButtonStyle())
-                .help("Import a sound pack as a .zip file or a folder that contains config.json")
+            if configStore.config.keySoundsForPhysicalTyping {
+                SettingsToggle(
+                    "Separate volume for my physical keyboard",
+                    detail: "Use a different volume while you type on your Mac's keyboard.",
+                    isOn: $configStore.config.keySoundSeparatePhysicalVolume
+                )
 
-                if let current = soundPacks.pack(id: configStore.config.keySoundPackId), !current.isBundled {
+                if configStore.config.keySoundSeparatePhysicalVolume {
+                    SettingsSliderRow(
+                        "Physical volume",
+                        value: $configStore.config.keySoundPhysicalVolume,
+                        in: 0...1,
+                        step: 0.05,
+                        valueText: "\(Int((configStore.config.keySoundPhysicalVolume * 100).rounded()))%"
+                    )
+                }
+            }
+
+            SettingsToggle(
+                "Vary each key slightly",
+                detail: "A small random change in pitch and loudness on every press, so repeated keys sound natural.",
+                isOn: $configStore.config.keySoundVariation
+            )
+
+            if let current = soundPacks.pack(id: configStore.config.keySoundPackId), !current.isBundled {
+                SettingsRow {
                     Button("Remove Pack") {
                         removeSoundPack(current)
                     }
                     .buttonStyle(SettingsSecondaryButtonStyle(isDestructive: true))
                 }
-
             }
 
             if let status = soundPacks.status {
                 statusBanner(status)
             }
+
+            SettingsSectionHeader(title: "Quiet Times", symbol: "speaker.slash")
+
+            SettingsToggle(
+                "Mute during calls",
+                detail: muteRules.microphoneInUse
+                    ? "Muted now: another app is using the microphone."
+                    : "While another app is using the microphone, such as a call or recording.",
+                isOn: $configStore.config.keySoundMuteDuringCalls
+            )
+
+            Text("Mute in these apps")
+                .font(.system(size: 12, weight: .medium))
+                .padding(.leading, 33)
+                .padding(.top, 4)
+
+            AppListEditor(
+                bundleIds: $configStore.config.keySoundMutedApps,
+                emptyText: "Key sounds play in every app."
+            )
 
             SettingsSectionHeader(title: "Browse Packs", symbol: "square.and.arrow.down")
 
@@ -367,28 +402,6 @@ public struct SoundsTabView: View {
             parts.append(license)
         }
         return parts.joined(separator: " · ")
-    }
-
-    private func importSoundPack() {
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = true
-        panel.allowedContentTypes = [.zip, .folder]
-        panel.allowsMultipleSelection = false
-        panel.prompt = "Import"
-        panel.message = "Choose a sound pack .zip file, or a folder that contains config.json"
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-
-        do {
-            let info = try soundPacks.importPack(from: url)
-            configStore.config.keySoundPackId = info.id
-            soundPacks.status = .success("Imported “\(info.name)”.")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                KeySoundEngine.shared.preview()
-            }
-        } catch {
-            soundPacks.status = .failure((error as? LocalizedError)?.errorDescription ?? "Keyli couldn't import that pack: \(error.localizedDescription)")
-        }
     }
 
     private func removeSoundPack(_ info: SoundPackInfo) {

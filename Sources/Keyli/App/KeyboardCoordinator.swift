@@ -108,7 +108,12 @@ public final class KeyboardCoordinator {
 
         let physicalSoundsChanged = (previous.playKeyClickSound && previous.keySoundsForPhysicalTyping)
             != (config.playKeyClickSound && config.keySoundsForPhysicalTyping)
-        if previous.isPhysicalMonitoringEnabled != config.isPhysicalMonitoringEnabled || physicalSoundsChanged {
+        if previous.isPhysicalMonitoringEnabled != config.isPhysicalMonitoringEnabled
+            || physicalSoundsChanged
+            || previous.keystrokeOverlayEnabled != config.keystrokeOverlayEnabled {
+            if !config.keystrokeOverlayEnabled {
+                KeystrokeOverlay.shared.hide()
+            }
             PhysicalKeyboardMonitor.shared.refresh()
             if PhysicalKeyboardMonitor.shared.needsEventTap && !PermissionsManager.shared.hasInputMonitoringPermission {
                 PermissionsManager.shared.requestInputMonitoring()

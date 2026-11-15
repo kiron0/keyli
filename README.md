@@ -38,6 +38,9 @@
 - ANSI, ISO, JIS and compact layouts that resize in proportion and never stretch.
 - Optionally light up keys you press on your physical keyboard. Nothing is recorded or stored.
 - Keycap sounds with press and release sounds per key, on the on-screen keyboard and optionally your Mac's keyboard. Seven packs are built in, and you can browse and install community packs or import a `.zip` or folder.
+- Pitch and loudness vary slightly on every press, sounds mute during calls and in apps you choose, and you can star favorite packs.
+- Show keystrokes on screen for screencasts, press keys by hovering, get word suggestions, and add one-click snippet keys that type a phrase or send a shortcut.
+- The keyboard can show itself when you click into a text field and hide again afterwards.
 - Global shortcuts for every Keyli action: show the keyboard, keep on top, lock position, input source, Emoji & Symbols, key sounds, themes and more.
 - The menu bar icon shows your input source and lists your input sources, Emoji & Symbols and Settings. ⌥-click it to show or hide the keyboard.
 - Keep on Top keeps the keyboard above other windows. Lock Position stops it from being moved or resized.
