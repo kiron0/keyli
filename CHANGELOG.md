@@ -2,6 +2,37 @@
 
 All notable changes to Keyli will be documented in this file.
 
+## 1.0.2
+
+### Added
+
+- **Show keystrokes on screen**: a large overlay shows the shortcuts you press, or every key, at the top or bottom of the screen. Great for screencasts and demos.
+- **Word suggestions**: the keyboard's title bar suggests the word you're typing with Keyli; one click finishes it, matching your capitalization.
+- **Snippets**: choose ⋯ › Snippets on the keyboard to type a saved phrase or send a recorded shortcut, with instant search and management in Settings.
+- **Show automatically in text fields**: the keyboard can appear when you click into a text field and hide again when you leave, with a list of apps to skip. Works in Electron apps such as VS Code, Slack and Claude. Password fields are ignored.
+- **Hover to type**: rest the pointer on a key to press it, with a progress bar on the key and an adjustable hover time.
+- **Installed app picker**: a built-in search and selection sheet to easily choose installed applications when adding exclusions to Quiet Times or Auto-Show, without manually navigating Open panels.
+- **Pack favorites and search**: star packs, search installed packs in a new picker with previews, and cycle only your favorites with the Next Sound Pack shortcut. The physical keyboard can have its own volume.
+- **Natural-sounding keys**: each press varies pitch and loudness slightly, and packs that ask for it (`random_pitch`, `recommended_volume`) are honored. Turn it off with **Vary each key slightly**.
+- **Quiet Times**: a master toggle to mute key sounds automatically while another app uses the microphone, such as during a call, and in apps you choose.
+
+### Changed
+
+- **Unified Quiet Times**: simplified key sound muting into a single master switch and app list, automatically migrating existing call-mute preferences.
+- **Snippets panel styling**: theme colors in the Snippets panel now dynamically adjust to ensure strong contrast and readable text across any background.
+- **Tidier settings**: options that depend on a switch only appear when it's on. Sound packs are installed from Browse Packs, so the separate Import Pack button is gone.
+- **Standardized build script**: introduced `swift-package.sh` wrapper script for consistent build, test, and package management across local scripts and CI.
+
+### Fixed
+
+- **Theme saving reliability**: custom theme saves and deletes now flush pending writes immediately, preventing unsaved theme edits from being lost or overwritten.
+- **Auto-show element safety**: added element type verification in the accessibility tree traversal to avoid crashes when inspecting non-standard UI elements.
+- **Physical keyboard monitor efficiency**: reduced background overhead when physical key highlighting, sound effects, or the keystroke overlay are disabled.
+- **Input source icon cache**: menu bar input source icons now update their cache when the available input source list changes.
+- **Key repeat dispatching**: isolated key repeat event state copies to prevent state interference during rapid key repeats.
+- **Key sound volume**: the volume setting now always controls key sounds, including the new per-key variation.
+- **Update download failure handling**: non-2xx HTTP responses during background DMG downloads are now detected and reported as errors rather than treated as completed downloads.
+
 ## 1.0.1
 
 ### Added
@@ -13,16 +44,7 @@ All notable changes to Keyli will be documented in this file.
 - **Shortcuts**: a new Shortcuts page with global shortcuts for showing the keyboard, keep on top, physical key highlighting, input sources, Emoji & Symbols, key sounds, next sound pack, next theme, Settings, Theme Studio and update checks.
 - **Input source menu**: the menu bar icon shows your current input source and lists your input sources, with Emoji & Symbols and Open Keyboard Settings.
 - **Lock Position**: a lock button on the keyboard, a toggle in the keyboard menu and Settings › Keyboard, and a shortcut keep the keyboard from being moved or resized. Keep on Top now has its own window icon so the two are no longer confused.
-- **Natural-sounding keys**: each press varies pitch and loudness slightly, and packs that ask for it (`random_pitch`, `recommended_volume`) are honored. Turn it off with **Vary each key slightly**.
-- **Quiet Times**: key sounds mute automatically while another app uses the microphone, such as during a call, and in apps you choose.
-- **Show keystrokes on screen**: a large overlay shows the shortcuts you press, or every key, at the top or bottom of the screen. Great for screencasts and demos.
-- **Hover to type**: rest the pointer on a key to press it, with a progress bar on the key and an adjustable hover time.
-- **Word suggestions**: the keyboard's title bar suggests the word you're typing with Keyli; one click finishes it, matching your capitalization.
-- **Snippets**: choose ⋯ › Snippets on the keyboard to type a saved phrase or send a recorded shortcut.
-- **Show automatically in text fields**: the keyboard can appear when you click into a text field and hide again when you leave, with a list of apps to skip. Works in Electron apps such as VS Code, Slack and Claude. Password fields are ignored.
-- **Pack favorites and search**: star packs, search installed packs in a new picker with previews, and cycle only your favorites with the Next Sound Pack shortcut. The physical keyboard can have its own volume.
 - **Sounds in Setup Assistant**: a new Sounds step to turn on keycap sounds, pick a pack, set the volume and preview it.
-- **Tidier settings**: options that depend on a switch only appear when it's on. Sound packs are installed from Browse Packs, so the separate Import Pack button is gone.
 
 ### Changed
 
@@ -40,7 +62,6 @@ All notable changes to Keyli will be documented in this file.
 - **Audio device changes**: key sounds come back right away after switching speakers or headphones.
 - **ISO Return key**: the ISO layout now has a real L-shaped Return key with its label in the top part, a full-width caps lock, and the key beside Return in the right place.
 - **Window buttons on the keyboard**: locking the keyboard's position no longer brings back the macOS close, minimize and zoom buttons. The lock now only blocks moving and resizing.
-- **Key sound volume**: the volume setting now always controls key sounds, including the new per-key variation.
 - **Smooth pack installs**: installing a pack from Browse Packs no longer freezes Settings while the pack is unpacked and checked.
 - **Rare crash on layout refresh**: reading the current input source from two places at once could crash Keyli. It's now serialized.
 
