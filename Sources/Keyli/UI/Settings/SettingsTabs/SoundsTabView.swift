@@ -27,8 +27,10 @@ public struct SoundsTabView: View {
         .onChange(of: configStore.config.playKeyClickSound, initial: true) { _, enabled in
             catalog.setFetchingEnabled(enabled)
         }
-        .onAppear {
-            muteRules.refreshMicrophoneIfNeeded(force: true)
+        .onChange(of: configStore.config.keySoundQuietTimesEnabled, initial: true) { _, enabled in
+            if enabled {
+                muteRules.refreshMicrophoneIfNeeded(force: true)
+            }
         }
     }
 
@@ -101,22 +103,30 @@ public struct SoundsTabView: View {
             SettingsSectionHeader(title: "Quiet Times", symbol: "speaker.slash")
 
             SettingsToggle(
-                "Mute during calls",
-                detail: muteRules.microphoneInUse
-                    ? "Muted now: another app is using the microphone."
-                    : "While another app is using the microphone, such as a call or recording.",
-                isOn: $configStore.config.keySoundMuteDuringCalls
+                "Enable quiet times",
+                detail: "Mute key sounds during calls or in selected apps.",
+                isOn: $configStore.config.keySoundQuietTimesEnabled
             )
 
-            Text("Mute in these apps")
-                .font(.system(size: 12, weight: .medium))
-                .padding(.leading, 33)
-                .padding(.top, 4)
+            if configStore.config.keySoundQuietTimesEnabled {
+                SettingsToggle(
+                    "Mute during calls",
+                    detail: muteRules.microphoneInUse
+                        ? "Muted now: another app is using the microphone."
+                        : "While another app is using the microphone, such as a call or recording.",
+                    isOn: $configStore.config.keySoundMuteDuringCalls
+                )
 
-            AppListEditor(
-                bundleIds: $configStore.config.keySoundMutedApps,
-                emptyText: "Key sounds play in every app."
-            )
+                Text("Mute in these apps")
+                    .font(.system(size: 12, weight: .medium))
+                    .padding(.leading, 33)
+                    .padding(.top, 4)
+
+                AppListEditor(
+                    bundleIds: $configStore.config.keySoundMutedApps,
+                    emptyText: "Key sounds play in every app."
+                )
+            }
 
             SettingsSectionHeader(title: "Browse Packs", symbol: "square.and.arrow.down")
 
