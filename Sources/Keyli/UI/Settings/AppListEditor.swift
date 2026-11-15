@@ -1,8 +1,12 @@
 import SwiftUI
 import AppKit
-import UniformTypeIdentifiers
+
+private final class AppListEditorState: ObservableObject {
+    @Published var showsAppPicker = false
+}
 
 public struct AppListEditor: View {
+    @StateObject private var state = AppListEditorState()
     @Binding public var bundleIds: [String]
     public var emptyText: String
 
@@ -53,23 +57,18 @@ public struct AppListEditor: View {
                 }
                 .frame(height: 24)
             }
-            Button("Add App…") {
-                let panel = NSOpenPanel()
-                panel.allowedContentTypes = [.application]
-                panel.allowsMultipleSelection = true
-                panel.directoryURL = URL(fileURLWithPath: "/Applications")
-                panel.prompt = "Add"
-                guard panel.runModal() == .OK else { return }
-                for url in panel.urls {
-                    if let id = Bundle(url: url)?.bundleIdentifier {
-                        bundleIds = Self.adding(id, to: bundleIds)
-                    }
-                }
-            }
+            Button("Add Apps…") { state.showsAppPicker = true }
             .buttonStyle(SettingsSecondaryButtonStyle())
             .padding(.top, 2)
         }
         .padding(.leading, 33)
         .padding(.trailing, 10)
+        .sheet(isPresented: $state.showsAppPicker) {
+            InstalledAppPicker(existingIdentifiers: bundleIds) { identifiers in
+                for identifier in identifiers {
+                    bundleIds = Self.adding(identifier, to: bundleIds)
+                }
+            }
+        }
     }
 }
