@@ -14,7 +14,7 @@ RESOURCES_DIR="$CONTENTS/Resources"
 cd "$ROOT_DIR"
 
 echo "▶ Building $APP_NAME (release)..."
-swift build -c release --build-system native 2>&1 | sed '/warning:.*build-system native.*deprecated/d'
+"$SCRIPT_DIR/swift-package.sh" build -c release
 
 echo "▶ Packaging $APP_NAME.app..."
 rm -rf "$APP_DIR"
