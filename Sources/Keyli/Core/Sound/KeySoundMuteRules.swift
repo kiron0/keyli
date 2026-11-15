@@ -13,7 +13,8 @@ public final class KeySoundMuteRules: ObservableObject {
     private let cacheLifetime: CFTimeInterval = 1
     private let probeQueue = DispatchQueue(label: "io.coreify.keyli.mute.probe", qos: .utility)
 
-    public static func shouldMute(muteDuringCalls: Bool, microphoneInUse: Bool, frontBundleId: String?, mutedApps: [String]) -> Bool {
+    public static func shouldMute(muteDuringCalls: Bool, microphoneInUse: Bool, frontBundleId: String?, mutedApps: [String], enabled: Bool = true) -> Bool {
+        guard enabled else { return false }
         if muteDuringCalls && microphoneInUse { return true }
         if let frontBundleId, mutedApps.contains(frontBundleId) { return true }
         return false
@@ -21,6 +22,7 @@ public final class KeySoundMuteRules: ObservableObject {
 
     public var isMuted: Bool {
         let config = ConfigStore.shared.config
+        guard config.keySoundQuietTimesEnabled else { return false }
         if config.keySoundMuteDuringCalls {
             refreshMicrophoneIfNeeded()
         }
@@ -28,7 +30,8 @@ public final class KeySoundMuteRules: ObservableObject {
             muteDuringCalls: config.keySoundMuteDuringCalls,
             microphoneInUse: microphoneInUse,
             frontBundleId: NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
-            mutedApps: config.keySoundMutedApps
+            mutedApps: config.keySoundMutedApps,
+            enabled: config.keySoundQuietTimesEnabled
         )
     }
 

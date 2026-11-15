@@ -37,6 +37,7 @@ public struct KeyliConfig: Codable, Equatable {
     public var keySoundVariation: Bool = true
     public var keySoundSeparatePhysicalVolume: Bool = false
     public var keySoundPhysicalVolume: Double = 0.6
+    public var keySoundQuietTimesEnabled: Bool = false
     public var keySoundMuteDuringCalls: Bool = true
     public var keySoundMutedApps: [String] = []
     public var keystrokeOverlayEnabled: Bool = false
@@ -86,6 +87,8 @@ public struct KeyliConfig: Codable, Equatable {
         keySoundPhysicalVolume = try container.decodeIfPresent(Double.self, forKey: .keySoundPhysicalVolume) ?? fallback.keySoundPhysicalVolume
         keySoundMuteDuringCalls = try container.decodeIfPresent(Bool.self, forKey: .keySoundMuteDuringCalls) ?? fallback.keySoundMuteDuringCalls
         keySoundMutedApps = try container.decodeIfPresent([String].self, forKey: .keySoundMutedApps) ?? fallback.keySoundMutedApps
+        keySoundQuietTimesEnabled = try container.decodeIfPresent(Bool.self, forKey: .keySoundQuietTimesEnabled)
+            ?? ((container.contains(.keySoundMuteDuringCalls) && keySoundMuteDuringCalls) || !keySoundMutedApps.isEmpty)
         keystrokeOverlayEnabled = try container.decodeIfPresent(Bool.self, forKey: .keystrokeOverlayEnabled) ?? fallback.keystrokeOverlayEnabled
         keystrokeOverlayMode = try container.decodeIfPresent(String.self, forKey: .keystrokeOverlayMode) ?? fallback.keystrokeOverlayMode
         keystrokeOverlayPosition = try container.decodeIfPresent(String.self, forKey: .keystrokeOverlayPosition) ?? fallback.keystrokeOverlayPosition

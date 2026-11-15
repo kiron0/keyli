@@ -73,6 +73,31 @@ struct MuteRuleTests {
         #expect(!KeySoundMuteRules.shouldMute(muteDuringCalls: false, microphoneInUse: false, frontBundleId: nil, mutedApps: ["us.zoom.xos"]))
     }
 
+    @Test func quietTimesCanBeDisabledWithoutLosingRules() throws {
+        var config = KeyliConfig()
+        #expect(!config.keySoundQuietTimesEnabled)
+        config.keySoundMutedApps = ["us.zoom.xos"]
+        #expect(!KeySoundMuteRules.shouldMute(muteDuringCalls: true, microphoneInUse: true,
+                                            frontBundleId: "us.zoom.xos", mutedApps: config.keySoundMutedApps,
+                                            enabled: config.keySoundQuietTimesEnabled))
+        config.keySoundQuietTimesEnabled = true
+        let restored = try JSONDecoder().decode(KeyliConfig.self, from: JSONEncoder().encode(config))
+        #expect(restored.keySoundQuietTimesEnabled)
+        #expect(restored.keySoundMutedApps == config.keySoundMutedApps)
+    }
+
+    @Test func quietTimesMigratesExistingRules() throws {
+        for (json, expected) in [
+            (#"{}"#, false),
+            (#"{"keySoundMuteDuringCalls":true}"#, true),
+            (#"{"keySoundMutedApps":["us.zoom.xos"]}"#, true),
+            (#"{"keySoundQuietTimesEnabled":false,"keySoundMuteDuringCalls":true}"#, false)
+        ] {
+            let config = try JSONDecoder().decode(KeyliConfig.self, from: Data(json.utf8))
+            #expect(config.keySoundQuietTimesEnabled == expected)
+        }
+    }
+
     @Test func appListAddsWithoutDuplicates() {
         #expect(AppListEditor.adding("a", to: ["a"]) == ["a"])
         #expect(AppListEditor.adding("b", to: ["a"]) == ["a", "b"])
