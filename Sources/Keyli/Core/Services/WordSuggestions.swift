@@ -48,10 +48,17 @@ public final class WordSuggestions: ObservableObject {
         }
     }
 
-    public static func completions(for word: String, limit: Int = 3) -> [String] {
-        let checker = NSSpellChecker.shared
+    public static func systemCandidates(for word: String) -> [String] {
         let range = NSRange(location: 0, length: (word as NSString).length)
-        let raw = checker.completions(forPartialWordRange: range, in: word, language: nil, inSpellDocumentWithTag: 0) ?? []
+        return NSSpellChecker.shared.completions(forPartialWordRange: range, in: word, language: nil, inSpellDocumentWithTag: 0) ?? []
+    }
+
+    public static func completions(
+        for word: String,
+        limit: Int = 3,
+        candidates: (String) -> [String] = WordSuggestions.systemCandidates(for:)
+    ) -> [String] {
+        let raw = candidates(word)
         var seen = Set<String>()
         var result: [String] = []
         for candidate in raw where candidate.lowercased() != word.lowercased() {

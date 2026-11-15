@@ -5,10 +5,17 @@ import Foundation
 @Suite("Word Suggestions", .serialized)
 struct WordSuggestionTests {
     @Test func completesCommonWords() {
+        let results = WordSuggestions.completions(for: "Keyb") { _ in
+            ["keyb", "keyboard", "Keyboard", "keyboards", "keyboarding", "keyboardist"]
+        }
+        #expect(results == ["Keyboard", "Keyboards", "Keyboarding"])
+    }
+
+    @Test func systemCompletionsKeepInvariants() {
         let results = WordSuggestions.completions(for: "keyb")
-        #expect(results.contains { $0.lowercased().hasPrefix("keyb") })
         #expect(results.count <= 3)
-        #expect(!results.contains("keyb"))
+        #expect(!results.contains { $0.lowercased() == "keyb" })
+        #expect(Set(results.map { $0.lowercased() }).count == results.count)
     }
 
     @Test func matchesTypedCase() {
