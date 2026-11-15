@@ -20,6 +20,36 @@ public enum SnippetFilter {
     }
 }
 
+enum SnippetsAppearance {
+    static func contrast(_ foreground: String, on background: String) -> Double {
+        let first = KeyboardTheme.relativeLuminance(hex: foreground)
+        let second = KeyboardTheme.relativeLuminance(hex: background)
+        return (max(first, second) + 0.05) / (min(first, second) + 0.05)
+    }
+
+    static func readableColor(_ preferred: String, on background: String) -> String {
+        if contrast(preferred, on: background) >= 4.5 { return preferred }
+        return contrast("#000000", on: background) >= contrast("#FFFFFF", on: background)
+            ? "#000000" : "#FFFFFF"
+    }
+
+    static func backdrop(for theme: KeyboardTheme) -> KeyboardTheme {
+        // Keep text contrast stable regardless of the desktop behind this utility window.
+        var backdrop = theme
+        backdrop.backgroundOpacity = 1
+        return backdrop
+    }
+
+    static func fontDesign(for theme: KeyboardTheme) -> Font.Design {
+        switch theme.fontDesign {
+        case "monospaced": return .monospaced
+        case "rounded": return .rounded
+        case "serif": return .serif
+        default: return .default
+        }
+    }
+}
+
 struct SnippetsPanelView: View {
     @ObservedObject var state: KeyboardState = .shared
     @ObservedObject var configStore: ConfigStore = .shared
@@ -28,7 +58,12 @@ struct SnippetsPanelView: View {
 
     var body: some View {
         let theme = state.currentTheme
-        let text = Color(hex: theme.keycapTextColorHex)
+        let text = Color(hex: SnippetsAppearance.readableColor(theme.keycapTextColorHex, on: theme.backgroundColorHex))
+        let rowText = Color(hex: SnippetsAppearance.readableColor(theme.keycapTextColorHex, on: theme.keycapBaseColorHex))
+        let rowAccent = Color(hex: SnippetsAppearance.readableColor(theme.accentColorHex, on: theme.keycapBaseColorHex))
+        let accent = Color(hex: SnippetsAppearance.readableColor(theme.accentColorHex, on: theme.backgroundColorHex))
+        let design = SnippetsAppearance.fontDesign(for: theme)
+        let backdropTheme = SnippetsAppearance.backdrop(for: theme)
         let snippets = SnippetFilter.matching(configStore.config.snippets, query: search.query)
         VStack(spacing: 8) {
             ZStack {
@@ -36,8 +71,8 @@ struct SnippetsPanelView: View {
                 HStack(spacing: 8) {
                     KeyboardChromeButton(systemImage: "xmark", tint: text, help: "Close Snippets", action: onClose)
                     Text("Snippets")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(text.opacity(0.8))
+                        .font(.system(size: 12, weight: .semibold, design: design))
+                        .foregroundStyle(text)
                         .allowsHitTesting(false)
                     Spacer(minLength: 0)
                     KeyboardChromeButton(systemImage: "slider.horizontal.3", tint: text, help: "Edit Snippets in Settings") {
@@ -50,17 +85,17 @@ struct SnippetsPanelView: View {
 
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(text.opacity(0.6))
+                    .font(.system(size: 11, weight: .medium, design: design))
+                    .foregroundStyle(rowText)
                     .accessibilityHidden(true)
-                TextField("Search snippets", text: $search.query)
+                TextField("Search snippets", text: $search.query, prompt: Text("Search snippets").foregroundColor(rowText))
                     .textFieldStyle(.plain)
-                    .font(.system(size: 12))
-                    .foregroundStyle(text)
+                    .font(.system(size: 12, design: design))
+                    .foregroundStyle(rowText)
             }
             .padding(.horizontal, 10)
             .frame(height: 28)
-            .background(text.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(Color(hex: theme.keycapBaseColorHex), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .padding(.horizontal, 10)
 
             ScrollView {
@@ -71,18 +106,18 @@ struct SnippetsPanelView: View {
                         } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: snippet.kind == .shortcut ? "command" : "text.quote")
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundStyle(Color(hex: theme.accentColorHex))
+                                    .font(.system(size: 11, weight: .semibold, design: design))
+                                    .foregroundStyle(rowAccent)
                                     .frame(width: 18)
                                     .accessibilityHidden(true)
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(snippet.title)
-                                        .font(.system(size: 12.5, weight: .semibold))
-                                        .foregroundStyle(text)
+                                        .font(.system(size: 12.5, weight: .semibold, design: design))
+                                        .foregroundStyle(rowText)
                                         .lineLimit(1)
                                     Text(snippet.kind == .shortcut ? snippet.keys.joined(separator: " ") : snippet.text)
-                                        .font(.system(size: 10.5))
-                                        .foregroundStyle(text.opacity(0.6))
+                                        .font(.system(size: 11.5, design: snippet.kind == .shortcut ? .monospaced : design))
+                                        .foregroundStyle(rowText)
                                         .lineLimit(1)
                                 }
                                 Spacer(minLength: 0)
@@ -98,15 +133,15 @@ struct SnippetsPanelView: View {
                     if snippets.isEmpty {
                         VStack(spacing: 8) {
                             Text(configStore.config.snippets.isEmpty ? "No snippets yet." : "No snippets match “\(search.query)”.")
-                                .font(.system(size: 12))
-                                .foregroundStyle(text.opacity(0.6))
+                                .font(.system(size: 12, design: design))
+                                .foregroundStyle(text)
                             if configStore.config.snippets.isEmpty {
                                 Button("Add Snippets…") {
                                     SettingsWindowController.shared.showSettings(tab: .typing)
                                 }
                                 .buttonStyle(.plain)
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(Color(hex: theme.accentColorHex))
+                                .font(.system(size: 12, weight: .semibold, design: design))
+                                .foregroundStyle(accent)
                             }
                         }
                         .padding(.top, 30)
@@ -117,7 +152,9 @@ struct SnippetsPanelView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(KeyboardBackdrop(theme: theme))
+        .background(KeyboardBackdrop(theme: backdropTheme))
+        .preferredColorScheme(theme.isDarkBackground ? .dark : .light)
+        .tint(accent)
         .ignoresSafeArea()
     }
 }
