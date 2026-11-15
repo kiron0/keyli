@@ -93,7 +93,7 @@ public final class KeySoundEngine {
     public func activate() {
         guard !activated else { return }
         activated = true
-        if ConfigStore.shared.config.keySoundMuteDuringCalls {
+        if ConfigStore.shared.config.keySoundQuietTimesEnabled {
             KeySoundMuteRules.shared.refreshMicrophoneIfNeeded(force: true)
         }
         NotificationCenter.default.addObserver(

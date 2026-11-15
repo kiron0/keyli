@@ -23,11 +23,9 @@ public final class KeySoundMuteRules: ObservableObject {
     public var isMuted: Bool {
         let config = ConfigStore.shared.config
         guard config.keySoundQuietTimesEnabled else { return false }
-        if config.keySoundMuteDuringCalls {
-            refreshMicrophoneIfNeeded()
-        }
+        refreshMicrophoneIfNeeded()
         return Self.shouldMute(
-            muteDuringCalls: config.keySoundMuteDuringCalls,
+            muteDuringCalls: true,
             microphoneInUse: microphoneInUse,
             frontBundleId: NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
             mutedApps: config.keySoundMutedApps,

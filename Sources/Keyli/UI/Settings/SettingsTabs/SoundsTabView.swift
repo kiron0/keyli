@@ -109,14 +109,6 @@ public struct SoundsTabView: View {
             )
 
             if configStore.config.keySoundQuietTimesEnabled {
-                SettingsToggle(
-                    "Mute during calls",
-                    detail: muteRules.microphoneInUse
-                        ? "Muted now: another app is using the microphone."
-                        : "While another app is using the microphone, such as a call or recording.",
-                    isOn: $configStore.config.keySoundMuteDuringCalls
-                )
-
                 Text("Mute in these apps")
                     .font(.system(size: 12, weight: .medium))
                     .padding(.leading, 33)
