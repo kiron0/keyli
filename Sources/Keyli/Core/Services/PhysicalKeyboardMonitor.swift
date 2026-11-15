@@ -121,9 +121,11 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
         }
 
         let available = state.availableKeyCodes
+        let config = ConfigStore.shared.config
+        let highlightsKeys = hasVisibleKeyboard && config.isPhysicalMonitoringEnabled
 
         if type.rawValue == PhysicalKeyMap.systemDefinedEventType {
-            if isRunning && !(hasVisibleKeyboard && ConfigStore.shared.config.isPhysicalMonitoringEnabled) {
+            if isRunning && !highlightsKeys {
                 return
             }
             guard let nsEvent = NSEvent(cgEvent: event),
@@ -138,11 +140,11 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
 
         let rawKeyCode = UInt16(truncatingIfNeeded: event.getIntegerValueField(.keyboardEventKeycode))
 
-        if isRunning && ConfigStore.shared.config.keySoundsForPhysicalTyping {
+        if isRunning && config.keySoundsForPhysicalTyping {
             playSound(type: type, event: event, keyCode: rawKeyCode)
         }
 
-        if isRunning && type == .keyDown && ConfigStore.shared.config.keystrokeOverlayEnabled {
+        if isRunning && type == .keyDown && config.keystrokeOverlayEnabled {
             var length = 0
             var chars = [UniChar](repeating: 0, count: 4)
             event.keyboardGetUnicodeString(maxStringLength: 4, actualStringLength: &length, unicodeString: &chars)
@@ -155,7 +157,7 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
             }
         }
 
-        if isRunning && !(hasVisibleKeyboard && ConfigStore.shared.config.isPhysicalMonitoringEnabled) {
+        if isRunning && !highlightsKeys {
             return
         }
 

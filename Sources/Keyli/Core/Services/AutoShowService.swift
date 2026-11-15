@@ -66,8 +66,9 @@ public final class AutoShowService {
         observer = created
         observedPID = pid
         var focused: CFTypeRef?
-        if AXUIElementCopyAttributeValue(appElement, kAXFocusedUIElementAttribute as CFString, &focused) == .success, let focused {
-            focusChanged(focused as! AXUIElement)
+        if AXUIElementCopyAttributeValue(appElement, kAXFocusedUIElementAttribute as CFString, &focused) == .success,
+           let element = Self.axElement(focused) {
+            focusChanged(element)
         }
     }
 
@@ -100,7 +101,7 @@ public final class AutoShowService {
                 if AXUIElementCopyAttributeValue(node, "AXEditableAncestor" as CFString, &ancestor) == .success, ancestor != nil { return true }
             }
             var parent: CFTypeRef?
-            current = AXUIElementCopyAttributeValue(node, kAXParentAttribute as CFString, &parent) == .success ? (parent as! AXUIElement) : nil
+            current = AXUIElementCopyAttributeValue(node, kAXParentAttribute as CFString, &parent) == .success ? axElement(parent) : nil
         }
         return false
     }
@@ -109,8 +110,14 @@ public final class AutoShowService {
         guard observedPID != 0 else { return false }
         let app = AXUIElementCreateApplication(observedPID)
         var focused: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(app, kAXFocusedUIElementAttribute as CFString, &focused) == .success, let focused else { return false }
-        return Self.isTextElement(focused as! AXUIElement)
+        guard AXUIElementCopyAttributeValue(app, kAXFocusedUIElementAttribute as CFString, &focused) == .success,
+              let element = Self.axElement(focused) else { return false }
+        return Self.isTextElement(element)
+    }
+
+    static func axElement(_ value: CFTypeRef?) -> AXUIElement? {
+        guard let value, CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
+        return (value as! AXUIElement)
     }
 
     private func focusChanged(_ element: AXUIElement) {

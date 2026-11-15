@@ -644,6 +644,16 @@ extension UpdateDownloadService: URLSessionDownloadDelegate {
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
+        if let http = downloadTask.response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            let code = http.statusCode
+            Task { @MainActor in
+                guard self.isActive(session: session, task: downloadTask) else { return }
+                self.finishSession(session, task: downloadTask)
+                self.state = .failed(message: UpdateError.downloadFailed("server returned status \(code)").localizedDescription)
+            }
+            return
+        }
+
         let updateDir = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("KeyliUpdate-\(UUID().uuidString)")
         let persistentDMG = updateDir.appendingPathComponent("Keyli.dmg")

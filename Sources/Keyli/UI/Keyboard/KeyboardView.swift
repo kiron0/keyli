@@ -254,7 +254,7 @@ public struct KeyboardView: View {
                     interaction?.stopRepeating()
                     return
                 }
-                KeyboardInputDispatcher.shared.dispatchKey(key, state: repeatState)
+                KeyboardInputDispatcher.shared.dispatchKey(key, state: repeatState.detachedCopy())
             }
         }
     }

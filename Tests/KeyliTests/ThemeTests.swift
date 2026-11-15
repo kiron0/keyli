@@ -85,6 +85,34 @@ struct ThemeTests {
         }
     }
 
+    @Test("Saving a theme keeps pending edits and is not overwritten by them")
+    func testSaveDoesNotLosePendingEdits() throws {
+        let (manager, _, _, directory) = makeIsolatedManager()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        var first = KeyboardTheme.cyberpunk
+        first.id = "custom_first"
+        first.name = "First"
+        manager.saveCustomTheme(first)
+        var second = KeyboardTheme.cyberpunk
+        second.id = "custom_second"
+        second.name = "Second"
+        manager.saveCustomTheme(second)
+
+        first.name = "First Edited"
+        manager.updateCustomTheme(first)
+        second.name = "Second Pending"
+        manager.updateCustomTheme(second)
+        second.name = "Second Saved"
+        manager.saveCustomTheme(second)
+        manager.flushPendingWrites()
+
+        #expect(manager.availableThemes.first { $0.id == "custom_first" }?.name == "First Edited")
+        let reloaded = ThemeManager(themesDirectory: directory, configStore: ConfigStore(defaults: UserDefaults(suiteName: "io.coreify.keyli.tests.\(UUID().uuidString)")!), state: KeyboardState())
+        #expect(reloaded.availableThemes.first { $0.id == "custom_first" }?.name == "First Edited")
+        #expect(reloaded.availableThemes.first { $0.id == "custom_second" }?.name == "Second Saved")
+    }
+
     @Test("Invalid Theme JSON Is Rejected")
     func testInvalidThemeImport() {
         let (manager, _, _, directory) = makeIsolatedManager()

@@ -162,7 +162,13 @@ public final class StatusItemController: NSObject {
             let item = NSMenuItem(title: source.name, action: #selector(selectInputSource(_:)), keyEquivalent: "")
             item.representedObject = source.id
             item.state = source.id == service.currentId ? .on : .off
-            item.image = service.icon(for: source.id) ?? Self.letterBadge(source.name)
+            if iconCacheSources != service.sources {
+                iconCacheSources = service.sources
+                iconCache.removeAll()
+            }
+            let image = iconCache[source.id] ?? service.icon(for: source.id) ?? Self.letterBadge(source.name)
+            iconCache[source.id] = image
+            item.image = image
             menu.addItem(item)
         }
         menu.addItem(NSMenuItem.separator())
