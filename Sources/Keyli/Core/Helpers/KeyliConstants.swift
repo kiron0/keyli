@@ -42,7 +42,9 @@ public enum KeyliConstants {
     public static let defaultMenuHeight: CGFloat = 300
 
     public static let keyboardHorizontalPadding: CGFloat = 20
-    public static let keyboardChromeHeight: CGFloat = 64
+    public static let baseChromeHeight: CGFloat = 64
+
+    public static var keyboardChromeHeight: CGFloat { baseChromeHeight }
 
     public static func keyboardAspect(_ layout: KeyboardLayout) -> CGFloat {
         CGFloat(layout.unitWidth / max(1, layout.unitHeight))

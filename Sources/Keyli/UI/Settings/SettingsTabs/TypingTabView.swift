@@ -36,6 +36,43 @@ public struct TypingTabView: View {
             )
             .help("How long Keyli holds each key down. Increase it if an app misses keys.")
 
+            SettingsSectionHeader(title: "Suggestions", symbol: "text.bubble")
+
+            SettingsToggle(
+                "Show word suggestions",
+                detail: "Suggestions appear in the keyboard's title bar for the word you're typing with Keyli. Click one to finish it.",
+                isOn: $configStore.config.wordSuggestionsEnabled
+            )
+
+            SettingsSectionHeader(title: "Snippet Keys", symbol: "text.quote")
+
+            SettingsInlineNote(
+                symbol: "text.quote",
+                title: "Snippets window",
+                detail: "Choose ⋯ › Snippets… on the keyboard, or press your shortcut, to open a floating window. Click a snippet to type the phrase or send the shortcut."
+            )
+            .padding(.leading, 33)
+
+            SnippetEditor()
+
+            SettingsSectionHeader(title: "Hover to Type", symbol: "cursorarrow.rays")
+
+            SettingsToggle(
+                "Press a key by resting the pointer on it",
+                detail: "Useful when clicking is hard. A bar fills on the key, then it's pressed once. Move to another key to press again.",
+                isOn: $configStore.config.dwellEnabled
+            )
+
+            if configStore.config.dwellEnabled {
+                SettingsSliderRow(
+                    "Hover time",
+                    value: $configStore.config.dwellDuration,
+                    in: 0.4...2.5,
+                    step: 0.1,
+                    valueText: String(format: "%.1f s", configStore.config.dwellDuration)
+                )
+            }
+
             SettingsSectionHeader(title: "Tips", symbol: "lightbulb")
 
             SettingsInlineNote(

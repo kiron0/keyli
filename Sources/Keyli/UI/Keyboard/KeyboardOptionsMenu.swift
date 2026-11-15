@@ -44,6 +44,10 @@ public struct KeyboardOptionsMenuItems: View {
 
         Toggle("Highlight Physical Keys", isOn: $configStore.config.isPhysicalMonitoringEnabled)
 
+        Button("Snippets…") {
+            SnippetsPanelController.shared.show()
+        }
+
         Divider()
 
         Button("Theme Studio…") {

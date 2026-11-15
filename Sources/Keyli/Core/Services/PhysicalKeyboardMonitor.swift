@@ -24,6 +24,7 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
         let config = ConfigStore.shared.config
         return (config.isPhysicalMonitoringEnabled && hasVisibleKeyboard)
             || (config.playKeyClickSound && config.keySoundsForPhysicalTyping)
+            || config.keystrokeOverlayEnabled
     }
 
     public func refresh() {
@@ -139,6 +140,19 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
 
         if isRunning && ConfigStore.shared.config.keySoundsForPhysicalTyping {
             playSound(type: type, event: event, keyCode: rawKeyCode)
+        }
+
+        if isRunning && type == .keyDown && ConfigStore.shared.config.keystrokeOverlayEnabled {
+            var length = 0
+            var chars = [UniChar](repeating: 0, count: 4)
+            event.keyboardGetUnicodeString(maxStringLength: 4, actualStringLength: &length, unicodeString: &chars)
+            let character = length > 0 ? String(utf16CodeUnits: chars, count: length) : nil
+            let flags = event.flags
+            let isRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
+            let printable = character.flatMap { $0.unicodeScalars.allSatisfy { $0.value >= 32 } ? $0 : nil }
+            DispatchQueue.main.async {
+                KeystrokeOverlay.shared.handleKeyDown(keyCode: rawKeyCode, flags: flags, character: printable, isRepeat: isRepeat)
+            }
         }
 
         if isRunning && !(hasVisibleKeyboard && ConfigStore.shared.config.isPhysicalMonitoringEnabled) {

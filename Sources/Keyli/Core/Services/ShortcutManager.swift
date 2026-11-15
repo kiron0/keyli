@@ -6,8 +6,10 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
     case togglePin
     case togglePositionLock
     case togglePhysicalHighlight
+    case toggleKeystrokeOverlay
     case nextInputSource
     case showEmojiAndSymbols
+    case toggleSnippets
     case toggleKeySounds
     case nextSoundPack
     case nextTheme
@@ -35,8 +37,8 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
 
     public var group: Group {
         switch self {
-        case .toggleKeyboard, .togglePin, .togglePositionLock, .togglePhysicalHighlight: return .window
-        case .nextInputSource, .showEmojiAndSymbols: return .typing
+        case .toggleKeyboard, .togglePin, .togglePositionLock, .togglePhysicalHighlight, .toggleKeystrokeOverlay: return .window
+        case .nextInputSource, .showEmojiAndSymbols, .toggleSnippets: return .typing
         case .toggleKeySounds, .nextSoundPack: return .sounds
         case .nextTheme, .openSettings, .openThemeStudio, .checkForUpdates: return .app
         }
@@ -48,8 +50,10 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
         case .togglePin: return "Keep Keyboard on Top"
         case .togglePositionLock: return "Lock Keyboard Position"
         case .togglePhysicalHighlight: return "Highlight Physical Keys"
+        case .toggleKeystrokeOverlay: return "Show Keystrokes on Screen"
         case .nextInputSource: return "Next Input Source"
         case .showEmojiAndSymbols: return "Emoji & Symbols"
+        case .toggleSnippets: return "Show or Hide Snippets"
         case .toggleKeySounds: return "Turn Key Sounds On or Off"
         case .nextSoundPack: return "Next Sound Pack"
         case .nextTheme: return "Next Theme"
@@ -65,10 +69,12 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
         case .togglePin: return "Switch between floating above windows and normal."
         case .togglePositionLock: return "Stop or allow moving and resizing the keyboard."
         case .togglePhysicalHighlight: return "Light up keys as you type on your Mac's keyboard."
+        case .toggleKeystrokeOverlay: return "Show pressed shortcuts in a large overlay."
         case .nextInputSource: return "Cycle through your keyboard input sources."
         case .showEmojiAndSymbols: return "Open the system character viewer."
+        case .toggleSnippets: return "Open the floating snippets window."
         case .toggleKeySounds: return "Mute or unmute keycap sounds."
-        case .nextSoundPack: return "Cycle through bundled and imported packs."
+        case .nextSoundPack: return "Cycle through your favorite packs, or all packs."
         case .nextTheme: return "Cycle through keyboard themes."
         case .openSettings: return "Jump straight to Keyli settings."
         case .openThemeStudio: return "Design and edit your own themes."
@@ -82,8 +88,10 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
         case .togglePin: return "macwindow.on.rectangle"
         case .togglePositionLock: return "lock"
         case .togglePhysicalHighlight: return "light.max"
+        case .toggleKeystrokeOverlay: return "rectangle.and.text.magnifyingglass"
         case .nextInputSource: return "globe"
         case .showEmojiAndSymbols: return "face.smiling"
+        case .toggleSnippets: return "text.quote"
         case .toggleKeySounds: return "speaker.wave.2"
         case .nextSoundPack: return "music.note.list"
         case .nextTheme: return "paintpalette"
@@ -294,14 +302,18 @@ public final class ShortcutManager: ObservableObject {
             store.config.isFloatingPositionLocked.toggle()
         case .togglePhysicalHighlight:
             store.config.isPhysicalMonitoringEnabled.toggle()
+        case .toggleKeystrokeOverlay:
+            store.config.keystrokeOverlayEnabled.toggle()
         case .nextInputSource:
             _ = InputSourceService.shared.selectNext()
         case .showEmojiAndSymbols:
             InputSourceService.shared.showEmojiAndSymbols()
+        case .toggleSnippets:
+            SnippetsPanelController.shared.toggle()
         case .toggleKeySounds:
             store.config.playKeyClickSound.toggle()
         case .nextSoundPack:
-            let packs = SoundPackLibrary.shared.packs
+            let packs = SoundPackPicker.cycleOrder(packs: SoundPackLibrary.shared.packs, favorites: store.config.favoriteSoundPacks)
             guard !packs.isEmpty else { return }
             let current = SoundPackLibrary.shared.pack(id: store.config.keySoundPackId)?.id
             let index = packs.firstIndex { $0.id == current } ?? -1

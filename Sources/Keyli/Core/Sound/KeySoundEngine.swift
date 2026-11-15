@@ -17,6 +17,37 @@ public final class KeySoundEngine {
         var up: AVAudioPCMBuffer?
     }
 
+    struct PackClips {
+        var clips: [UInt16: ClipPair]
+        var fallback: ClipPair
+        var gain: Double
+        var randomPitch: Bool
+    }
+
+    struct Variation: Equatable {
+        var rate: Float
+        var gain: Float
+
+        static let none = Variation(rate: 1, gain: 1)
+
+        static func random<G: RandomNumberGenerator>(wide: Bool, using generator: inout G) -> Variation {
+            let spread: Float = wide ? 0.06 : 0.035
+            return Variation(
+                rate: Float.random(in: (1 - spread)...(1 + spread), using: &generator),
+                gain: Float.random(in: 0.86...1, using: &generator)
+            )
+        }
+    }
+
+    static func decibels(_ linear: Float) -> Float {
+        guard linear > 0.0001 else { return -96 }
+        return max(-96, min(24, 20 * log10(linear)))
+    }
+
+    static func voiceVolume(sourceVolume: Double, packGain: Double, variation: Variation) -> Float {
+        Float(max(0, min(1, sourceVolume * packGain * Double(variation.gain))))
+    }
+
     private struct SliceKey: Hashable {
         var file: String
         var segment: SoundSegment
@@ -30,6 +61,12 @@ public final class KeySoundEngine {
 
     private let engine = AVAudioEngine()
     private var voices: [AVAudioPlayerNode] = []
+    private var pitchUnits: [AVAudioUnitVarispeed] = []
+    private var voiceGains: [AVAudioUnitEQ] = []
+    private var packGain: Double = 1
+    private var packRandomPitch = false
+    private var previewGain: Double = 1
+    private var generator = SystemRandomNumberGenerator()
     private var voiceFreeAt: [CFTimeInterval] = []
     private var nextVoice = 0
     private var format: AVAudioFormat
@@ -39,7 +76,7 @@ public final class KeySoundEngine {
     private var defaultClip = ClipPair()
     private var loadedPackId: String?
     private var clipsPackId: String?
-    private var previewCache: (id: String, clips: [UInt16: ClipPair], fallback: ClipPair)?
+    private var previewCache: (id: String, pack: PackClips)?
     private var loadGeneration = 0
     private let loadQueue = DispatchQueue(label: "io.coreify.keyli.keysounds.load", qos: .userInitiated)
 
@@ -56,6 +93,9 @@ public final class KeySoundEngine {
     public func activate() {
         guard !activated else { return }
         activated = true
+        if ConfigStore.shared.config.keySoundMuteDuringCalls {
+            KeySoundMuteRules.shared.refreshMicrophoneIfNeeded(force: true)
+        }
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleConfigurationChange),
@@ -86,15 +126,24 @@ public final class KeySoundEngine {
     public func keyDown(_ keyCode: UInt16, source: Source, isRepeat: Bool = false) {
         guard isEnabled, !isRepeat else { return }
         held.insert(heldKey(keyCode, source))
+        guard !KeySoundMuteRules.shared.isMuted else { return }
         if let buffer = clip(for: keyCode).down {
-            play(buffer)
+            play(buffer, source: source)
         }
     }
 
     public func keyUp(_ keyCode: UInt16, source: Source) {
         guard held.remove(heldKey(keyCode, source)) != nil else { return }
-        guard isEnabled, let buffer = clip(for: keyCode).up else { return }
-        play(buffer)
+        guard isEnabled, !KeySoundMuteRules.shared.isMuted, let buffer = clip(for: keyCode).up else { return }
+        play(buffer, source: source)
+    }
+
+    private func sourceVolume(_ source: Source) -> Double {
+        let config = ConfigStore.shared.config
+        if source == .physical && config.keySoundSeparatePhysicalVolume {
+            return config.keySoundPhysicalVolume
+        }
+        return config.keySoundVolume
     }
 
     public func tap(_ keyCode: UInt16, source: Source = .onScreen) {
@@ -109,7 +158,7 @@ public final class KeySoundEngine {
     }
 
     public func preview() {
-        playSequence(clips: clips, fallback: defaultClip)
+        playSequence(PackClips(clips: clips, fallback: defaultClip, gain: packGain, randomPitch: packRandomPitch))
     }
 
     public func preview(pack info: SoundPackInfo) {
@@ -118,7 +167,7 @@ public final class KeySoundEngine {
             return
         }
         if let cached = previewCache, cached.id == info.id {
-            playSequence(clips: cached.clips, fallback: cached.fallback)
+            playSequence(cached.pack)
             return
         }
         setupGraphIfNeeded()
@@ -127,21 +176,21 @@ public final class KeySoundEngine {
             guard let result = try? Self.buildClips(folder: info.folder, format: target) else { return }
             DispatchQueue.main.async {
                 guard let self else { return }
-                self.previewCache = (info.id, result.clips, result.fallback)
-                self.playSequence(clips: result.clips, fallback: result.fallback)
+                self.previewCache = (info.id, result)
+                self.playSequence(result)
             }
         }
     }
 
-    private func playSequence(clips: [UInt16: ClipPair], fallback: ClipPair) {
+    private func playSequence(_ pack: PackClips) {
         let sequence: [UInt16] = [4, 14, 37, 37, 31, 49, 13, 31, 15, 37, 2, 36]
         for (index, keyCode) in sequence.enumerated() {
-            let pair = clips[keyCode] ?? fallback
+            let pair = pack.clips[keyCode] ?? pack.fallback
             DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.11) { [weak self] in
                 guard let self else { return }
-                if let down = pair.down { self.play(down) }
+                if let down = pair.down { self.play(down, source: .onScreen, gain: pack.gain, randomPitch: pack.randomPitch) }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.07) {
-                    if let up = pair.up { self.play(up) }
+                    if let up = pair.up { self.play(up, source: .onScreen, gain: pack.gain, randomPitch: pack.randomPitch) }
                 }
             }
         }
@@ -156,9 +205,6 @@ public final class KeySoundEngine {
     }
 
     private func apply(_ config: KeyliConfig) {
-        if graphReady {
-            engine.mainMixerNode.outputVolume = Float(max(0, min(1, config.keySoundVolume)))
-        }
         guard config.playKeyClickSound else {
             stopEngine()
             return
@@ -179,12 +225,20 @@ public final class KeySoundEngine {
         format = AVAudioFormat(standardFormatWithSampleRate: rate, channels: 2)!
         for _ in 0..<Self.voiceCount {
             let node = AVAudioPlayerNode()
+            let pitch = AVAudioUnitVarispeed()
+            let mixer = AVAudioUnitEQ(numberOfBands: 0)
             engine.attach(node)
-            engine.connect(node, to: engine.mainMixerNode, format: format)
+            engine.attach(pitch)
+            engine.attach(mixer)
+            engine.connect(node, to: pitch, format: format)
+            engine.connect(pitch, to: mixer, format: format)
+            engine.connect(mixer, to: engine.mainMixerNode, format: format)
             voices.append(node)
+            pitchUnits.append(pitch)
+            voiceGains.append(mixer)
             voiceFreeAt.append(0)
         }
-        engine.mainMixerNode.outputVolume = Float(max(0, min(1, ConfigStore.shared.config.keySoundVolume)))
+        engine.mainMixerNode.outputVolume = 1
         engine.prepare()
         graphReady = true
     }
@@ -247,8 +301,11 @@ public final class KeySoundEngine {
         idleTimer = timer
     }
 
-    private func play(_ buffer: AVAudioPCMBuffer) {
+    private func play(_ buffer: AVAudioPCMBuffer, source: Source, gain: Double? = nil, randomPitch: Bool? = nil) {
         guard buffer.format == format, ensureRunning() else { return }
+        let variation = ConfigStore.shared.config.keySoundVariation
+            ? Variation.random(wide: randomPitch ?? packRandomPitch, using: &generator)
+            : .none
         let now = CACurrentMediaTime()
         lastPlay = now
         let count = voices.count
@@ -263,11 +320,13 @@ public final class KeySoundEngine {
         let index = chosen ?? voiceFreeAt.indices.min { voiceFreeAt[$0] < voiceFreeAt[$1] } ?? 0
         nextVoice = (index + 1) % count
         let node = voices[index]
+        pitchUnits[index].rate = variation.rate
+        voiceGains[index].globalGain = Self.decibels(Self.voiceVolume(sourceVolume: sourceVolume(source), packGain: gain ?? packGain, variation: variation))
         node.scheduleBuffer(buffer, at: nil, options: .interrupts, completionHandler: nil)
         if !node.isPlaying {
             node.play()
         }
-        voiceFreeAt[index] = now + Double(buffer.frameLength) / format.sampleRate + 0.02
+        voiceFreeAt[index] = now + Double(buffer.frameLength) / format.sampleRate / Double(variation.rate) + 0.02
     }
 
     @objc private func handleConfigurationChange(_ notification: Notification) {
@@ -284,9 +343,14 @@ public final class KeySoundEngine {
                 return
             }
             self.format = AVAudioFormat(standardFormatWithSampleRate: rate, channels: 2)!
-            for node in self.voices {
+            for index in self.voices.indices {
+                let node = self.voices[index], pitch = self.pitchUnits[index], mixer = self.voiceGains[index]
                 self.engine.disconnectNodeOutput(node)
-                self.engine.connect(node, to: self.engine.mainMixerNode, format: self.format)
+                self.engine.disconnectNodeOutput(pitch)
+                self.engine.disconnectNodeOutput(mixer)
+                self.engine.connect(node, to: pitch, format: self.format)
+                self.engine.connect(pitch, to: mixer, format: self.format)
+                self.engine.connect(mixer, to: self.engine.mainMixerNode, format: self.format)
             }
             self.clips = [:]
             self.clipsPackId = nil
@@ -315,6 +379,8 @@ public final class KeySoundEngine {
                 self.clips = result?.clips ?? [:]
                 self.defaultClip = result?.fallback ?? ClipPair()
                 self.clipsPackId = result == nil ? nil : info.id
+                self.packGain = result?.gain ?? 1
+                self.packRandomPitch = result?.randomPitch ?? false
                 if self.isEnabled, result != nil {
                     self.lastPlay = CACurrentMediaTime()
                     _ = self.ensureRunning()
@@ -323,7 +389,7 @@ public final class KeySoundEngine {
         }
     }
 
-    static func buildClips(folder: URL, format: AVAudioFormat) throws -> (clips: [UInt16: ClipPair], fallback: ClipPair) {
+    static func buildClips(folder: URL, format: AVAudioFormat) throws -> PackClips {
         let manifest = try SoundPackLibrary.loadManifest(in: folder)
         var decoded: [String: AVAudioPCMBuffer] = [:]
         var failed: Set<String> = []
@@ -359,7 +425,7 @@ public final class KeySoundEngine {
             clips[keyCode] = pair(manifest.definition(forMacKeyCode: keyCode))
         }
         let fallback = pair(manifest.definition(forKeyName: "KeyA"))
-        return (clips, fallback)
+        return PackClips(clips: clips, fallback: fallback, gain: manifest.recommendedVolume, randomPitch: manifest.randomPitch)
     }
 
     static func decode(url: URL, format: AVAudioFormat) throws -> AVAudioPCMBuffer {

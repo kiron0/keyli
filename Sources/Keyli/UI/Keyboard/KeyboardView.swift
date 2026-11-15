@@ -1,7 +1,76 @@
 import SwiftUI
 import AppKit
 
+public struct DwellTracker {
+    public private(set) var keyId: String?
+    public private(set) var startedAt: TimeInterval = 0
+    public private(set) var firedKeyId: String?
+
+    public init() {}
+
+    public mutating func hover(_ id: String?, at now: TimeInterval) {
+        guard id != keyId else { return }
+        keyId = id
+        startedAt = now
+        if id != firedKeyId {
+            firedKeyId = nil
+        }
+    }
+
+    public func progress(at now: TimeInterval, duration: TimeInterval) -> Double {
+        guard keyId != nil, keyId != firedKeyId, duration > 0 else { return 0 }
+        return min(1, max(0, (now - startedAt) / duration))
+    }
+
+    public mutating func tick(at now: TimeInterval, duration: TimeInterval) -> String? {
+        guard let keyId, keyId != firedKeyId, progress(at: now, duration: duration) >= 1 else { return nil }
+        firedKeyId = keyId
+        return keyId
+    }
+}
+
 final class KeyboardInteractionState: ObservableObject {
+    @Published var dwellKeyId: String?
+    @Published var dwellProgress: Double = 0
+    var dwell = DwellTracker()
+    private var dwellTimer: Timer?
+
+    func updateDwell(hovered id: String?, enabled: Bool, duration: TimeInterval, fire: @escaping (String) -> Void) {
+        guard enabled else {
+            stopDwell()
+            return
+        }
+        dwell.hover(id, at: ProcessInfo.processInfo.systemUptime)
+        dwellKeyId = id
+        dwellProgress = 0
+        guard id != nil, dwellTimer == nil else {
+            if id == nil { stopDwell() }
+            return
+        }
+        let timer = Timer(timeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            let now = ProcessInfo.processInfo.systemUptime
+            let progress = self.dwell.progress(at: now, duration: duration)
+            if abs(progress - self.dwellProgress) > 0.01 || (progress == 0 && self.dwellProgress != 0) {
+                self.dwellProgress = progress
+            }
+            if let fired = self.dwell.tick(at: now, duration: duration) {
+                self.dwellProgress = 0
+                fire(fired)
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        dwellTimer = timer
+    }
+
+    func stopDwell() {
+        dwellTimer?.invalidate()
+        dwellTimer = nil
+        dwell = DwellTracker()
+        if dwellKeyId != nil { dwellKeyId = nil }
+        if dwellProgress != 0 { dwellProgress = 0 }
+    }
+
     @Published var hoveredKeyId: String?
     @Published var pressedKeyId: String?
     var pressBegan: Date?
@@ -90,7 +159,9 @@ public struct KeyboardView: View {
                     physicalKeyCodes: presses.physicalKeyCodes,
                     virtualKeyId: presses.virtualKeyId,
                     localPressedKeyId: interaction.pressedKeyId,
-                    hoveredKeyId: isInteractive ? interaction.hoveredKeyId : nil
+                    hoveredKeyId: isInteractive ? interaction.hoveredKeyId : nil,
+                    dwellKeyId: interaction.dwellKeyId,
+                    dwellProgress: interaction.dwellProgress
                 )
 
                 Canvas { context, _ in
@@ -121,11 +192,13 @@ public struct KeyboardView: View {
                         let id = geometry.key(at: point)?.id
                         if interaction.hoveredKeyId != id {
                             interaction.hoveredKeyId = id
+                            updateDwell(id)
                         }
                     case .ended:
                         if interaction.hoveredKeyId != nil {
                             interaction.hoveredKeyId = nil
                         }
+                        interaction.stopDwell()
                     }
                 }
                 .accessibilityElement(children: .contain)
@@ -158,6 +231,7 @@ public struct KeyboardView: View {
             }
         }
         .onDisappear {
+            interaction.stopDwell()
             interaction.stopRepeating()
             KeySoundEngine.shared.releaseAll(source: .onScreen)
         }
@@ -208,6 +282,26 @@ public struct KeyboardView: View {
 
     static let fnLatchHoldDuration: TimeInterval = 0.4
 
+    private func updateDwell(_ id: String?) {
+        let config = ConfigStore.shared.config
+        let state = self.state
+        interaction.updateDwell(hovered: id, enabled: isInteractive && config.dwellEnabled, duration: config.dwellDuration) { firedId in
+            guard let key = state.currentLayout.keys.first(where: { $0.id == firedId }) else { return }
+            KeySoundEngine.shared.tap(key.keyCode)
+            state.virtualPressedKeyId = key.id
+            if key.modifierType == .fn {
+                KeyboardInputDispatcher.shared.handleGlobeTap(state: state)
+            } else {
+                KeyboardInputDispatcher.shared.dispatchKey(key, state: state)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                if state.virtualPressedKeyId == key.id {
+                    state.virtualPressedKeyId = nil
+                }
+            }
+        }
+    }
+
     private func isRepeatable(_ key: KeyboardKey) -> Bool {
         guard ConfigStore.shared.config.keyRepeatEnabled else { return false }
         switch key.kind {
@@ -243,6 +337,8 @@ struct KeyboardRenderer {
     let virtualKeyId: String?
     let localPressedKeyId: String?
     let hoveredKeyId: String?
+    var dwellKeyId: String? = nil
+    var dwellProgress: Double = 0
 
     private let keycapColor: Color
     private let modifierColor: Color
@@ -261,6 +357,9 @@ struct KeyboardRenderer {
         virtualKeyId: String?,
         localPressedKeyId: String?,
         hoveredKeyId: String?
+,
+        dwellKeyId: String? = nil,
+        dwellProgress: Double = 0
     ) {
         self.theme = theme
         self.modifiers = modifiers
@@ -268,6 +367,8 @@ struct KeyboardRenderer {
         self.virtualKeyId = virtualKeyId
         self.localPressedKeyId = localPressedKeyId
         self.hoveredKeyId = hoveredKeyId
+        self.dwellKeyId = dwellKeyId
+        self.dwellProgress = dwellProgress
         self.keycapColor = Color(hex: theme.keycapBaseColorHex)
         self.modifierColor = Color(hex: theme.modifierKeyColorHex)
         self.activeColor = Color(hex: theme.keycapActiveColorHex)
@@ -346,6 +447,14 @@ struct KeyboardRenderer {
 
         let labelColor = isDown ? (showsAccentTint ? textColor : activeTextColor) : textColor
         drawLabel(key: key, rect: rect, isDown: isDown, textColor: labelColor, context: context)
+
+        if dwellKeyId == key.id, dwellProgress > 0 {
+            let inset = rect.insetBy(dx: rect.width * 0.12, dy: 0)
+            let track = CGRect(x: inset.minX, y: rect.maxY - max(3, rect.height * 0.07) - 3, width: inset.width, height: max(3, rect.height * 0.07))
+            context.fill(Path(roundedRect: track, cornerRadius: track.height / 2), with: .color(accentColor.opacity(0.25)))
+            let filled = CGRect(x: track.minX, y: track.minY, width: track.width * CGFloat(dwellProgress), height: track.height)
+            context.fill(Path(roundedRect: filled, cornerRadius: track.height / 2), with: .color(accentColor))
+        }
     }
 
     private func drawBackground(key: KeyboardKey, rect: CGRect, isDown: Bool, isHovered: Bool, showsAccentTint: Bool, context: GraphicsContext) {

@@ -1,5 +1,26 @@
 import Foundation
 
+public struct Snippet: Codable, Equatable, Identifiable {
+    public enum Kind: String, Codable {
+        case text
+        case shortcut
+    }
+
+    public var id: String
+    public var title: String
+    public var kind: Kind
+    public var text: String
+    public var keys: [String]
+
+    public init(id: String = UUID().uuidString, title: String, kind: Kind, text: String = "", keys: [String] = []) {
+        self.id = id
+        self.title = title
+        self.kind = kind
+        self.text = text
+        self.keys = keys
+    }
+}
+
 public struct KeyliConfig: Codable, Equatable {
     public var version: Int = 1
     public var themeId: String = "ember_graphite"
@@ -13,6 +34,23 @@ public struct KeyliConfig: Codable, Equatable {
     public var keySoundPackId: String = "keyli-slate-thock"
     public var keySoundVolume: Double = 0.6
     public var keySoundsForPhysicalTyping: Bool = false
+    public var keySoundVariation: Bool = true
+    public var keySoundSeparatePhysicalVolume: Bool = false
+    public var keySoundPhysicalVolume: Double = 0.6
+    public var keySoundMuteDuringCalls: Bool = true
+    public var keySoundMutedApps: [String] = []
+    public var keystrokeOverlayEnabled: Bool = false
+    public var keystrokeOverlayMode: String = "shortcuts"
+    public var keystrokeOverlayPosition: String = "bottom"
+    public var dwellEnabled: Bool = false
+    public var dwellDuration: Double = 1.0
+    public var wordSuggestionsEnabled: Bool = false
+    public var snippetBarEnabled: Bool = false
+    public var snippets: [Snippet] = []
+    public var autoShowKeyboard: Bool = false
+    public var autoHideKeyboard: Bool = true
+    public var autoShowExcludedApps: [String] = []
+    public var favoriteSoundPacks: [String] = []
     public var liquidGlassEnabled: Bool = true
     public var launchAtLogin: Bool = false
     public var showMenuBarIcon: Bool = true
@@ -43,6 +81,23 @@ public struct KeyliConfig: Codable, Equatable {
         keySoundPackId = try container.decodeIfPresent(String.self, forKey: .keySoundPackId) ?? fallback.keySoundPackId
         keySoundVolume = try container.decodeIfPresent(Double.self, forKey: .keySoundVolume) ?? fallback.keySoundVolume
         keySoundsForPhysicalTyping = try container.decodeIfPresent(Bool.self, forKey: .keySoundsForPhysicalTyping) ?? fallback.keySoundsForPhysicalTyping
+        keySoundVariation = try container.decodeIfPresent(Bool.self, forKey: .keySoundVariation) ?? fallback.keySoundVariation
+        keySoundSeparatePhysicalVolume = try container.decodeIfPresent(Bool.self, forKey: .keySoundSeparatePhysicalVolume) ?? fallback.keySoundSeparatePhysicalVolume
+        keySoundPhysicalVolume = try container.decodeIfPresent(Double.self, forKey: .keySoundPhysicalVolume) ?? fallback.keySoundPhysicalVolume
+        keySoundMuteDuringCalls = try container.decodeIfPresent(Bool.self, forKey: .keySoundMuteDuringCalls) ?? fallback.keySoundMuteDuringCalls
+        keySoundMutedApps = try container.decodeIfPresent([String].self, forKey: .keySoundMutedApps) ?? fallback.keySoundMutedApps
+        keystrokeOverlayEnabled = try container.decodeIfPresent(Bool.self, forKey: .keystrokeOverlayEnabled) ?? fallback.keystrokeOverlayEnabled
+        keystrokeOverlayMode = try container.decodeIfPresent(String.self, forKey: .keystrokeOverlayMode) ?? fallback.keystrokeOverlayMode
+        keystrokeOverlayPosition = try container.decodeIfPresent(String.self, forKey: .keystrokeOverlayPosition) ?? fallback.keystrokeOverlayPosition
+        dwellEnabled = try container.decodeIfPresent(Bool.self, forKey: .dwellEnabled) ?? fallback.dwellEnabled
+        dwellDuration = try container.decodeIfPresent(Double.self, forKey: .dwellDuration) ?? fallback.dwellDuration
+        wordSuggestionsEnabled = try container.decodeIfPresent(Bool.self, forKey: .wordSuggestionsEnabled) ?? fallback.wordSuggestionsEnabled
+        snippetBarEnabled = try container.decodeIfPresent(Bool.self, forKey: .snippetBarEnabled) ?? fallback.snippetBarEnabled
+        snippets = try container.decodeIfPresent([Snippet].self, forKey: .snippets) ?? fallback.snippets
+        autoShowKeyboard = try container.decodeIfPresent(Bool.self, forKey: .autoShowKeyboard) ?? fallback.autoShowKeyboard
+        autoHideKeyboard = try container.decodeIfPresent(Bool.self, forKey: .autoHideKeyboard) ?? fallback.autoHideKeyboard
+        autoShowExcludedApps = try container.decodeIfPresent([String].self, forKey: .autoShowExcludedApps) ?? fallback.autoShowExcludedApps
+        favoriteSoundPacks = try container.decodeIfPresent([String].self, forKey: .favoriteSoundPacks) ?? fallback.favoriteSoundPacks
         liquidGlassEnabled = try container.decodeIfPresent(Bool.self, forKey: .liquidGlassEnabled) ?? fallback.liquidGlassEnabled
         launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? fallback.launchAtLogin
         showMenuBarIcon = try container.decodeIfPresent(Bool.self, forKey: .showMenuBarIcon) ?? fallback.showMenuBarIcon

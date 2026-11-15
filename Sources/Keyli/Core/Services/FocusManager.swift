@@ -52,6 +52,8 @@ public final class FocusManager: ObservableObject {
         }
 
         PhysicalKeyboardMonitor.shared.clearPressedKeys()
+        WordSuggestions.shared.reset()
+        AutoShowService.shared.observe(app)
         if KeyboardState.shared.dispatchIssue == .noTarget || KeyboardState.shared.dispatchIssue == .secureInput {
             KeyboardState.shared.dispatchIssue = nil
         }

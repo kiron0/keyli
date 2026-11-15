@@ -82,6 +82,8 @@ public struct SoundPackManifest: Equatable {
     public var author: String?
     public var method: Method
     public var keys: [String: KeySoundDefinition]
+    public var recommendedVolume: Double = 1
+    public var randomPitch: Bool = false
 
     public var audioFiles: Set<String> {
         Set(keys.values.map(\.file))
@@ -131,7 +133,14 @@ public struct SoundPackManifest: Equatable {
 
         let methodString = (root["definition_method"] as? String) ?? (root["key_define_type"] as? String) ?? "single"
         let method = Method(rawValue: methodString.lowercased()) ?? .single
-        return SoundPackManifest(id: sanitizedId(rawId), name: name, author: author, method: method, keys: keyboardKeys)
+        var manifest = SoundPackManifest(id: sanitizedId(rawId), name: name, author: author, method: method, keys: keyboardKeys)
+        if let options = root["options"] as? [String: Any] {
+            if let volume = number(options["recommended_volume"]), volume > 0 {
+                manifest.recommendedVolume = min(2, max(0.1, volume))
+            }
+            manifest.randomPitch = (options["random_pitch"] as? Bool) ?? false
+        }
+        return manifest
     }
 
     public static func folderName(for name: String) -> String {
