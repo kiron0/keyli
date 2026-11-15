@@ -25,6 +25,20 @@ struct SnippetTests {
 
 @Suite("Snippets Window")
 struct SnippetsWindowTests {
+    @Test func themeColorsStayReadableOnTheirActualSurfaces() {
+        for theme in KeyboardTheme.builtInThemes + [.appleNativeLight] {
+            for background in [theme.backgroundColorHex, theme.keycapBaseColorHex] {
+                for preferred in [theme.keycapTextColorHex, theme.accentColorHex] {
+                    let resolved = SnippetsAppearance.readableColor(preferred, on: background)
+                    #expect(SnippetsAppearance.contrast(resolved, on: background) >= 4.5,
+                            "\(theme.name): \(resolved) on \(background)")
+                }
+            }
+        }
+        #expect(SnippetsAppearance.readableColor("#FFFFFF", on: "#FFFFFF") == "#000000")
+        #expect(SnippetsAppearance.readableColor("#000000", on: "#000000") == "#FFFFFF")
+    }
+
     @Test func searchMatchesTitleTextAndKeys() {
         let snippets = [Snippet(title: "Signature", kind: .text, text: "Best, Kiron"), Snippet(title: "Reopen", kind: .shortcut, keys: ["⌘", "⇧", "T"])]
         #expect(SnippetFilter.matching(snippets, query: "").count == 2)
