@@ -11,10 +11,6 @@ struct DragHandleView: NSViewRepresentable {
 final class _DragPassthroughView: NSView {
     override var mouseDownCanMoveWindow: Bool { true }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
-    override func mouseDown(with event: NSEvent) {
-        guard let window, window.isMovable else { return }
-        window.performDrag(with: event)
-    }
 }
 
 public struct FloatingKeyboardContainerView: View {
