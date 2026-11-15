@@ -5,7 +5,7 @@
   "description": "Modern macOS Keyboard Viewer & Interactive Keyboard",
   "scripts": {
     "build": "./Scripts/build.sh",
-    "test": "set -o pipefail && swift test --build-system native -Xswiftc -F -Xswiftc /Library/Developer/CommandLineTools/Library/Developer/Frameworks 2>&1 | LC_ALL=C sed -E '/warning:.*build-system native.*deprecated/d'",
+    "test": "./Scripts/swift-package.sh test",
     "clean": "swift package clean && rm -rf .build/Keyli.app",
     "install": "npm run build && mkdir -p \"$HOME/Applications\" && ditto .build/Keyli.app \"$HOME/Applications/Keyli.app\"",
     "open": "open \"$HOME/Applications/Keyli.app\"",

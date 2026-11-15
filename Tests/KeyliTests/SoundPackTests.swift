@@ -118,7 +118,7 @@ struct SoundPackTests {
         #expect(ids.count == 7)
         for id in ids {
             let folder = Self.packsRoot.appendingPathComponent(id)
-            let manifest = try SoundPackLibrary.loadManifest(in: folder)
+            _ = try SoundPackLibrary.loadManifest(in: folder)
             let built = try KeySoundEngine.buildClips(folder: folder, format: format)
             for keyCode in SoundKeyMap.macKeyNames.keys {
                 let pair = built.clips[keyCode]

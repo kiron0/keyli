@@ -65,7 +65,7 @@ jobs:
           echo "DEVELOPER_DIR=$XCODE_APP/Contents/Developer" >> "$GITHUB_ENV"
 
       - name: Run Tests
-        run: swift test || swift test --build-system native
+        run: ./Scripts/swift-package.sh test
 
       - name: Import Signing Certificate
         shell: bash
