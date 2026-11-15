@@ -1,6 +1,6 @@
 {
   "name": "keyli-macos-app",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "Modern macOS Keyboard Viewer & Interactive Keyboard",
   "scripts": {
