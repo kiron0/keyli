@@ -53,8 +53,15 @@ public final class KeySoundEngine {
         var segment: SoundSegment
     }
 
+    private final class KeepAliveState {
+        var active = false
+        var seed: UInt32 = 0x9E37_79B9
+    }
+
     private static let voiceCount = 32
     private static let idleShutdown: CFTimeInterval = 60
+    private static let keepAliveIdleShutdown: CFTimeInterval = 600
+    private static let keepAliveLevel: Float = 0.00002
     private static let maxClipSeconds: Double = 2.5
     private static let fadeInSeconds: Double = 0.002
     private static let fadeOutSeconds: Double = 0.005
@@ -63,6 +70,8 @@ public final class KeySoundEngine {
     private var voices: [AVAudioPlayerNode] = []
     private var pitchUnits: [AVAudioUnitVarispeed] = []
     private var voiceGains: [AVAudioUnitEQ] = []
+    private var keepAliveNode: AVAudioSourceNode?
+    private let keepAliveState = KeepAliveState()
     private var packGain: Double = 1
     private var packRandomPitch = false
     private var previewGain: Double = 1
@@ -238,9 +247,56 @@ public final class KeySoundEngine {
             voiceGains.append(mixer)
             voiceFreeAt.append(0)
         }
+        let keepAlive = makeKeepAliveNode()
+        engine.attach(keepAlive)
+        engine.connect(keepAlive, to: engine.mainMixerNode, format: format)
+        keepAliveNode = keepAlive
+        keepAliveState.active = Self.outputNeedsKeepAlive()
         engine.mainMixerNode.outputVolume = 1
         engine.prepare()
         graphReady = true
+    }
+
+    private func makeKeepAliveNode() -> AVAudioSourceNode {
+        let state = keepAliveState
+        let level = Self.keepAliveLevel
+        return AVAudioSourceNode(format: format) { _, _, frameCount, audioBufferList -> OSStatus in
+            let buffers = UnsafeMutableAudioBufferListPointer(audioBufferList)
+            let count = Int(frameCount)
+            let active = state.active
+            var seed = state.seed
+            for buffer in buffers {
+                guard let data = buffer.mData?.assumingMemoryBound(to: Float.self) else { continue }
+                guard active else {
+                    data.update(repeating: 0, count: count)
+                    continue
+                }
+                for frame in 0..<count {
+                    seed = seed &* 1_664_525 &+ 1_013_904_223
+                    data[frame] = (Float(seed >> 8) / 16_777_216 - 0.5) * level
+                }
+            }
+            state.seed = seed
+            return noErr
+        }
+    }
+
+    static func outputNeedsKeepAlive() -> Bool {
+        var device = AudioObjectID(0)
+        guard readProperty(AudioObjectID(kAudioObjectSystemObject), kAudioHardwarePropertyDefaultOutputDevice, kAudioObjectPropertyScopeGlobal, &device),
+              device != 0 else { return false }
+        var transport: UInt32 = 0
+        guard readProperty(device, kAudioDevicePropertyTransportType, kAudioObjectPropertyScopeGlobal, &transport) else { return true }
+        guard transport == kAudioDeviceTransportTypeBuiltIn else { return true }
+        var source: UInt32 = 0
+        guard readProperty(device, kAudioDevicePropertyDataSource, kAudioObjectPropertyScopeOutput, &source) else { return true }
+        return source != 0x6973_706B
+    }
+
+    private static func readProperty<T>(_ object: AudioObjectID, _ selector: AudioObjectPropertySelector, _ scope: AudioObjectPropertyScope, _ value: inout T) -> Bool {
+        var address = AudioObjectPropertyAddress(mSelector: selector, mScope: scope, mElement: kAudioObjectPropertyElementMain)
+        var size = UInt32(MemoryLayout<T>.size)
+        return AudioObjectGetPropertyData(object, &address, 0, nil, &size, &value) == noErr
     }
 
     private func setLowLatencyBuffer() {
@@ -293,7 +349,8 @@ public final class KeySoundEngine {
         idleTimer?.invalidate()
         let timer = Timer(timeInterval: 15, repeats: true) { [weak self] _ in
             guard let self else { return }
-            if CACurrentMediaTime() - self.lastPlay > Self.idleShutdown {
+            let limit = self.keepAliveState.active ? Self.keepAliveIdleShutdown : Self.idleShutdown
+            if CACurrentMediaTime() - self.lastPlay > limit {
                 self.pauseEngine()
             }
         }
@@ -332,6 +389,7 @@ public final class KeySoundEngine {
     @objc private func handleConfigurationChange(_ notification: Notification) {
         DispatchQueue.main.async { [weak self] in
             guard let self, self.graphReady else { return }
+            self.keepAliveState.active = Self.outputNeedsKeepAlive()
             let hardware = self.engine.outputNode.outputFormat(forBus: 0)
             let rate = hardware.sampleRate > 0 ? hardware.sampleRate : self.format.sampleRate
             for index in self.voiceFreeAt.indices { self.voiceFreeAt[index] = 0 }
@@ -351,6 +409,10 @@ public final class KeySoundEngine {
                 self.engine.connect(node, to: pitch, format: self.format)
                 self.engine.connect(pitch, to: mixer, format: self.format)
                 self.engine.connect(mixer, to: self.engine.mainMixerNode, format: self.format)
+            }
+            if let keepAlive = self.keepAliveNode {
+                self.engine.disconnectNodeOutput(keepAlive)
+                self.engine.connect(keepAlive, to: self.engine.mainMixerNode, format: self.format)
             }
             self.clips = [:]
             self.clipsPackId = nil
