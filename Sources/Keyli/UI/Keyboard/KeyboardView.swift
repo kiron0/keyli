@@ -242,7 +242,6 @@ public struct KeyboardView: View {
     @StateObject private var interaction = KeyboardInteractionState()
     @ObservedObject private var menuShortcuts = MenuShortcutService.shared
     @ObservedObject private var configStore = ConfigStore.shared
-    @ObservedObject private var scanner = KeyScanner.shared
     public var showStatusBar: Bool
     public var isInteractive: Bool
 
@@ -277,22 +276,10 @@ public struct KeyboardView: View {
                 )
                 let swipePoints = interaction.swipePoints
                 let trailColor = Color(hex: theme.accentColorHex).opacity(0.55)
-                let scanIds = isInteractive ? Set(scanner.highlightedKeyIds) : []
-                let scanColor = Color(hex: theme.accentColorHex)
-                let scanningKeys = scanner.isScanningKeys
 
                 Canvas { context, size in
                     for key in layout.keys {
                         renderer.draw(key: key, in: geometry.frame(for: key), context: context)
-                    }
-                    if !scanIds.isEmpty {
-                        let rects = layout.keys.filter { scanIds.contains($0.id) }.map { geometry.frame(for: $0) }
-                        if let first = rects.first {
-                            let bounds = rects.dropFirst().reduce(first) { $0.union($1) }.insetBy(dx: -3, dy: -3)
-                            let shape = Path(roundedRect: bounds, cornerRadius: CGFloat(theme.cornerRadius) + 3, style: .continuous)
-                            context.fill(shape, with: .color(scanColor.opacity(scanningKeys ? 0.28 : 0.14)))
-                            context.stroke(shape, with: .color(scanColor), lineWidth: 3)
-                        }
                     }
                     if swipePoints.count > 1 {
                         var trail = Path()
@@ -534,11 +521,6 @@ public struct KeyboardView: View {
         if let consumed = interaction.consumedPressStart {
             if consumed == value.startLocation { return }
             interaction.consumedPressStart = nil
-        }
-        if isInteractive, scanner.isActive, configStore.config.scanSelectByClick {
-            interaction.consumedPressStart = value.startLocation
-            scanner.select()
-            return
         }
         if var popup = interaction.accentPopup {
             if popup.isHeld, interaction.pressStart == value.startLocation {

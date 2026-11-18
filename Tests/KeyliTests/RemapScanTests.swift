@@ -94,54 +94,18 @@ struct KeyRemapTests {
     }
 }
 
-@Suite("Switch scanning")
-struct SwitchScanningTests {
-    @Test func stepsRowsThenKeys() {
-        var cursor = ScanCursor(rows: [["a", "b"], ["c"], []])
-        #expect(cursor.rows.count == 2)
-        #expect(cursor.highlighted == ["a", "b"])
-        cursor.step()
-        #expect(cursor.highlighted == ["c"])
-        cursor.step()
-        #expect(cursor.highlighted == ["a", "b"])
-        #expect(cursor.select() == nil)
-        #expect(cursor.isScanningKeys)
-        #expect(cursor.highlighted == ["a"])
-        cursor.step()
-        #expect(cursor.highlighted == ["b"])
-        #expect(cursor.select() == "b")
-        #expect(cursor.phase == .rows(0))
-    }
-
-    @Test func returnsToRowsAfterTwoPassesWithoutAChoice() {
-        var cursor = ScanCursor(rows: [["a"], ["c", "d"]])
-        cursor.step()
-        _ = cursor.select()
-        cursor.step()
-        cursor.step()
-        cursor.step()
-        #expect(cursor.isScanningKeys)
-        cursor.step()
-        #expect(cursor.phase == .rows(1))
-    }
-
-    @Test func rowsCoverEveryKeyOnce() {
-        let layout = KeyboardLayoutManager.shared.generateLayout(geometry: .ansi, numericKeypad: true)
-        let rows = ScanCursor.rows(for: layout)
-        #expect(rows.count >= 6)
-        let ids = rows.flatMap { $0 }
-        #expect(Set(ids).count == ids.count)
-        #expect(Set(ids) == Set(layout.keys.filter { $0.kind != .spacer }.map(\.id)))
-        #expect(rows[1].first == "k_50")
-    }
-
+@Suite("Remap settings defaults")
+struct RemapSettingsDefaultsTests {
     @Test func newSettingsHaveSafeDefaults() throws {
         let decoded = try JSONDecoder().decode(KeyliConfig.self, from: Data("{}".utf8))
         #expect(decoded.keyRemaps.isEmpty)
-        #expect(decoded.scanningEnabled == false)
-        #expect(decoded.scanInterval == 1.0)
-        #expect(decoded.scanSelectByClick)
-        #expect(ShortcutAction.scanSelect.group == .typing)
         #expect(SettingsTab.remap.category == .keyboard)
+    }
+
+    @Test func oldConfigsWithScanningSettingsStillDecode() throws {
+        let old = #"{"scanningEnabled": true, "scanInterval": 2.0, "scanSelectByClick": false}"#
+        let decoded = try JSONDecoder().decode(KeyliConfig.self, from: Data(old.utf8))
+        #expect(decoded.keyRemaps.isEmpty)
+        #expect(!ShortcutAction.allCases.map(\.rawValue).contains("scanSelect"))
     }
 }

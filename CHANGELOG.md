@@ -14,9 +14,18 @@ All notable changes to Keyli will be documented in this file.
 - **Swipe typing**: drag across letters to type a word, with other matches offered as suggestions and spaces added between swiped words.
 - **Backup & Sync**: export and import settings, shortcuts, custom themes and your personal dictionary, or keep them in step across Macs through a synced folder such as iCloud Drive.
 - **Remap keys**: a new Remap page in Settings lets you click any key and make it type different text, press another key, send a shortcut, run a snippet or do nothing, with an optional label. Dvorak and Colemak layouts are one click away.
-- **Switch scanning**: a highlight steps through the rows and then the keys, so the whole keyboard works with a single switch. Select with a click on the keyboard or a switch shortcut, and set the time per step.
-- **Lock modifier keys**: double-click or hold Shift, Control, Option or Command to lock it, so you can type several capitals or send several shortcuts in a row, then click it again to unlock. A light on the key and a chip in the status bar show what's locked, and a fast double-click unlocks too. With Hover to Type, switch scanning or VoiceOver, choosing a modifier twice locks it, with no timing needed. Locks clear when the keyboard hides.
+- **Lock modifier keys**: double-click or hold Shift, Control, Option or Command to lock it, so you can type several capitals or send several shortcuts in a row, then click it again to unlock. A light on the key and a chip in the status bar show what's locked, and a fast double-click unlocks too. With Hover to Type or VoiceOver, choosing a modifier twice locks it, with no timing needed. Locks clear when the keyboard hides.
 - **Better VoiceOver**: keys read what they do, modifier keys report on or off, keypad and function keys are named clearly, and the actions menu on a letter types its accents.
+- **More shortcuts**: new global shortcuts for the number pad, previous input source, clearing clipboard history, word suggestions, sticky modifiers, sounds for Mac keyboard typing, previous sound pack, key sound volume up and down, previous theme, Setup Assistant, Keyboard settings and showing or hiding the menu bar icon.
+- **Shortcuts in the menu bar menu**: menu items show their assigned shortcut on the right, and every other action you give a shortcut appears in a Shortcuts section, with a checkmark for settings that are on.
+
+### Fixed
+
+- **Key sounds no longer go quiet**: when a password field, the lock screen or another app turns on Secure Input, typing sounds keep playing instead of only modifier keys clicking. Sounds also come back right after the Mac wakes or you unlock it.
+
+### Removed
+
+- **Switch scanning**: removed in favor of macOS Switch Control (System Settings › Accessibility › Switch Control), which scans the whole screen, works with every app and supports switch hardware. The Switch Scanning settings and the "Switch Scanning: Select" shortcut are gone; existing settings are ignored safely.
 
 ## 1.0.2
 

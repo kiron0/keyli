@@ -87,10 +87,6 @@ public final class KeyboardCoordinator {
             KeyboardLayoutManager.shared.reloadActiveLayout()
         }
 
-        if previous.scanningEnabled != config.scanningEnabled || previous.scanInterval != config.scanInterval {
-            KeyScanner.shared.applyConfig()
-        }
-
         if previous.clipboardHistoryEnabled != config.clipboardHistoryEnabled {
             ClipboardHistory.shared.applyConfig()
         }

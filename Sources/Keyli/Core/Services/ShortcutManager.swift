@@ -16,7 +16,6 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
     case clearClipboardHistory
     case toggleWordSuggestions
     case toggleStickyModifiers
-    case scanSelect
     case toggleKeySounds
     case togglePhysicalTypingSounds
     case nextSoundPack
@@ -53,7 +52,7 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
     public var group: Group {
         switch self {
         case .toggleKeyboard, .togglePin, .togglePositionLock, .togglePhysicalHighlight, .toggleKeystrokeOverlay, .toggleNumericKeypad: return .window
-        case .nextInputSource, .previousInputSource, .showEmojiAndSymbols, .toggleSnippets, .toggleClipboard, .clearClipboardHistory, .toggleWordSuggestions, .toggleStickyModifiers, .scanSelect: return .typing
+        case .nextInputSource, .previousInputSource, .showEmojiAndSymbols, .toggleSnippets, .toggleClipboard, .clearClipboardHistory, .toggleWordSuggestions, .toggleStickyModifiers: return .typing
         case .toggleKeySounds, .togglePhysicalTypingSounds, .nextSoundPack, .previousSoundPack, .keySoundVolumeUp, .keySoundVolumeDown: return .sounds
         case .nextTheme, .previousTheme, .openSettings, .openThemeStudio, .openSetupAssistant, .openKeyboardSettings, .toggleMenuBarIcon, .checkForUpdates: return .app
         }
@@ -75,7 +74,6 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
         case .clearClipboardHistory: return "Clear Clipboard History"
         case .toggleWordSuggestions: return "Turn Word Suggestions On or Off"
         case .toggleStickyModifiers: return "Sticky Modifier Keys"
-        case .scanSelect: return "Switch Scanning: Select"
         case .toggleKeySounds: return "Turn Key Sounds On or Off"
         case .togglePhysicalTypingSounds: return "Sounds for Mac Keyboard Typing"
         case .nextSoundPack: return "Next Sound Pack"
@@ -109,7 +107,6 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
         case .clearClipboardHistory: return "Forget everything Keyli has saved from the clipboard."
         case .toggleWordSuggestions: return "Show or hide word suggestions above the keyboard."
         case .toggleStickyModifiers: return "Make ⇧ ⌥ ^ ⌘ stay down for one key, or until tapped again."
-        case .scanSelect: return "Your switch. Picks the highlighted row, then the highlighted key."
         case .toggleKeySounds: return "Mute or unmute keycap sounds."
         case .togglePhysicalTypingSounds: return "Play sounds when you type on your Mac's own keyboard."
         case .nextSoundPack: return "Cycle through your favorite packs, or all packs."
@@ -143,7 +140,6 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
         case .clearClipboardHistory: return "trash"
         case .toggleWordSuggestions: return "text.badge.plus"
         case .toggleStickyModifiers: return "command"
-        case .scanSelect: return "dot.viewfinder"
         case .toggleKeySounds: return "speaker.wave.2"
         case .togglePhysicalTypingSounds: return "keyboard.badge.ellipsis"
         case .nextSoundPack: return "music.note.list"
@@ -416,8 +412,6 @@ public final class ShortcutManager: ObservableObject {
             store.config.wordSuggestionsEnabled.toggle()
         case .toggleStickyModifiers:
             store.config.modifierStickyMode.toggle()
-        case .scanSelect:
-            KeyScanner.shared.select()
         case .toggleKeySounds:
             store.config.playKeyClickSound.toggle()
         case .togglePhysicalTypingSounds:

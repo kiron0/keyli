@@ -68,9 +68,6 @@ public struct KeyliConfig: Codable, Equatable {
     public var swipeTypingEnabled: Bool = false
     public var settingsSyncFolder: String? = nil
     public var keyRemaps: [KeyRemap] = []
-    public var scanningEnabled: Bool = false
-    public var scanInterval: Double = 1.0
-    public var scanSelectByClick: Bool = true
     public var syntheticTypingDelayMs: Int = 5
     public var floatingWindowX: Double? = nil
     public var floatingWindowY: Double? = nil
@@ -129,9 +126,6 @@ public struct KeyliConfig: Codable, Equatable {
         swipeTypingEnabled = try container.decodeIfPresent(Bool.self, forKey: .swipeTypingEnabled) ?? fallback.swipeTypingEnabled
         settingsSyncFolder = try container.decodeIfPresent(String.self, forKey: .settingsSyncFolder)
         keyRemaps = try container.decodeIfPresent([KeyRemap].self, forKey: .keyRemaps) ?? fallback.keyRemaps
-        scanningEnabled = try container.decodeIfPresent(Bool.self, forKey: .scanningEnabled) ?? fallback.scanningEnabled
-        scanInterval = try container.decodeIfPresent(Double.self, forKey: .scanInterval) ?? fallback.scanInterval
-        scanSelectByClick = try container.decodeIfPresent(Bool.self, forKey: .scanSelectByClick) ?? fallback.scanSelectByClick
         syntheticTypingDelayMs = try container.decodeIfPresent(Int.self, forKey: .syntheticTypingDelayMs) ?? fallback.syntheticTypingDelayMs
         floatingWindowX = try container.decodeIfPresent(Double.self, forKey: .floatingWindowX)
         floatingWindowY = try container.decodeIfPresent(Double.self, forKey: .floatingWindowY)
