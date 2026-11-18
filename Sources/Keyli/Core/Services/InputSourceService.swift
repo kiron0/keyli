@@ -14,23 +14,28 @@ public final class InputSourceService: ObservableObject {
     @Published public private(set) var sources: [InputSourceOption] = []
     @Published public private(set) var currentId: String = ""
 
-    private var observer: NSObjectProtocol?
-
     private init() {
         refresh()
-        observer = DistributedNotificationCenter.default().addObserver(
-            forName: Notification.Name("com.apple.Carbon.TISNotifySelectedKeyboardInputSourceChanged"),
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.refresh()
-        }
+        CFNotificationCenterAddObserver(
+            CFNotificationCenterGetDistributedCenter(),
+            Unmanaged.passUnretained(self).toOpaque(),
+            { _, observer, _, _, _ in
+                guard let observer else { return }
+                let service = Unmanaged<InputSourceService>.fromOpaque(observer).takeUnretainedValue()
+                if Thread.isMainThread {
+                    service.refresh()
+                } else {
+                    DispatchQueue.main.async { service.refresh() }
+                }
+            },
+            kTISNotifySelectedKeyboardInputSourceChanged,
+            nil,
+            .deliverImmediately
+        )
     }
 
     deinit {
-        if let observer = observer {
-            DistributedNotificationCenter.default().removeObserver(observer)
-        }
+        CFNotificationCenterRemoveEveryObserver(CFNotificationCenterGetDistributedCenter(), Unmanaged.passUnretained(self).toOpaque())
     }
 
     private static func string(_ source: TISInputSource, _ key: CFString) -> String? {

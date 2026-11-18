@@ -41,9 +41,8 @@ public final class StatusItemController: NSObject {
     private func observeUpdates() {
         InputSourceService.shared.$currentId
             .combineLatest(InputSourceService.shared.$sources)
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.updateIcon(isKeyboardVisible: PanelManager.shared.isFloatingVisible)
+            .sink { [weak self] currentId, sources in
+                self?.updateIcon(isKeyboardVisible: PanelManager.shared.isFloatingVisible, currentId: currentId, sources: sources)
             }
             .store(in: &updateObservers)
         UpdateChecker.shared.$availableUpdate
@@ -110,13 +109,15 @@ public final class StatusItemController: NSObject {
         statusItem?.isVisible = isVisible
     }
 
-    private func updateIcon(isKeyboardVisible: Bool) {
+    private func updateIcon(isKeyboardVisible: Bool, currentId: String? = nil, sources: [InputSourceOption]? = nil) {
         guard let button = statusItem?.button else { return }
         let service = InputSourceService.shared
-        let current = service.sources.first { $0.id == service.currentId }
+        let sources = sources ?? service.sources
+        let currentId = currentId ?? service.currentId
+        let current = sources.first { $0.id == currentId }
         if let current {
-            if iconCacheSources != service.sources {
-                iconCacheSources = service.sources
+            if iconCacheSources != sources {
+                iconCacheSources = sources
                 iconCache.removeAll()
             }
             let image = iconCache[current.id] ?? service.icon(for: current.id) ?? Self.letterBadge(current.name)
