@@ -90,6 +90,7 @@ public final class KeySoundEngine {
     private let loadQueue = DispatchQueue(label: "io.coreify.keyli.keysounds.load", qos: .userInitiated)
 
     private var held: Set<Int> = []
+    private var lastDownAt: [Int: CFTimeInterval] = [:]
     private var lastPlay: CFTimeInterval = 0
     private var idleTimer: Timer?
     private var cancellables: Set<AnyCancellable> = []
@@ -132,9 +133,23 @@ public final class KeySoundEngine {
         ConfigStore.shared.config.playKeyClickSound
     }
 
+    static let duplicateDownWindow: CFTimeInterval = 0.08
+
+    static func isDuplicateDown(wasHeld: Bool, lastDown: CFTimeInterval?, now: CFTimeInterval) -> Bool {
+        guard wasHeld, let lastDown else { return false }
+        return now - lastDown < duplicateDownWindow
+    }
+
     public func keyDown(_ keyCode: UInt16, source: Source, isRepeat: Bool = false) {
         guard isEnabled, !isRepeat else { return }
-        held.insert(heldKey(keyCode, source))
+        let key = heldKey(keyCode, source)
+        let now = CACurrentMediaTime()
+        if source == .physical,
+           Self.isDuplicateDown(wasHeld: held.contains(key), lastDown: lastDownAt[key], now: now) {
+            return
+        }
+        lastDownAt[key] = now
+        held.insert(key)
         guard !KeySoundMuteRules.shared.isMuted else { return }
         if let buffer = clip(for: keyCode).down {
             play(buffer, source: source)

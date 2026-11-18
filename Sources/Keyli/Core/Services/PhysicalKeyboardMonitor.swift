@@ -19,7 +19,33 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
 
-    private init() {}
+    private var wakeObservers: [NSObjectProtocol] = []
+
+    private init() {
+        let center = NSWorkspace.shared.notificationCenter
+        let names: [Notification.Name] = [
+            NSWorkspace.didWakeNotification,
+            NSWorkspace.screensDidWakeNotification,
+            NSWorkspace.sessionDidBecomeActiveNotification
+        ]
+        wakeObservers = names.map { name in
+            center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                self?.rearm()
+            }
+        }
+    }
+
+    public var needsSoundFallback: Bool {
+        let config = ConfigStore.shared.config
+        return config.playKeyClickSound && config.keySoundsForPhysicalTyping
+    }
+
+    public func rearm() {
+        if isRunning {
+            stop()
+        }
+        refresh()
+    }
 
     public var needsEventTap: Bool {
         let config = ConfigStore.shared.config
@@ -37,6 +63,11 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
             start()
         } else {
             stop()
+        }
+        if isRunning && needsSoundFallback {
+            SecureInputKeySoundFallback.shared.start()
+        } else {
+            SecureInputKeySoundFallback.shared.stop()
         }
         if oldIsRunningForRefresh != isRunning {
             DispatchQueue.main.async {
@@ -107,6 +138,7 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
         self.eventTap = nil
         self.runLoopSource = nil
         self.isRunning = false
+        SecureInputKeySoundFallback.shared.stop()
         clearPressedKeys()
         KeySoundEngine.shared.releaseAll(source: .physical)
     }
@@ -144,6 +176,11 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
 
         if isRunning && config.keySoundsForPhysicalTyping {
             playSound(type: type, event: event, keyCode: rawKeyCode)
+            if type == .keyDown,
+               event.getIntegerValueField(.keyboardEventAutorepeat) == 0,
+               SecureInputKeySoundFallback.shared.isRunning {
+                SecureInputKeySoundFallback.shared.noteTapKeyDown(rawKeyCode)
+            }
         }
 
         if isRunning && type == .keyDown && config.keystrokeOverlayEnabled {
