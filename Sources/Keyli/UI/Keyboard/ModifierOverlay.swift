@@ -10,7 +10,7 @@ public struct ModifierOverlay: View {
     }
 
     public var body: some View {
-        let text = Color(hex: theme.keycapTextColorHex)
+        let text = theme.chromeTextColor
 
         HStack(spacing: 8) {
             if let issue = state.dispatchIssue {
@@ -20,6 +20,28 @@ public struct ModifierOverlay: View {
             }
 
             Spacer(minLength: 8)
+
+            if !state.lockedModifiers.isEmpty {
+                let locked = ModifierLatch.lockable.filter { state.lockedModifiers.contains($0) }
+                Button {
+                    state.releaseAllModifiers()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 9, weight: .semibold))
+                        Text(locked.map(ModifierLatch.symbol).joined())
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundColor(text)
+                    .padding(.horizontal, 7)
+                    .frame(height: 18)
+                    .background(Capsule().fill(Color(hex: theme.accentColorHex).opacity(0.3)))
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .help("Locked: \(locked.map(ModifierLatch.name).joined(separator: ", ")). Click to unlock.")
+                .accessibilityLabel("Locked \(locked.map(ModifierLatch.name).joined(separator: ", ")). Unlock")
+            }
 
             HStack(spacing: 4) {
                 Image(systemName: "globe")

@@ -61,11 +61,16 @@ public final class KeyboardLayoutManager: ObservableObject {
     }
 
     public func generateLayout(geometry: GeometryType) -> KeyboardLayout {
+        let config = ConfigStore.shared.config
+        return generateLayout(geometry: geometry, numericKeypad: config.showNumericKeypad, remaps: config.keyRemaps, snippets: config.snippets)
+    }
+
+    public func generateLayout(geometry: GeometryType, numericKeypad: Bool, remaps: [KeyRemap] = [], snippets: [Snippet] = []) -> KeyboardLayout {
         CharacterTranslator.shared.refreshInputSource()
         let translator = CharacterTranslator.shared
 
-        let keys: [KeyboardKey]
-        let width: Double = 15.0
+        var keys: [KeyboardKey]
+        var width: Double = 14.5
         let height: Double
 
         switch geometry {
@@ -83,8 +88,16 @@ public final class KeyboardLayoutManager: ObservableObject {
             keys = buildCompactKeys(translator: translator)
         }
 
+        if numericKeypad {
+            let topOffset = geometry == .compact ? 0.85 : 0.0
+            keys += Self.keypadKeys(originX: width + Self.keypadGap, topOffset: topOffset, includesNavigationRow: geometry != .compact)
+            width += Self.keypadGap + Self.keypadWidth
+        }
+
+        keys = KeyRemapper.apply(remaps, to: keys, snippets: snippets)
+
         return KeyboardLayout(
-            id: "\(geometry.rawValue)_\(translator.activeInputSourceID)",
+            id: "\(geometry.rawValue)_\(translator.activeInputSourceID)\(numericKeypad ? "_keypad" : "")",
             name: "\(geometry.displayName) (\(translator.activeInputSourceName))",
             geometryType: geometry,
             inputSourceId: translator.activeInputSourceID,
@@ -118,7 +131,7 @@ public final class KeyboardLayoutManager: ObservableObject {
                 labels: KeyLabels(defaultLabel: label), symbolIcon: icon, systemAction: action))
         }
         list.append(KeyboardKey(id: "k_lock", keyCode: KeyliConstants.noKeyCode, kind: .system,
-            unitFrame: KeyUnitFrame(x: fStart + 12 * fW, y: 0, width: 1.5, height: fh),
+            unitFrame: KeyUnitFrame(x: fStart + 12 * fW, y: 0, width: 1.0, height: fh),
             labels: KeyLabels(defaultLabel: "lock"), symbolIcon: "lock.fill", systemAction: .lockScreen))
 
         let ny: Double = 0.85
@@ -131,7 +144,7 @@ public final class KeyboardLayoutManager: ObservableObject {
                 labels: labels))
         }
         list.append(KeyboardKey(id: "k_delete", keyCode: 51, kind: .system,
-            unitFrame: KeyUnitFrame(x: 13.0, y: ny, width: 2.0, height: nh),
+            unitFrame: KeyUnitFrame(x: 13.0, y: ny, width: 1.5, height: nh),
             labels: KeyLabels(defaultLabel: "delete"), symbolIcon: "delete.left.fill"))
 
         let qy: Double = 1.95
@@ -148,7 +161,7 @@ public final class KeyboardLayoutManager: ObservableObject {
         }
         let bslashLabels = translator.translateKeycode(42)
         list.append(KeyboardKey(id: "k_42", keyCode: 42, kind: .character,
-            unitFrame: KeyUnitFrame(x: 13.5, y: qy, width: 1.5, height: qh),
+            unitFrame: KeyUnitFrame(x: 13.5, y: qy, width: 1.0, height: qh),
             labels: bslashLabels))
 
         let hy: Double = 3.05
@@ -164,7 +177,7 @@ public final class KeyboardLayoutManager: ObservableObject {
                 labels: labels))
         }
         list.append(KeyboardKey(id: "k_return", keyCode: 36, kind: .system,
-            unitFrame: KeyUnitFrame(x: 12.75, y: hy, width: 2.25, height: hh),
+            unitFrame: KeyUnitFrame(x: 12.75, y: hy, width: 1.75, height: hh),
             labels: KeyLabels(defaultLabel: "return"), symbolIcon: "return"))
 
         let sy: Double = 4.15
@@ -180,39 +193,39 @@ public final class KeyboardLayoutManager: ObservableObject {
                 labels: labels))
         }
         list.append(KeyboardKey(id: "k_rshift", keyCode: 60, kind: .modifier, modifierType: .shift,
-            unitFrame: KeyUnitFrame(x: 12.25, y: sy, width: 2.75, height: sh),
+            unitFrame: KeyUnitFrame(x: 12.25, y: sy, width: 2.25, height: sh),
             labels: KeyLabels(defaultLabel: "shift"), symbolIcon: "shift.fill"))
 
         let my: Double = 5.25
         let mh: Double = 1.0
         let ah: Double = 0.5
-        let aw: Double = 0.875
+        let aw: Double = 1.0
 
         list.append(KeyboardKey(id: "k_fn",    keyCode: 63,  kind: .modifier, modifierType: .fn,
             unitFrame: KeyUnitFrame(x: 0.0,   y: my, width: 1.0,  height: mh),
             labels: KeyLabels(defaultLabel: "fn"), symbolIcon: "globe"))
         list.append(KeyboardKey(id: "k_lctrl", keyCode: 59,  kind: .modifier, modifierType: .control,
-            unitFrame: KeyUnitFrame(x: 1.0,   y: my, width: 1.25, height: mh),
+            unitFrame: KeyUnitFrame(x: 1.0,   y: my, width: 1.0,  height: mh),
             labels: KeyLabels(defaultLabel: "control"), symbolIcon: "control"))
         list.append(KeyboardKey(id: "k_lopt",  keyCode: 58,  kind: .modifier, modifierType: .option,
-            unitFrame: KeyUnitFrame(x: 2.25,  y: my, width: 1.25, height: mh),
+            unitFrame: KeyUnitFrame(x: 2.0,   y: my, width: 1.0,  height: mh),
             labels: KeyLabels(defaultLabel: "option"), symbolIcon: "option"))
         list.append(KeyboardKey(id: "k_lcmd",  keyCode: 55,  kind: .modifier, modifierType: .command,
-            unitFrame: KeyUnitFrame(x: 3.5,   y: my, width: 1.5,  height: mh),
+            unitFrame: KeyUnitFrame(x: 3.0,   y: my, width: 1.25, height: mh),
             labels: KeyLabels(defaultLabel: "command"), symbolIcon: "command"))
 
         list.append(KeyboardKey(id: "k_space", keyCode: 49, kind: .character,
-            unitFrame: KeyUnitFrame(x: 5.0, y: my, width: 4.625, height: mh),
+            unitFrame: KeyUnitFrame(x: 4.25, y: my, width: 5.0, height: mh),
             labels: KeyLabels(defaultLabel: " ")))
 
         list.append(KeyboardKey(id: "k_rcmd",  keyCode: 54,  kind: .modifier, modifierType: .command,
-            unitFrame: KeyUnitFrame(x: 9.625, y: my, width: 1.5,  height: mh),
+            unitFrame: KeyUnitFrame(x: 9.25, y: my, width: 1.25, height: mh),
             labels: KeyLabels(defaultLabel: "command"), symbolIcon: "command"))
         list.append(KeyboardKey(id: "k_ropt",  keyCode: 61,  kind: .modifier, modifierType: .option,
-            unitFrame: KeyUnitFrame(x: 11.125, y: my, width: 1.25, height: mh),
+            unitFrame: KeyUnitFrame(x: 10.5, y: my, width: 1.0,  height: mh),
             labels: KeyLabels(defaultLabel: "option"), symbolIcon: "option"))
 
-        let arrowX: Double = 12.375
+        let arrowX: Double = 11.5
         list.append(KeyboardKey(id: "k_larrow", keyCode: 123, kind: .navigation,
             unitFrame: KeyUnitFrame(x: arrowX,        y: my + ah, width: aw, height: ah),
             labels: KeyLabels(defaultLabel: "◀"), symbolIcon: "arrowtriangle.backward.fill"))
@@ -239,7 +252,7 @@ public final class KeyboardLayoutManager: ObservableObject {
             unitFrame: KeyUnitFrame(x: 12.75, y: 3.05, width: 1.0, height: 1.0),
             labels: translator.translateKeycode(42)))
         list.append(KeyboardKey(id: "k_return", keyCode: 36, kind: .system,
-            unitFrame: KeyUnitFrame(x: 13.75, y: 1.95, width: 1.25, height: 2.1),
+            unitFrame: KeyUnitFrame(x: 13.75, y: 1.95, width: 0.75, height: 2.1),
             labels: KeyLabels(defaultLabel: "return"), symbolIcon: "return",
             topLeftExtension: 0.25))
         list.append(KeyboardKey(id: "k_lshift", keyCode: 56, kind: .modifier, modifierType: .shift,
@@ -268,17 +281,74 @@ public final class KeyboardLayoutManager: ObservableObject {
             unitFrame: KeyUnitFrame(x: 12.25, y: 4.15, width: 1.0, height: 1.0),
             labels: translator.translateKeycode(94)))
         list.append(KeyboardKey(id: "k_rshift", keyCode: 60, kind: .modifier, modifierType: .shift,
-            unitFrame: KeyUnitFrame(x: 13.25, y: 4.15, width: 1.75, height: 1.0),
+            unitFrame: KeyUnitFrame(x: 13.25, y: 4.15, width: 1.25, height: 1.0),
             labels: KeyLabels(defaultLabel: "shift"), symbolIcon: "shift.fill"))
         list.append(KeyboardKey(id: "k_eisu", keyCode: 102, kind: .system,
-            unitFrame: KeyUnitFrame(x: 5.0, y: 5.25, width: 1.125, height: 1.0),
+            unitFrame: KeyUnitFrame(x: 4.25, y: 5.25, width: 1.25, height: 1.0),
             labels: KeyLabels(defaultLabel: "英数")))
         list.append(KeyboardKey(id: "k_space", keyCode: 49, kind: .character,
-            unitFrame: KeyUnitFrame(x: 6.125, y: 5.25, width: 2.375, height: 1.0),
+            unitFrame: KeyUnitFrame(x: 5.5, y: 5.25, width: 2.5, height: 1.0),
             labels: KeyLabels(defaultLabel: " ")))
         list.append(KeyboardKey(id: "k_kana", keyCode: 104, kind: .system,
-            unitFrame: KeyUnitFrame(x: 8.5, y: 5.25, width: 1.125, height: 1.0),
+            unitFrame: KeyUnitFrame(x: 8.0, y: 5.25, width: 1.25, height: 1.0),
             labels: KeyLabels(defaultLabel: "かな")))
+        return list
+    }
+
+    public static let keypadGap: Double = 0.25
+    public static let keypadWidth: Double = 4.0
+    public static let keypadKeyCodes: Set<UInt16> = [65, 67, 69, 71, 75, 76, 78, 81, 82, 83, 84, 85, 86, 87, 88, 89, 91, 92]
+
+    public static func isKeypadKey(_ key: KeyboardKey) -> Bool {
+        key.id.hasPrefix("kp_")
+    }
+
+    public static func keypadKeys(originX x: Double, topOffset: Double, includesNavigationRow: Bool) -> [KeyboardKey] {
+        var list: [KeyboardKey] = []
+        let rows: [Double] = [0.85, 1.95, 3.05, 4.15, 5.25].map { $0 - topOffset }
+
+        if includesNavigationRow {
+            let nav: [(UInt16, String)] = [(115, "home"), (119, "end"), (116, "pg up"), (121, "pg dn")]
+            for (i, (code, label)) in nav.enumerated() {
+                list.append(KeyboardKey(id: "kp_nav_\(code)", keyCode: code, kind: .navigation,
+                    unitFrame: KeyUnitFrame(x: x + Double(i), y: 0, width: 1.0, height: 0.75),
+                    labels: KeyLabels(defaultLabel: label)))
+            }
+        }
+
+        func character(_ code: UInt16, _ label: String, column: Int, row: Int, width: Double = 1.0) {
+            list.append(KeyboardKey(id: "kp_\(code)", keyCode: code, kind: .character,
+                unitFrame: KeyUnitFrame(x: x + Double(column), y: rows[row], width: width, height: 1.0),
+                labels: KeyLabels(defaultLabel: label)))
+        }
+
+        list.append(KeyboardKey(id: "kp_71", keyCode: 71, kind: .system,
+            unitFrame: KeyUnitFrame(x: x, y: rows[0], width: 1.0, height: 1.0),
+            labels: KeyLabels(defaultLabel: "clear")))
+        character(81, "=", column: 1, row: 0)
+        character(75, "/", column: 2, row: 0)
+        character(67, "*", column: 3, row: 0)
+
+        character(89, "7", column: 0, row: 1)
+        character(91, "8", column: 1, row: 1)
+        character(92, "9", column: 2, row: 1)
+        character(78, "-", column: 3, row: 1)
+
+        character(86, "4", column: 0, row: 2)
+        character(87, "5", column: 1, row: 2)
+        character(88, "6", column: 2, row: 2)
+        character(69, "+", column: 3, row: 2)
+
+        character(83, "1", column: 0, row: 3)
+        character(84, "2", column: 1, row: 3)
+        character(85, "3", column: 2, row: 3)
+        list.append(KeyboardKey(id: "kp_76", keyCode: 76, kind: .system,
+            unitFrame: KeyUnitFrame(x: x + 3, y: rows[3], width: 1.0, height: rows[4] - rows[3] + 1.0),
+            labels: KeyLabels(defaultLabel: "enter")))
+
+        character(82, "0", column: 0, row: 4, width: 2.0)
+        character(65, ".", column: 2, row: 4)
+
         return list
     }
 

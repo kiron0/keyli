@@ -1,3 +1,4 @@
+import Carbon
 import Foundation
 import CoreGraphics
 import AppKit
@@ -18,13 +19,40 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
 
-    private init() {}
+    private var wakeObservers: [NSObjectProtocol] = []
+
+    private init() {
+        let center = NSWorkspace.shared.notificationCenter
+        let names: [Notification.Name] = [
+            NSWorkspace.didWakeNotification,
+            NSWorkspace.screensDidWakeNotification,
+            NSWorkspace.sessionDidBecomeActiveNotification
+        ]
+        wakeObservers = names.map { name in
+            center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                self?.rearm()
+            }
+        }
+    }
+
+    public var needsSoundFallback: Bool {
+        let config = ConfigStore.shared.config
+        return config.playKeyClickSound && config.keySoundsForPhysicalTyping
+    }
+
+    public func rearm() {
+        if isRunning {
+            stop()
+        }
+        refresh()
+    }
 
     public var needsEventTap: Bool {
         let config = ConfigStore.shared.config
         return (config.isPhysicalMonitoringEnabled && hasVisibleKeyboard)
             || (config.playKeyClickSound && config.keySoundsForPhysicalTyping)
             || config.keystrokeOverlayEnabled
+            || (config.wordSuggestionsEnabled && config.learnWordsFromTyping)
     }
 
     public func refresh() {
@@ -35,6 +63,11 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
             start()
         } else {
             stop()
+        }
+        if isRunning && needsSoundFallback {
+            SecureInputKeySoundFallback.shared.start()
+        } else {
+            SecureInputKeySoundFallback.shared.stop()
         }
         if oldIsRunningForRefresh != isRunning {
             DispatchQueue.main.async {
@@ -105,6 +138,7 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
         self.eventTap = nil
         self.runLoopSource = nil
         self.isRunning = false
+        SecureInputKeySoundFallback.shared.stop()
         clearPressedKeys()
         KeySoundEngine.shared.releaseAll(source: .physical)
     }
@@ -142,6 +176,11 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
 
         if isRunning && config.keySoundsForPhysicalTyping {
             playSound(type: type, event: event, keyCode: rawKeyCode)
+            if type == .keyDown,
+               event.getIntegerValueField(.keyboardEventAutorepeat) == 0,
+               SecureInputKeySoundFallback.shared.isRunning {
+                SecureInputKeySoundFallback.shared.noteTapKeyDown(rawKeyCode)
+            }
         }
 
         if isRunning && type == .keyDown && config.keystrokeOverlayEnabled {
@@ -154,6 +193,24 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
             let printable = character.flatMap { $0.unicodeScalars.allSatisfy { $0.value >= 32 } ? $0 : nil }
             DispatchQueue.main.async {
                 KeystrokeOverlay.shared.handleKeyDown(keyCode: rawKeyCode, flags: flags, character: printable, isRepeat: isRepeat)
+            }
+        }
+
+        if isRunning && type == .keyDown && config.wordSuggestionsEnabled && config.learnWordsFromTyping && !IsSecureEventInputEnabled() {
+            var length = 0
+            var chars = [UniChar](repeating: 0, count: 4)
+            event.keyboardGetUnicodeString(maxStringLength: 4, actualStringLength: &length, unicodeString: &chars)
+            let flags = event.flags
+            let input = WordSuggestions.classifyPhysical(
+                keyCode: rawKeyCode,
+                characters: length > 0 ? String(utf16CodeUnits: chars, count: length) : nil,
+                command: flags.contains(.maskCommand),
+                control: flags.contains(.maskControl)
+            )
+            if input != .ignore {
+                DispatchQueue.main.async {
+                    WordSuggestions.shared.didTypePhysically(input)
+                }
             }
         }
 

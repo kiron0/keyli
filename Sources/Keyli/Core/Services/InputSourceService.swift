@@ -86,6 +86,15 @@ public final class InputSourceService: ObservableObject {
         return select(id: next.id)
     }
 
+    @discardableResult
+    public func selectPrevious() -> Bool {
+        refresh()
+        guard sources.count > 1 else { return false }
+        let index = sources.firstIndex(where: { $0.id == currentId }) ?? 0
+        let previous = sources[(index + sources.count - 1) % sources.count]
+        return select(id: previous.id)
+    }
+
     public func icon(for id: String) -> NSImage? {
         guard let source = InputSourceService.enabledKeyboardSources().first(where: { InputSourceService.string($0, kTISPropertyInputSourceID) == id }) else {
             return nil

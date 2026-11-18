@@ -25,6 +25,8 @@ public final class KeyboardCoordinator {
 
         setupNotificationObservers()
         observeConfig()
+        ClipboardHistory.shared.applyConfig()
+        SettingsBackup.shared.applySyncFolder()
     }
 
     private func setupNotificationObservers() {
@@ -77,6 +79,20 @@ public final class KeyboardCoordinator {
         if previous.layoutGeometry != config.layoutGeometry {
             KeyboardLayoutManager.shared.reloadActiveLayout()
             PanelManager.shared.fitPanelsToLayout()
+        } else if previous.showNumericKeypad != config.showNumericKeypad {
+            KeyboardLayoutManager.shared.reloadActiveLayout()
+            PanelManager.shared.fitPanelsToLayout(preservingHeight: true)
+        } else if previous.keyRemaps != config.keyRemaps
+                    || (!config.keyRemaps.isEmpty && previous.snippets != config.snippets) {
+            KeyboardLayoutManager.shared.reloadActiveLayout()
+        }
+
+        if previous.clipboardHistoryEnabled != config.clipboardHistoryEnabled {
+            ClipboardHistory.shared.applyConfig()
+        }
+
+        if previous.settingsSyncFolder != config.settingsSyncFolder {
+            SettingsBackup.shared.applySyncFolder()
         }
 
         if previous.themeId != config.themeId && ThemeManager.shared.currentTheme.id != config.themeId {
@@ -110,7 +126,8 @@ public final class KeyboardCoordinator {
             != (config.playKeyClickSound && config.keySoundsForPhysicalTyping)
         if previous.isPhysicalMonitoringEnabled != config.isPhysicalMonitoringEnabled
             || physicalSoundsChanged
-            || previous.keystrokeOverlayEnabled != config.keystrokeOverlayEnabled {
+            || previous.keystrokeOverlayEnabled != config.keystrokeOverlayEnabled
+            || (previous.wordSuggestionsEnabled && previous.learnWordsFromTyping) != (config.wordSuggestionsEnabled && config.learnWordsFromTyping) {
             if !config.keystrokeOverlayEnabled {
                 KeystrokeOverlay.shared.hide()
             }

@@ -27,6 +27,8 @@ public enum KeyDispatchAction: Equatable {
     case text(String, keyCode: UInt16)
     case keyCode(UInt16)
     case system(KeySystemAction)
+    case shortcut([String])
+    case snippet(String)
 }
 
 public final class KeyboardInputDispatcher {
@@ -34,7 +36,31 @@ public final class KeyboardInputDispatcher {
 
     private init() {}
 
+    public static func remapAction(_ remap: RemapAction, key: KeyboardKey, state: KeyboardState) -> KeyDispatchAction {
+        switch remap {
+        case .disabled:
+            return .none
+        case .key(let code):
+            return .keyCode(code)
+        case .shortcut(let keys):
+            return keys.isEmpty ? .none : .shortcut(keys)
+        case .snippet(let id):
+            return .snippet(id)
+        case .text(let text, let shifted):
+            if state.isCommandActive || state.isControlActive {
+                return .keyCode(key.shortcutKeyCode ?? key.keyCode)
+            }
+            let isLetter = text.count == 1 && text.first?.isLetter == true
+            let useShift = (state.isCapsLockActive && isLetter) ? !state.isShiftActive : state.isShiftActive
+            let output = useShift ? (shifted ?? KeyRemapper.shifted(text) ?? text) : text
+            return output.isEmpty ? .none : .text(output, keyCode: key.keyCode)
+        }
+    }
+
     public func action(for key: KeyboardKey, state: KeyboardState) -> KeyDispatchAction {
+        if let remap = key.remap {
+            return Self.remapAction(remap, key: key, state: state)
+        }
         switch key.kind {
         case .modifier:
             if let mod = key.modifierType {
@@ -89,7 +115,7 @@ public final class KeyboardInputDispatcher {
 
     public static func needsTargetApp(_ action: KeyDispatchAction) -> Bool {
         switch action {
-        case .text, .keyCode:
+        case .text, .keyCode, .shortcut, .snippet:
             return true
         case .system, .none, .toggleModifier:
             return false
@@ -100,7 +126,7 @@ public final class KeyboardInputDispatcher {
         switch action {
         case .system(.missionControl):
             return false
-        case .text, .keyCode, .system:
+        case .text, .keyCode, .system, .shortcut, .snippet:
             return true
         case .none, .toggleModifier:
             return false
@@ -183,7 +209,7 @@ public final class KeyboardInputDispatcher {
         case .none:
             return nil
         case .toggleModifier(let mod):
-            state.toggleModifier(mod)
+            state.pressModifier(mod, press: .sequence)
             return nil
         default:
             break
@@ -226,6 +252,58 @@ public final class KeyboardInputDispatcher {
         }
     }
 
+    public func replacePreviousCharacter(with text: String, state: KeyboardState) {
+        guard !text.isEmpty else { return }
+        deliverText(text, state: state) {
+            let plain = KeyboardState()
+            self.sendKeycode(51, state: plain)
+            self.typeText(text, state: plain)
+            WordSuggestions.shared.didPressKey(51)
+            WordSuggestions.shared.didType(text)
+        }
+    }
+
+    public func dispatchText(_ text: String, state: KeyboardState) {
+        guard !text.isEmpty else { return }
+        deliverText(text, state: state) {
+            self.typeText(text, state: KeyboardState())
+            WordSuggestions.shared.didType(text)
+        }
+    }
+
+    private func deliverText(_ text: String, state: KeyboardState, perform: @escaping () -> Void) {
+        let plan = KeyboardInputDispatcher.plan(
+            for: .text(text, keyCode: 0),
+            canPostEvents: PermissionsManager.canTypeNow,
+            secureInput: IsSecureEventInputEnabled(),
+            keyliIsActive: NSRunningApplication.current.isActive,
+            hasTarget: FocusManager.shared.isTargetValid
+        )
+        let send = {
+            if state.dispatchIssue != nil { state.dispatchIssue = nil }
+            perform()
+        }
+        switch plan {
+        case .refuse(let issue):
+            state.dispatchIssue = issue
+        case .activateTargetThenSend:
+            guard let target = FocusManager.shared.targetApplication else {
+                state.dispatchIssue = .noTarget
+                return
+            }
+            target.activate()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                guard target.isActive, !target.isTerminated else {
+                    state.dispatchIssue = .noTarget
+                    return
+                }
+                send()
+            }
+        case .send:
+            send()
+        }
+    }
+
     private func perform(_ action: KeyDispatchAction, state: KeyboardState) {
         if state.dispatchIssue != nil {
             state.dispatchIssue = nil
@@ -248,6 +326,15 @@ public final class KeyboardInputDispatcher {
             }
         case .system(let systemAction):
             performSystemAction(systemAction)
+        case .shortcut(let keys):
+            if let parsed = ShortcutManager.keysToCarbon(keys: keys), let shortcutState = SnippetRunner.modifierState(for: keys) {
+                sendKeycode(UInt16(parsed.keyCode), state: shortcutState)
+            }
+            WordSuggestions.shared.reset()
+        case .snippet(let id):
+            if let snippet = ConfigStore.shared.config.snippets.first(where: { $0.id == id }) {
+                SnippetRunner.run(snippet)
+            }
         case .none, .toggleModifier:
             break
         }
@@ -355,11 +442,7 @@ public final class KeyboardInputDispatcher {
 
     private func handlePostTypingModifiers(state: KeyboardState) {
         if ConfigStore.shared.config.modifierStickyMode {
-            if state.isShiftActive { state.isShiftActive = false }
-            if state.isOptionActive { state.isOptionActive = false }
-            if state.isControlActive { state.isControlActive = false }
-            if state.isCommandActive { state.isCommandActive = false }
-            if state.isFnActive { state.isFnActive = false }
+            state.releaseOneShotModifiers()
         }
     }
 }
