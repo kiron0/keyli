@@ -196,6 +196,22 @@ public final class ThemeManager: ObservableObject {
         }
     }
 
+    public func restoreCustomThemes(_ themes: [KeyboardTheme]) {
+        flushPendingWrites()
+        let builtInIds = Set(KeyboardTheme.builtInThemes.map { $0.id })
+        var changed = false
+        for var theme in themes where !theme.id.isEmpty && !builtInIds.contains(theme.id) {
+            theme.isBuiltIn = false
+            if availableThemes.first(where: { $0.id == theme.id }) != theme {
+                write(theme)
+                changed = true
+            }
+        }
+        if changed {
+            loadAllThemes()
+        }
+    }
+
     public func exportThemeJSON(_ theme: KeyboardTheme) -> String? {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]

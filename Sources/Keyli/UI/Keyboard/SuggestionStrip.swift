@@ -36,7 +36,7 @@ public struct SuggestionStrip: View {
     }
 
     public var body: some View {
-        let text = Color(hex: theme.keycapTextColorHex)
+        let text = theme.chromeTextColor
         HStack(spacing: 5) {
             if words.suggestions.isEmpty {
                 Text(words.currentWord.isEmpty ? "Suggestions appear as you type" : words.currentWord)

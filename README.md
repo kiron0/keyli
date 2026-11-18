@@ -30,16 +30,22 @@
 ## Features
 
 - Type into the app you're using by clicking keys. Keyli never steals its focus.
-- Shift, Option, Control and Command latch for one key, or stay on until you tap them again.
+- Shift, Option, Control and Command work for the next key. Double-click or hold one to lock it, like holding it down on a real keyboard, then click it again to unlock.
 - Tap fn to do what your Globe key does, such as switching input source. Hold fn to latch it for F1–F12, Home, End and Page Up/Down.
 - Function row works like a Mac: brightness, Mission Control, Spotlight, media, volume and lock. Latch fn for F1–F12.
 - Hold a key to repeat it at your system key-repeat speed.
 - Labels follow your input source live, including Shift and Option characters. Switch input source from Settings.
-- ANSI, ISO, JIS and compact layouts that resize in proportion and never stretch.
+- ANSI, ISO, JIS and compact layouts that resize in proportion and never stretch, with an optional numeric keypad.
+- Hold a letter for accents like é, ñ and ü, or swipe across letters to type a whole word.
+- With ⌘ or ⌃ on, keys show what they do in the app you're using, read from its menus.
 - Optionally light up keys you press on your physical keyboard. Nothing is recorded or stored.
 - Keycap sounds with press and release sounds per key, on the on-screen keyboard and optionally your Mac's keyboard. Seven packs are built in, and you can browse and install community packs or import a `.zip` or folder.
 - Pitch and loudness vary slightly on every press, sounds mute during calls and in apps you choose, and you can star favorite packs.
-- Show keystrokes on screen for screencasts, press keys by hovering, get word suggestions, and add one-click snippet keys that type a phrase or send a shortcut.
+- Show keystrokes on screen for screencasts, press keys by hovering, get word suggestions that learn your words and predict the next one, and add one-click snippet keys that type a phrase or send a shortcut.
+- Clipboard history keeps your recent copies, in memory only, ready to paste with a click.
+- Export and import all your settings, or sync them between Macs through iCloud Drive or any synced folder.
+- Remap any key to type text, press another key, send a shortcut or run a snippet, or switch the letters to Dvorak or Colemak.
+- VoiceOver reads every key, its state and its accents.
 - The keyboard can show itself when you click into a text field and hide again afterwards.
 - Global shortcuts for every Keyli action: show the keyboard, keep on top, lock position, input source, Emoji & Symbols, key sounds, themes and more.
 - The menu bar icon shows your input source and lists your input sources, Emoji & Symbols and Settings. ⌥-click it to show or hide the keyboard.

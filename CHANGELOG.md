@@ -2,6 +2,31 @@
 
 All notable changes to Keyli will be documented in this file.
 
+## 1.0.3
+
+### Added
+
+- **Accents on hold**: hold a letter such as e, a or n to pick é, à, ñ and more. Drag to a character and let go, or click one. Turn it off in Settings › Typing.
+- **Numeric keypad**: add a number pad with clear, enter and math keys, plus home, end and page keys, to any layout from Settings › Keyboard or the ⋯ menu. The keyboard widens and keeps its height.
+- **Suggestions that learn**: optionally learn the words you type on Keyli and your Mac's keyboard, predict the next word after a space, and keep a personal dictionary of names and terms. Learned words stay on your Mac, password fields are never read, and you can forget them anytime.
+- **App shortcuts on keys**: when ⌘ or ⌃ is on, keys show the menu command they trigger in the app you're typing in.
+- **Clipboard history**: keep the last 30 text items you copy and paste one with a click from ⋯ › Clipboard History or a shortcut. Held in memory only, and copies from password managers are skipped.
+- **Swipe typing**: drag across letters to type a word, with other matches offered as suggestions and spaces added between swiped words.
+- **Backup & Sync**: export and import settings, shortcuts, custom themes and your personal dictionary, or keep them in step across Macs through a synced folder such as iCloud Drive.
+- **Remap keys**: a new Remap page in Settings lets you click any key and make it type different text, press another key, send a shortcut, run a snippet or do nothing, with an optional label. Dvorak and Colemak layouts are one click away.
+- **Lock modifier keys**: double-click or hold Shift, Control, Option or Command to lock it, so you can type several capitals or send several shortcuts in a row, then click it again to unlock. A light on the key and a chip in the status bar show what's locked, and a fast double-click unlocks too. With Hover to Type or VoiceOver, choosing a modifier twice locks it, with no timing needed. Locks clear when the keyboard hides.
+- **Better VoiceOver**: keys read what they do, modifier keys report on or off, keypad and function keys are named clearly, and the actions menu on a letter types its accents.
+- **More shortcuts**: new global shortcuts for the number pad, previous input source, clearing clipboard history, word suggestions, sticky modifiers, sounds for Mac keyboard typing, previous sound pack, key sound volume up and down, previous theme, Setup Assistant, Keyboard settings and showing or hiding the menu bar icon.
+- **Shortcuts in the menu bar menu**: menu items show their assigned shortcut on the right, and every other action you give a shortcut appears in a Shortcuts section, with a checkmark for settings that are on.
+
+### Fixed
+
+- **Key sounds no longer go quiet**: when a password field, the lock screen or another app turns on Secure Input, typing sounds keep playing instead of only modifier keys clicking. Sounds also come back right after the Mac wakes or you unlock it.
+
+### Removed
+
+- **Switch scanning**: removed in favor of macOS Switch Control (System Settings › Accessibility › Switch Control), which scans the whole screen, works with every app and supports switch hardware. The Switch Scanning settings and the "Switch Scanning: Select" shortcut are gone; existing settings are ignored safely.
+
 ## 1.0.2
 
 ### Added

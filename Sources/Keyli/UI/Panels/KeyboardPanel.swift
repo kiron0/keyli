@@ -13,6 +13,12 @@ final class _DragPassthroughView: NSView {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
 
+extension KeyboardTheme {
+    var chromeTextColor: Color {
+        Color(hex: SnippetsAppearance.readableColor(keycapTextColorHex, on: backgroundColorHex))
+    }
+}
+
 public struct FloatingKeyboardContainerView: View {
     @ObservedObject public var state: KeyboardState = .shared
     @ObservedObject public var configStore: ConfigStore = .shared
@@ -24,7 +30,7 @@ public struct FloatingKeyboardContainerView: View {
 
     public var body: some View {
         let theme = state.currentTheme
-        let textColor = Color(hex: theme.keycapTextColorHex)
+        let textColor = theme.chromeTextColor
 
         VStack(spacing: 0) {
             ZStack {

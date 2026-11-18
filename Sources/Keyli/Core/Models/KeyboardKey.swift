@@ -75,6 +75,8 @@ public struct KeyboardKey: Identifiable, Codable, Equatable {
     public var symbolIcon: String?
     public var systemAction: KeySystemAction?
     public var topLeftExtension: Double?
+    public var remap: RemapAction? = nil
+    public var shortcutKeyCode: UInt16? = nil
 
     public init(
         id: String,
