@@ -75,6 +75,12 @@ public struct KeyboardTabView: View {
                 )
             }
 
+            SettingsToggle(
+                "Show numeric keypad",
+                detail: "Adds a number pad with clear, enter and math keys, plus home, end and page keys above it. The keyboard gets wider to fit.",
+                isOn: $configStore.config.showNumericKeypad
+            )
+
             SettingsRow {
                 Text("Input source")
                     .font(.system(size: 12, weight: .medium))

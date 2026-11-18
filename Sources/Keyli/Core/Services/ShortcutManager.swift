@@ -10,6 +10,8 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
     case nextInputSource
     case showEmojiAndSymbols
     case toggleSnippets
+    case toggleClipboard
+    case scanSelect
     case toggleKeySounds
     case nextSoundPack
     case nextTheme
@@ -38,7 +40,7 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
     public var group: Group {
         switch self {
         case .toggleKeyboard, .togglePin, .togglePositionLock, .togglePhysicalHighlight, .toggleKeystrokeOverlay: return .window
-        case .nextInputSource, .showEmojiAndSymbols, .toggleSnippets: return .typing
+        case .nextInputSource, .showEmojiAndSymbols, .toggleSnippets, .toggleClipboard, .scanSelect: return .typing
         case .toggleKeySounds, .nextSoundPack: return .sounds
         case .nextTheme, .openSettings, .openThemeStudio, .checkForUpdates: return .app
         }
@@ -54,6 +56,8 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
         case .nextInputSource: return "Next Input Source"
         case .showEmojiAndSymbols: return "Emoji & Symbols"
         case .toggleSnippets: return "Show or Hide Snippets"
+        case .toggleClipboard: return "Show or Hide Clipboard History"
+        case .scanSelect: return "Switch Scanning: Select"
         case .toggleKeySounds: return "Turn Key Sounds On or Off"
         case .nextSoundPack: return "Next Sound Pack"
         case .nextTheme: return "Next Theme"
@@ -73,6 +77,8 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
         case .nextInputSource: return "Cycle through your keyboard input sources."
         case .showEmojiAndSymbols: return "Open the system character viewer."
         case .toggleSnippets: return "Open the floating snippets window."
+        case .toggleClipboard: return "Open recent copies and paste one with a click."
+        case .scanSelect: return "Your switch. Picks the highlighted row, then the highlighted key."
         case .toggleKeySounds: return "Mute or unmute keycap sounds."
         case .nextSoundPack: return "Cycle through your favorite packs, or all packs."
         case .nextTheme: return "Cycle through keyboard themes."
@@ -92,6 +98,8 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
         case .nextInputSource: return "globe"
         case .showEmojiAndSymbols: return "face.smiling"
         case .toggleSnippets: return "text.quote"
+        case .toggleClipboard: return "doc.on.clipboard"
+        case .scanSelect: return "dot.viewfinder"
         case .toggleKeySounds: return "speaker.wave.2"
         case .nextSoundPack: return "music.note.list"
         case .nextTheme: return "paintpalette"
@@ -188,6 +196,24 @@ public final class ShortcutManager: ObservableObject {
         if !keys.isEmpty { binding.isEnabled = true }
         update(binding, for: action)
         return true
+    }
+
+    public var storedBindings: [String: ShortcutBinding] {
+        Dictionary(uniqueKeysWithValues: bindings.map { ($0.key.rawValue, $0.value) })
+    }
+
+    public func restore(_ stored: [String: ShortcutBinding]) {
+        var loaded = Self.defaultBindings
+        for (raw, binding) in stored {
+            if let action = ShortcutAction(rawValue: raw) {
+                loaded[action] = binding
+            }
+        }
+        guard loaded != bindings else { return }
+        bindings = loaded
+        shortcutError = nil
+        persist()
+        restartMonitoring()
     }
 
     public func resetToDefaults() {
@@ -310,6 +336,10 @@ public final class ShortcutManager: ObservableObject {
             InputSourceService.shared.showEmojiAndSymbols()
         case .toggleSnippets:
             SnippetsPanelController.shared.toggle()
+        case .toggleClipboard:
+            ClipboardPanelController.shared.toggle()
+        case .scanSelect:
+            KeyScanner.shared.select()
         case .toggleKeySounds:
             store.config.playKeyClickSound.toggle()
         case .nextSoundPack:

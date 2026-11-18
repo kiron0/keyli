@@ -1,3 +1,4 @@
+import Carbon
 import Foundation
 import CoreGraphics
 import AppKit
@@ -25,6 +26,7 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
         return (config.isPhysicalMonitoringEnabled && hasVisibleKeyboard)
             || (config.playKeyClickSound && config.keySoundsForPhysicalTyping)
             || config.keystrokeOverlayEnabled
+            || (config.wordSuggestionsEnabled && config.learnWordsFromTyping)
     }
 
     public func refresh() {
@@ -154,6 +156,24 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
             let printable = character.flatMap { $0.unicodeScalars.allSatisfy { $0.value >= 32 } ? $0 : nil }
             DispatchQueue.main.async {
                 KeystrokeOverlay.shared.handleKeyDown(keyCode: rawKeyCode, flags: flags, character: printable, isRepeat: isRepeat)
+            }
+        }
+
+        if isRunning && type == .keyDown && config.wordSuggestionsEnabled && config.learnWordsFromTyping && !IsSecureEventInputEnabled() {
+            var length = 0
+            var chars = [UniChar](repeating: 0, count: 4)
+            event.keyboardGetUnicodeString(maxStringLength: 4, actualStringLength: &length, unicodeString: &chars)
+            let flags = event.flags
+            let input = WordSuggestions.classifyPhysical(
+                keyCode: rawKeyCode,
+                characters: length > 0 ? String(utf16CodeUnits: chars, count: length) : nil,
+                command: flags.contains(.maskCommand),
+                control: flags.contains(.maskControl)
+            )
+            if input != .ignore {
+                DispatchQueue.main.async {
+                    WordSuggestions.shared.didTypePhysically(input)
+                }
             }
         }
 

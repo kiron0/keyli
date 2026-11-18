@@ -74,6 +74,7 @@ public final class PanelManager: NSObject, NSWindowDelegate {
     public func hideFloatingKeyboard() {
         floatingPanel?.orderOut(nil)
         isFloatingVisible = false
+        KeyboardState.shared.releaseAllModifiers()
         if ConfigStore.shared.config.isFloatingVisible {
             ConfigStore.shared.config.isFloatingVisible = false
         }
@@ -139,6 +140,7 @@ public final class PanelManager: NSObject, NSWindowDelegate {
 
     private func updateMonitorVisibility() {
         PhysicalKeyboardMonitor.shared.hasVisibleKeyboard = isFloatingVisible
+        KeyScanner.shared.isKeyboardVisible = isFloatingVisible
     }
 
     private func keepFloatingPanelOnScreen() {
@@ -156,14 +158,18 @@ public final class PanelManager: NSObject, NSWindowDelegate {
         )
     }
 
-    public func fitPanelsToLayout() {
+    public func fitPanelsToLayout(preservingHeight: Bool = false) {
         guard let panel = floatingPanel else { return }
         let layout = KeyboardState.shared.currentLayout
         panel.minSize = minimumSize(for: layout)
         panel.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
 
         let frame = panel.frame
-        let width = max(KeyliConstants.minFloatingWidth, frame.width)
+        var width = max(KeyliConstants.minFloatingWidth, frame.width)
+        if preservingHeight {
+            let screenWidth = (panel.screen ?? NSScreen.main)?.visibleFrame.width ?? .greatestFiniteMagnitude
+            width = min(screenWidth, max(KeyliConstants.minFloatingWidth, KeyliConstants.panelWidth(forHeight: frame.height, layout: layout)))
+        }
         let height = KeyliConstants.panelHeight(forWidth: width, layout: layout)
         if abs(height - frame.height) > 0.5 || abs(width - frame.width) > 0.5 {
             let fitted = NSRect(x: frame.minX, y: frame.maxY - height, width: width, height: height)

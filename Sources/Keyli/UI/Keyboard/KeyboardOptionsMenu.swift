@@ -17,6 +17,8 @@ public struct KeyboardOptionsMenuItems: View {
         }
         .pickerStyle(.menu)
 
+        Toggle("Numeric Keypad", isOn: $configStore.config.showNumericKeypad)
+
         Picker("Theme", selection: Binding(
             get: { themeManager.currentTheme.id },
             set: { themeManager.selectTheme(byId: $0) }
@@ -46,6 +48,9 @@ public struct KeyboardOptionsMenuItems: View {
 
         Button("Snippets…") {
             SnippetsPanelController.shared.show()
+        }
+        Button("Clipboard History…") {
+            ClipboardPanelController.shared.show()
         }
 
         Divider()
