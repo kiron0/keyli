@@ -198,44 +198,96 @@ public final class StatusItemController: NSObject {
 
         let emojiItem = NSMenuItem(title: "Emoji & Symbols", action: #selector(showEmojiAndSymbols), keyEquivalent: "")
         emojiItem.image = Self.symbol("face.smiling")
+        Self.applyShortcut(.showEmojiAndSymbols, to: emojiItem)
         menu.addItem(emojiItem)
 
         let isVisible = PanelManager.shared.isFloatingVisible
         let keyboardItem = NSMenuItem(title: isVisible ? "Hide Keyboard" : "Show Keyboard", action: #selector(toggleFloating), keyEquivalent: "")
         keyboardItem.image = Self.symbol(isVisible ? "keyboard.fill" : "keyboard")
         keyboardItem.toolTip = "Tip: ⌥-click the menu bar icon to toggle the keyboard directly."
+        Self.applyShortcut(.toggleKeyboard, to: keyboardItem)
         menu.addItem(keyboardItem)
         menu.addItem(NSMenuItem.separator())
 
+        let shortcutItems = Self.shortcutMenuItems(excluding: Self.actionsShownElsewhere)
+        if !shortcutItems.isEmpty {
+            let header = NSMenuItem(title: "Shortcuts", action: nil, keyEquivalent: "")
+            header.isEnabled = false
+            menu.addItem(header)
+            shortcutItems.forEach(menu.addItem)
+            menu.addItem(NSMenuItem.separator())
+        }
+
         let studioItem = NSMenuItem(title: "Theme Studio…", action: #selector(openThemeStudio), keyEquivalent: "")
         studioItem.image = Self.symbol("paintpalette")
+        Self.applyShortcut(.openThemeStudio, to: studioItem)
         menu.addItem(studioItem)
         let settingsItem = NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.image = Self.symbol("gearshape")
+        Self.applyShortcut(.openSettings, to: settingsItem)
         menu.addItem(settingsItem)
         let setupPending = !PermissionsManager.shared.canType || !SetupAssistantModel.isCompleted()
         let setupItem = NSMenuItem(title: setupPending ? "Finish Setup…" : "Setup Assistant…", action: #selector(openSetup), keyEquivalent: "")
         setupItem.image = Self.symbol(setupPending ? "exclamationmark.circle" : "checklist")
+        Self.applyShortcut(.openSetupAssistant, to: setupItem)
         menu.addItem(setupItem)
         let updatesItem = NSMenuItem(title: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "u")
         updatesItem.image = Self.symbol("arrow.triangle.2.circlepath")
+        Self.applyShortcut(.checkForUpdates, to: updatesItem)
         menu.addItem(updatesItem)
         menu.addItem(NSMenuItem.separator())
 
         let systemItem = NSMenuItem(title: "Open Keyboard Settings…", action: #selector(openKeyboardSettings), keyEquivalent: "")
         systemItem.image = Self.symbol("switch.2")
+        Self.applyShortcut(.openKeyboardSettings, to: systemItem)
         menu.addItem(systemItem)
         let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
         quitItem.image = Self.symbol("power")
         menu.addItem(quitItem)
 
-        for item in menu.items {
+        for item in menu.items where item.target == nil {
             item.target = self
         }
 
         statusItem?.menu = menu
         statusItem?.button?.performClick(nil)
         statusItem?.menu = nil
+    }
+
+    static let actionsShownElsewhere: Set<ShortcutAction> = [
+        .showEmojiAndSymbols, .toggleKeyboard, .openThemeStudio, .openSettings,
+        .openSetupAssistant, .checkForUpdates, .openKeyboardSettings
+    ]
+
+    static func applyShortcut(_ action: ShortcutAction, to item: NSMenuItem, manager: ShortcutManager = .shared) {
+        guard let equivalent = manager.menuKeyEquivalent(for: action) else { return }
+        item.keyEquivalent = equivalent.key
+        item.keyEquivalentModifierMask = equivalent.modifiers
+    }
+
+    static func shortcutMenuItems(
+        excluding hidden: Set<ShortcutAction>,
+        manager: ShortcutManager = .shared,
+        config: KeyliConfig = ConfigStore.shared.config
+    ) -> [NSMenuItem] {
+        manager.actionsWithShortcuts
+            .filter { !hidden.contains($0) }
+            .map { action in
+                let item = NSMenuItem(title: action.title, action: #selector(performShortcutAction(_:)), keyEquivalent: "")
+                item.representedObject = action.rawValue
+                item.image = symbol(action.symbol)
+                item.toolTip = action.detail
+                if let isOn = action.isOn(config) {
+                    item.state = isOn ? .on : .off
+                }
+                applyShortcut(action, to: item, manager: manager)
+                return item
+            }
+    }
+
+    @objc private func performShortcutAction(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let action = ShortcutAction(rawValue: raw) else { return }
+        ShortcutManager.shared.perform(action)
     }
 
     @objc private func selectInputSource(_ sender: NSMenuItem) {
