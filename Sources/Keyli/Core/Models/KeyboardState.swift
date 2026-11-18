@@ -74,7 +74,7 @@ public final class KeyboardState: ObservableObject {
             id: "ansi_default",
             name: "US ANSI",
             geometryType: .ansi,
-            unitWidth: 15.0,
+            unitWidth: 14.5,
             unitHeight: 6.0,
             keys: []
         )

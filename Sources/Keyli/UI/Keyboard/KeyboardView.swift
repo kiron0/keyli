@@ -767,6 +767,8 @@ struct KeyboardRenderer {
     private let textColor: Color
     private let activeTextColor: Color
     private let keycapIsDark: Bool
+    private let tintedKeycapTextColor: Color
+    private let tintedModifierTextColor: Color
     private let modifierIsDark: Bool
 
     init(
@@ -797,6 +799,8 @@ struct KeyboardRenderer {
         self.borderColor = Color(hex: theme.borderColorHex).opacity(theme.borderOpacity)
         self.textColor = Color(hex: theme.keycapTextColorHex)
         self.activeTextColor = Color(hex: theme.activeTextColorHex)
+        self.tintedKeycapTextColor = Self.tintedTextColor(theme: theme, baseHex: theme.keycapBaseColorHex)
+        self.tintedModifierTextColor = Self.tintedTextColor(theme: theme, baseHex: theme.modifierKeyColorHex)
         self.keycapIsDark = theme.keycapStyle == .fluent && KeyboardTheme.relativeLuminance(hex: theme.keycapBaseColorHex) < 0.4
         self.modifierIsDark = theme.keycapStyle == .fluent && KeyboardTheme.relativeLuminance(hex: theme.modifierKeyColorHex) < 0.4
     }
@@ -866,7 +870,7 @@ struct KeyboardRenderer {
 
         drawBackground(key: key, rect: rect, isDown: isDown, isHovered: isHovered, showsAccentTint: showsAccentTint, context: context)
 
-        let labelColor = isDown ? (showsAccentTint ? textColor : activeTextColor) : textColor
+        let labelColor = isDown ? (showsAccentTint ? (key.kind == .modifier ? tintedModifierTextColor : tintedKeycapTextColor) : activeTextColor) : textColor
         if let hint = shortcutHints[key.id] {
             drawLabel(key: key, rect: rect.offsetBy(dx: 0, dy: -rect.height * 0.13), isDown: isDown, textColor: labelColor, context: context)
             let sz = min(rect.width, rect.height)
@@ -884,11 +888,11 @@ struct KeyboardRenderer {
             drawLabel(key: key, rect: rect, isDown: isDown, textColor: labelColor, context: context)
         }
 
-        if let modifier = key.modifierType, modifiers.locked.contains(modifier) {
-            let sz = min(rect.width, rect.height)
-            let dot = sz * 0.15
-            let led = CGRect(x: rect.minX + sz * 0.15, y: rect.minY + sz * 0.15, width: dot, height: dot)
-            context.fill(Path(ellipseIn: led), with: .color(accentColor))
+        if let modifier = key.modifierType, modifier != .capsLock, modifiers.locked.contains(modifier) {
+            let u = rect.height / CGFloat(max(0.25, key.unitFrame.height))
+            let trailing = key.id == "k_rcmd" || key.id == "k_ropt" || key.id == "k_rctrl"
+            let x = trailing ? rect.maxX - u * 0.13 - u * 0.085 : rect.minX + u * 0.13
+            Self.drawLED(at: CGPoint(x: x, y: rect.minY + u * 0.11), diameter: u * 0.085, on: true, offColor: textColor, context: context)
         }
 
         if dwellKeyId == key.id, dwellProgress > 0 {
@@ -898,6 +902,38 @@ struct KeyboardRenderer {
             let filled = CGRect(x: track.minX, y: track.minY, width: track.width * CGFloat(dwellProgress), height: track.height)
             context.fill(Path(roundedRect: filled, cornerRadius: track.height / 2), with: .color(accentColor))
         }
+    }
+
+    static func tintedTextColor(theme: KeyboardTheme, baseHex: String) -> Color {
+        let isGlass = theme.keycapStyle == .glass
+        let under = isGlass ? theme.backgroundColorHex : baseHex
+        let amount = isGlass ? 0.2 : 0.35
+        guard let a = KeyboardTheme.rgbComponents(hex: under), let b = KeyboardTheme.rgbComponents(hex: theme.accentColorHex) else {
+            return Color(hex: theme.keycapTextColorHex)
+        }
+        func channel(_ x: Double, _ y: Double) -> Int { Int(((x * (1 - amount) + y * amount) * 255).rounded()) }
+        let blended = String(format: "#%02X%02X%02X", channel(a.red, b.red), channel(a.green, b.green), channel(a.blue, b.blue))
+        return Color(hex: SnippetsAppearance.readableColor(theme.keycapTextColorHex, on: blended))
+    }
+
+    static let ledColor = Color(red: 0.2, green: 0.86, blue: 0.36)
+
+    static func drawLED(at origin: CGPoint, diameter: CGFloat, on: Bool, offColor: Color, context: GraphicsContext) {
+        let led = CGRect(x: origin.x, y: origin.y, width: diameter, height: diameter)
+        guard on else {
+            context.fill(Path(ellipseIn: led), with: .color(offColor.opacity(0.22)))
+            return
+        }
+        let glowRadius = diameter * 2.2
+        let glow = CGRect(x: led.midX - glowRadius, y: led.midY - glowRadius, width: glowRadius * 2, height: glowRadius * 2)
+        context.fill(Path(ellipseIn: glow), with: .radialGradient(
+            Gradient(colors: [ledColor.opacity(0.55), ledColor.opacity(0)]),
+            center: CGPoint(x: led.midX, y: led.midY),
+            startRadius: diameter * 0.3,
+            endRadius: glowRadius
+        ))
+        context.fill(Path(ellipseIn: led), with: .color(ledColor))
+        context.fill(Path(ellipseIn: led.insetBy(dx: diameter * 0.3, dy: diameter * 0.3)), with: .color(Color.white.opacity(0.7)))
     }
 
     private func drawBackground(key: KeyboardKey, rect: CGRect, isDown: Bool, isHovered: Bool, showsAccentTint: Bool, context: GraphicsContext) {
@@ -914,6 +950,13 @@ struct KeyboardRenderer {
 
         let shape = Self.shape(for: key, in: rect, radius: radius)
 
+        func fillKey(_ color: Color) {
+            if showsAccentTint {
+                context.fill(shape, with: .color(base))
+            }
+            context.fill(shape, with: .color(color))
+        }
+
         func strokeBorder(_ shading: GraphicsContext.Shading, width: CGFloat) {
             guard width > 0 else { return }
             let inset = rect.insetBy(dx: width / 2, dy: width / 2)
@@ -925,7 +968,7 @@ struct KeyboardRenderer {
         case .raised:
             let plate = Self.shape(for: key, in: rect.offsetBy(dx: 0, dy: isDown ? 0 : max(1, elevation * 0.8)), radius: radius)
             context.fill(plate, with: .color(Color.black.opacity(0.35)))
-            context.fill(shape, with: .color(fill))
+            fillKey(fill)
             context.fill(shape, with: .linearGradient(
                 Gradient(colors: [Color.white.opacity(isDown ? 0 : 0.10), Color.black.opacity(0.10)]),
                 startPoint: CGPoint(x: rect.midX, y: rect.minY),
@@ -934,7 +977,7 @@ struct KeyboardRenderer {
             strokeBorder(.color(strokeColor), width: lineWidth)
 
         case .flat:
-            context.fill(shape, with: .color(fill))
+            fillKey(fill)
             strokeBorder(.color(strokeColor), width: lineWidth)
 
         case .glass:
@@ -953,7 +996,7 @@ struct KeyboardRenderer {
             let restFill: Color = isHovered
                 ? (isDarkSurface ? base.opacity(0.82) : base.opacity(0.7))
                 : base
-            context.fill(shape, with: .color(isDown ? fill : restFill))
+            fillKey(isDown ? fill : restFill)
             let borderTop = borderColor
             let borderBottom = isDarkSurface ? Color.white.opacity(theme.borderOpacity * 0.55) : Color.black.opacity(min(1, theme.borderOpacity * 2.6))
             strokeBorder(.linearGradient(
@@ -971,7 +1014,7 @@ struct KeyboardRenderer {
                 let plate = Self.shape(for: key, in: rect.offsetBy(dx: 0, dy: isDown ? 0.5 : max(0.5, elevation * 0.6)), radius: radius)
                 context.fill(plate, with: .color(Color.black.opacity(isDown ? 0.06 : 0.22)))
             }
-            context.fill(shape, with: .color(fill))
+            fillKey(fill)
             strokeBorder(.color(strokeColor), width: lineWidth)
         }
     }
@@ -1008,29 +1051,6 @@ struct KeyboardRenderer {
         return (resolved, measured)
     }
 
-    private func drawRow(_ items: [(GraphicsContext.ResolvedText, CGSize)], spacing: CGFloat, center: CGPoint, context: GraphicsContext) {
-        let total = items.map { $0.1.width }.reduce(0, +) + spacing * CGFloat(max(0, items.count - 1))
-        var x = center.x - total / 2
-        for (resolved, size) in items {
-            context.draw(resolved, at: CGPoint(x: x + size.width / 2, y: center.y), anchor: .center)
-            x += size.width + spacing
-        }
-    }
-
-    private func drawColumn(_ items: [(GraphicsContext.ResolvedText, CGSize)], spacing: CGFloat, center: CGPoint, context: GraphicsContext) {
-        let total = items.map { $0.1.height }.reduce(0, +) + spacing * CGFloat(max(0, items.count - 1))
-        var y = center.y - total / 2
-        for (resolved, size) in items {
-            context.draw(resolved, at: CGPoint(x: center.x, y: y + size.height / 2), anchor: .center)
-            y += size.height + spacing
-        }
-    }
-
-    private func measured(_ text: Text, context: GraphicsContext) -> (GraphicsContext.ResolvedText, CGSize) {
-        let resolved = context.resolve(text)
-        return (resolved, resolved.measure(in: CGSize(width: 10_000, height: 10_000)))
-    }
-
     private func hasDualLabels(_ key: KeyboardKey) -> Bool {
         guard key.kind == .character else { return false }
         guard let shift = key.labels.shiftLabel, !shift.isEmpty else { return false }
@@ -1038,90 +1058,81 @@ struct KeyboardRenderer {
         return shift != key.labels.defaultLabel
     }
 
+    private enum LegendCorner {
+        case topLeading, topTrailing, bottomLeading, bottomTrailing
+    }
+
+    private func drawLegend(_ resolved: GraphicsContext.ResolvedText, corner: LegendCorner, in rect: CGRect, padX: CGFloat, padY: CGFloat, context: GraphicsContext) {
+        switch corner {
+        case .topLeading:
+            context.draw(resolved, at: CGPoint(x: rect.minX + padX, y: rect.minY + padY), anchor: .topLeading)
+        case .topTrailing:
+            context.draw(resolved, at: CGPoint(x: rect.maxX - padX, y: rect.minY + padY), anchor: .topTrailing)
+        case .bottomLeading:
+            context.draw(resolved, at: CGPoint(x: rect.minX + padX, y: rect.maxY - padY), anchor: .bottomLeading)
+        case .bottomTrailing:
+            context.draw(resolved, at: CGPoint(x: rect.maxX - padX, y: rect.maxY - padY), anchor: .bottomTrailing)
+        }
+    }
+
     private func drawLabel(key: KeyboardKey, rect keyRect: CGRect, isDown: Bool, textColor: Color, context: GraphicsContext) {
         let rect = Self.labelRect(for: key, in: keyRect)
         let center = CGPoint(x: rect.midX, y: rect.midY)
-        let maxWidth = rect.width * 0.9
+        let u = keyRect.height / CGFloat(max(0.25, key.unitFrame.height))
+        let padX = u * 0.13
+        let padY = u * 0.11
+        let wordSize = u * 0.165
+        let modSymbolSize = u * 0.2
+        let wordMaxWidth = max(1, rect.width - padX * 2)
+
+        func word(_ string: String) -> GraphicsContext.ResolvedText {
+            fitted(string, size: wordSize, weight: .regular, color: textColor, maxWidth: wordMaxWidth, minScale: 0.6, context: context).0
+        }
+
+        func glyph(_ string: String) -> GraphicsContext.ResolvedText {
+            context.resolve(text(string, size: modSymbolSize, weight: .regular, color: textColor))
+        }
 
         if hasDualLabels(key) {
-            let inner = rect.insetBy(dx: 2, dy: 2)
-            let sz = min(inner.width, inner.height)
             let accent = accentColor
-            let shiftColor = modifiers.shift ? (isDown ? accent : accent.opacity(0.85)) : textColor.opacity(0.55)
+            let shiftColor = modifiers.shift ? (isDown ? accent : accent.opacity(0.85)) : textColor.opacity(0.7)
             let baseColor = (!modifiers.shift || isDown) ? textColor : textColor.opacity(0.55)
 
-            let top = context.resolve(text(key.labels.shiftLabel ?? "", size: sz * 0.34, weight: .semibold, design: fontDesign, color: shiftColor))
-            context.draw(top, at: CGPoint(x: inner.minX + inner.width * 0.12, y: inner.minY + inner.height * 0.1), anchor: .topLeading)
+            let top = context.resolve(text(key.labels.shiftLabel ?? "", size: u * 0.19, weight: .regular, design: fontDesign, color: shiftColor))
+            context.draw(top, at: CGPoint(x: rect.midX, y: rect.minY + rect.height * 0.32), anchor: .center)
 
-            let bottom = context.resolve(text(key.labels.defaultLabel, size: sz * 0.44, weight: .semibold, design: fontDesign, color: baseColor))
-            context.draw(bottom, at: CGPoint(x: inner.maxX - inner.width * 0.12, y: inner.maxY - inner.height * 0.1), anchor: .bottomTrailing)
+            let bottom = context.resolve(text(key.labels.defaultLabel, size: u * 0.22, weight: .regular, design: fontDesign, color: baseColor))
+            context.draw(bottom, at: CGPoint(x: rect.midX, y: rect.minY + rect.height * 0.67), anchor: .center)
             return
         }
 
-        let sz = min(rect.width, rect.height)
-
         switch key.id {
-        case "k_lcmd", "k_rcmd":
-            drawColumn([
-                measured(text("⌘", size: sz * 0.55, weight: .semibold, color: textColor), context: context),
-                fitted("command", size: sz * 0.24, weight: .medium, color: textColor, maxWidth: maxWidth, minScale: 0.6, context: context)
-            ], spacing: 0, center: center, context: context)
+        case "k_lcmd", "k_lopt", "k_lctrl":
+            let symbol = key.id == "k_lcmd" ? "⌘" : (key.id == "k_lopt" ? "⌥" : "⌃")
+            drawLegend(glyph(symbol), corner: .topTrailing, in: rect, padX: padX, padY: padY, context: context)
+            drawLegend(word(key.labels.defaultLabel), corner: .bottomTrailing, in: rect, padX: padX, padY: padY, context: context)
 
-        case "k_lopt", "k_ropt":
-            drawColumn([
-                measured(text("⌥", size: sz * 0.5, weight: .semibold, color: textColor), context: context),
-                fitted("option", size: sz * 0.22, weight: .medium, color: textColor, maxWidth: maxWidth, minScale: 0.6, context: context)
-            ], spacing: 0, center: center, context: context)
-
-        case "k_lctrl":
-            drawColumn([
-                measured(text("⌃", size: sz * 0.5, weight: .semibold, color: textColor), context: context),
-                fitted("control", size: sz * 0.22, weight: .medium, color: textColor, maxWidth: maxWidth, minScale: 0.6, context: context)
-            ], spacing: 0, center: center, context: context)
-
-        case "k_lshift", "k_rshift":
-            drawRow([
-                measured(symbol("shift.fill", size: sz * 0.45, weight: .semibold, color: textColor), context: context),
-                measured(text("shift", size: sz * 0.24, weight: .medium, color: textColor), context: context)
-            ], spacing: sz * 0.1, center: center, context: context)
-
-        case "k_caps":
-            drawRow([
-                measured(symbol("capslock.fill", size: sz * 0.4, weight: .semibold, color: textColor), context: context),
-                fitted("caps lock", size: sz * 0.22, weight: .medium, color: textColor, maxWidth: maxWidth * 0.7, minScale: 0.6, context: context)
-            ], spacing: sz * 0.08, center: center, context: context)
-            if modifiers.capsLock {
-                let dot = sz * 0.15
-                let led = CGRect(x: rect.minX + sz * 0.15, y: rect.minY + sz * 0.15, width: dot, height: dot)
-                context.fill(Path(ellipseIn: led), with: .color(accentColor))
-            }
-
-        case "k_tab":
-            drawRow([
-                measured(text("tab", size: sz * 0.24, weight: .medium, color: textColor), context: context),
-                measured(symbol("arrow.right.to.line.compact", size: sz * 0.38, weight: .semibold, color: textColor), context: context)
-            ], spacing: sz * 0.08, center: center, context: context)
-
-        case "k_return":
-            drawRow([
-                measured(text("return", size: sz * 0.24, weight: .medium, color: textColor), context: context),
-                measured(symbol("return", size: sz * 0.38, weight: .semibold, color: textColor), context: context)
-            ], spacing: sz * 0.08, center: center, context: context)
-
-        case "k_delete":
-            drawRow([
-                measured(text("delete", size: sz * 0.24, weight: .medium, color: textColor), context: context),
-                measured(symbol("delete.left.fill", size: sz * 0.38, weight: .semibold, color: textColor), context: context)
-            ], spacing: sz * 0.08, center: center, context: context)
+        case "k_rcmd", "k_ropt", "k_rctrl":
+            let symbol = key.id == "k_rcmd" ? "⌘" : (key.id == "k_ropt" ? "⌥" : "⌃")
+            drawLegend(glyph(symbol), corner: .topLeading, in: rect, padX: padX, padY: padY, context: context)
+            drawLegend(word(key.labels.defaultLabel), corner: .bottomLeading, in: rect, padX: padX, padY: padY, context: context)
 
         case "k_fn":
-            drawColumn([
-                measured(symbol("globe", size: sz * 0.38, weight: .semibold, color: textColor), context: context),
-                measured(text("fn", size: sz * 0.22, weight: .medium, color: textColor), context: context)
-            ], spacing: 1, center: center, context: context)
+            drawLegend(word("fn"), corner: .topTrailing, in: rect, padX: padX, padY: padY, context: context)
+            drawLegend(context.resolve(symbol("globe", size: modSymbolSize, weight: .regular, color: textColor)), corner: .bottomLeading, in: rect, padX: padX, padY: padY, context: context)
+
+        case "k_caps":
+            Self.drawLED(at: CGPoint(x: rect.minX + padX, y: rect.minY + padY), diameter: u * 0.085, on: modifiers.capsLock, offColor: textColor, context: context)
+            drawLegend(word("caps lock"), corner: .bottomLeading, in: rect, padX: padX, padY: padY, context: context)
+
+        case "k_esc", "k_tab", "k_lshift":
+            drawLegend(word(key.labels.defaultLabel), corner: .bottomLeading, in: rect, padX: padX, padY: padY, context: context)
+
+        case "k_delete", "k_return", "k_rshift":
+            drawLegend(word(key.labels.defaultLabel), corner: .bottomTrailing, in: rect, padX: padX, padY: padY, context: context)
 
         case "k_lock":
-            context.draw(context.resolve(symbol("lock.fill", size: sz * 0.42, weight: .semibold, color: textColor)), at: center, anchor: .center)
+            context.draw(context.resolve(symbol("lock.fill", size: u * 0.22, weight: .regular, color: textColor)), at: center, anchor: .center)
 
         case "k_space":
             break
@@ -1129,25 +1140,26 @@ struct KeyboardRenderer {
         default:
             if let icon = key.symbolIcon, key.kind != .character {
                 if key.kind == .function {
-                    let label = context.resolve(text(key.labels.defaultLabel, size: sz * 0.26, weight: .medium, color: textColor.opacity(modifiers.fn ? 1.0 : 0.55)))
-                    let labelSize = label.measure(in: CGSize(width: 10_000, height: 10_000))
-                    let trailing = sz * 0.18
-                    context.draw(label, at: CGPoint(x: rect.maxX - trailing, y: center.y), anchor: .trailing)
-                    let iconAreaWidth = max(0, rect.width - labelSize.width - trailing)
-                    let iconText = context.resolve(symbol(icon, size: sz * 0.40, weight: .semibold, color: textColor.opacity(modifiers.fn ? 0.45 : 1.0)))
-                    context.draw(iconText, at: CGPoint(x: rect.minX + iconAreaWidth / 2, y: center.y), anchor: .center)
+                    let iconText = context.resolve(symbol(icon, size: u * 0.2, weight: .regular, color: textColor.opacity(modifiers.fn ? 0.45 : 1.0)))
+                    context.draw(iconText, at: CGPoint(x: rect.midX, y: rect.minY + rect.height * 0.4), anchor: .center)
+                    let label = context.resolve(text(key.labels.defaultLabel, size: u * 0.12, weight: .medium, color: textColor.opacity(modifiers.fn ? 1.0 : 0.7)))
+                    context.draw(label, at: CGPoint(x: rect.midX, y: rect.minY + rect.height * 0.76), anchor: .center)
+                } else if key.kind == .navigation {
+                    context.draw(context.resolve(symbol(icon, size: u * 0.17, weight: .regular, color: textColor)), at: center, anchor: .center)
                 } else {
-                    context.draw(context.resolve(symbol(icon, size: sz * 0.42, weight: .semibold, color: textColor)), at: center, anchor: .center)
+                    context.draw(context.resolve(symbol(icon, size: u * 0.24, weight: .regular, color: textColor)), at: center, anchor: .center)
                 }
             } else {
-                let label = key.displayedLabel(shift: modifiers.shift, option: modifiers.option, capsLock: modifiers.capsLock)
+                let displayed = key.displayedLabel(shift: modifiers.shift, option: modifiers.option, capsLock: modifiers.capsLock)
+                let isLetter = displayed.count == 1 && displayed.first?.isLetter == true && !modifiers.option
+                let label = isLetter ? displayed.uppercased() : displayed
                 let (resolved, _) = fitted(
                     label,
-                    size: sz * (label.count > 2 ? 0.28 : 0.55),
-                    weight: .semibold,
+                    size: label.count > 2 ? wordSize * 1.15 : u * 0.27,
+                    weight: .medium,
                     design: fontDesign,
                     color: textColor,
-                    maxWidth: maxWidth,
+                    maxWidth: rect.width * 0.85,
                     minScale: 0.5,
                     context: context
                 )

@@ -308,7 +308,7 @@ extension KeyboardTheme {
         backgroundBlur: true,
         keycapBaseColorHex: "#FFFFFF",
         keycapActiveColorHex: "#38BDF8",
-        keycapTextColorHex: "#FFFFFF",
+        keycapTextColorHex: "#0F172A",
         accentColorHex: "#38BDF8",
         modifierKeyColorHex: "#FFFFFF",
         cornerRadius: 8.0,
