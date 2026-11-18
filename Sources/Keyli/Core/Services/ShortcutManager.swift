@@ -7,16 +7,29 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
     case togglePositionLock
     case togglePhysicalHighlight
     case toggleKeystrokeOverlay
+    case toggleNumericKeypad
     case nextInputSource
+    case previousInputSource
     case showEmojiAndSymbols
     case toggleSnippets
     case toggleClipboard
+    case clearClipboardHistory
+    case toggleWordSuggestions
+    case toggleStickyModifiers
     case scanSelect
     case toggleKeySounds
+    case togglePhysicalTypingSounds
     case nextSoundPack
+    case previousSoundPack
+    case keySoundVolumeUp
+    case keySoundVolumeDown
     case nextTheme
+    case previousTheme
     case openSettings
     case openThemeStudio
+    case openSetupAssistant
+    case openKeyboardSettings
+    case toggleMenuBarIcon
     case checkForUpdates
 
     public var id: String { rawValue }
@@ -39,10 +52,10 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
 
     public var group: Group {
         switch self {
-        case .toggleKeyboard, .togglePin, .togglePositionLock, .togglePhysicalHighlight, .toggleKeystrokeOverlay: return .window
-        case .nextInputSource, .showEmojiAndSymbols, .toggleSnippets, .toggleClipboard, .scanSelect: return .typing
-        case .toggleKeySounds, .nextSoundPack: return .sounds
-        case .nextTheme, .openSettings, .openThemeStudio, .checkForUpdates: return .app
+        case .toggleKeyboard, .togglePin, .togglePositionLock, .togglePhysicalHighlight, .toggleKeystrokeOverlay, .toggleNumericKeypad: return .window
+        case .nextInputSource, .previousInputSource, .showEmojiAndSymbols, .toggleSnippets, .toggleClipboard, .clearClipboardHistory, .toggleWordSuggestions, .toggleStickyModifiers, .scanSelect: return .typing
+        case .toggleKeySounds, .togglePhysicalTypingSounds, .nextSoundPack, .previousSoundPack, .keySoundVolumeUp, .keySoundVolumeDown: return .sounds
+        case .nextTheme, .previousTheme, .openSettings, .openThemeStudio, .openSetupAssistant, .openKeyboardSettings, .toggleMenuBarIcon, .checkForUpdates: return .app
         }
     }
 
@@ -53,16 +66,29 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
         case .togglePositionLock: return "Lock Keyboard Position"
         case .togglePhysicalHighlight: return "Highlight Physical Keys"
         case .toggleKeystrokeOverlay: return "Show Keystrokes on Screen"
+        case .toggleNumericKeypad: return "Show or Hide Numeric Keypad"
         case .nextInputSource: return "Next Input Source"
+        case .previousInputSource: return "Previous Input Source"
         case .showEmojiAndSymbols: return "Emoji & Symbols"
         case .toggleSnippets: return "Show or Hide Snippets"
         case .toggleClipboard: return "Show or Hide Clipboard History"
+        case .clearClipboardHistory: return "Clear Clipboard History"
+        case .toggleWordSuggestions: return "Turn Word Suggestions On or Off"
+        case .toggleStickyModifiers: return "Sticky Modifier Keys"
         case .scanSelect: return "Switch Scanning: Select"
         case .toggleKeySounds: return "Turn Key Sounds On or Off"
+        case .togglePhysicalTypingSounds: return "Sounds for Mac Keyboard Typing"
         case .nextSoundPack: return "Next Sound Pack"
+        case .previousSoundPack: return "Previous Sound Pack"
+        case .keySoundVolumeUp: return "Key Sound Volume Up"
+        case .keySoundVolumeDown: return "Key Sound Volume Down"
         case .nextTheme: return "Next Theme"
+        case .previousTheme: return "Previous Theme"
         case .openSettings: return "Open Settings"
         case .openThemeStudio: return "Open Theme Studio"
+        case .openSetupAssistant: return "Open Setup Assistant"
+        case .openKeyboardSettings: return "Open Keyboard Settings"
+        case .toggleMenuBarIcon: return "Show or Hide Menu Bar Icon"
         case .checkForUpdates: return "Check for Updates"
         }
     }
@@ -74,16 +100,29 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
         case .togglePositionLock: return "Stop or allow moving and resizing the keyboard."
         case .togglePhysicalHighlight: return "Light up keys as you type on your Mac's keyboard."
         case .toggleKeystrokeOverlay: return "Show pressed shortcuts in a large overlay."
+        case .toggleNumericKeypad: return "Add or remove the number pad on the keyboard."
         case .nextInputSource: return "Cycle through your keyboard input sources."
+        case .previousInputSource: return "Go back to the input source before this one."
         case .showEmojiAndSymbols: return "Open the system character viewer."
         case .toggleSnippets: return "Open the floating snippets window."
         case .toggleClipboard: return "Open recent copies and paste one with a click."
+        case .clearClipboardHistory: return "Forget everything Keyli has saved from the clipboard."
+        case .toggleWordSuggestions: return "Show or hide word suggestions above the keyboard."
+        case .toggleStickyModifiers: return "Make ⇧ ⌥ ^ ⌘ stay down for one key, or until tapped again."
         case .scanSelect: return "Your switch. Picks the highlighted row, then the highlighted key."
         case .toggleKeySounds: return "Mute or unmute keycap sounds."
+        case .togglePhysicalTypingSounds: return "Play sounds when you type on your Mac's own keyboard."
         case .nextSoundPack: return "Cycle through your favorite packs, or all packs."
+        case .previousSoundPack: return "Go back to the pack before this one."
+        case .keySoundVolumeUp: return "Make key sounds louder in 10% steps."
+        case .keySoundVolumeDown: return "Make key sounds quieter in 10% steps."
         case .nextTheme: return "Cycle through keyboard themes."
+        case .previousTheme: return "Go back to the theme before this one."
         case .openSettings: return "Jump straight to Keyli settings."
         case .openThemeStudio: return "Design and edit your own themes."
+        case .openSetupAssistant: return "Walk through permissions and setup again."
+        case .openKeyboardSettings: return "Open macOS Keyboard settings for input sources."
+        case .toggleMenuBarIcon: return "Hide the icon, or bring it back when hidden."
         case .checkForUpdates: return "Look for a newer Keyli release."
         }
     }
@@ -95,17 +134,46 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
         case .togglePositionLock: return "lock"
         case .togglePhysicalHighlight: return "light.max"
         case .toggleKeystrokeOverlay: return "rectangle.and.text.magnifyingglass"
+        case .toggleNumericKeypad: return "number"
         case .nextInputSource: return "globe"
+        case .previousInputSource: return "globe.badge.chevron.backward"
         case .showEmojiAndSymbols: return "face.smiling"
         case .toggleSnippets: return "text.quote"
         case .toggleClipboard: return "doc.on.clipboard"
+        case .clearClipboardHistory: return "trash"
+        case .toggleWordSuggestions: return "text.badge.plus"
+        case .toggleStickyModifiers: return "command"
         case .scanSelect: return "dot.viewfinder"
         case .toggleKeySounds: return "speaker.wave.2"
+        case .togglePhysicalTypingSounds: return "keyboard.badge.ellipsis"
         case .nextSoundPack: return "music.note.list"
+        case .previousSoundPack: return "backward"
+        case .keySoundVolumeUp: return "speaker.plus"
+        case .keySoundVolumeDown: return "speaker.minus"
         case .nextTheme: return "paintpalette"
+        case .previousTheme: return "arrow.uturn.backward"
         case .openSettings: return "gearshape"
         case .openThemeStudio: return "paintbrush"
+        case .openSetupAssistant: return "checklist"
+        case .openKeyboardSettings: return "switch.2"
+        case .toggleMenuBarIcon: return "menubar.rectangle"
         case .checkForUpdates: return "arrow.down.circle"
+        }
+    }
+
+    public func isOn(_ config: KeyliConfig) -> Bool? {
+        switch self {
+        case .togglePin: return config.isFloatingPinned
+        case .togglePositionLock: return config.isFloatingPositionLocked
+        case .togglePhysicalHighlight: return config.isPhysicalMonitoringEnabled
+        case .toggleKeystrokeOverlay: return config.keystrokeOverlayEnabled
+        case .toggleNumericKeypad: return config.showNumericKeypad
+        case .toggleWordSuggestions: return config.wordSuggestionsEnabled
+        case .toggleStickyModifiers: return config.modifierStickyMode
+        case .toggleKeySounds: return config.playKeyClickSound
+        case .togglePhysicalTypingSounds: return config.keySoundsForPhysicalTyping
+        case .toggleMenuBarIcon: return config.showMenuBarIcon
+        default: return nil
         }
     }
 
@@ -330,44 +398,84 @@ public final class ShortcutManager: ObservableObject {
             store.config.isPhysicalMonitoringEnabled.toggle()
         case .toggleKeystrokeOverlay:
             store.config.keystrokeOverlayEnabled.toggle()
+        case .toggleNumericKeypad:
+            store.config.showNumericKeypad.toggle()
         case .nextInputSource:
             _ = InputSourceService.shared.selectNext()
+        case .previousInputSource:
+            _ = InputSourceService.shared.selectPrevious()
         case .showEmojiAndSymbols:
             InputSourceService.shared.showEmojiAndSymbols()
         case .toggleSnippets:
             SnippetsPanelController.shared.toggle()
         case .toggleClipboard:
             ClipboardPanelController.shared.toggle()
+        case .clearClipboardHistory:
+            ClipboardHistory.shared.clear()
+        case .toggleWordSuggestions:
+            store.config.wordSuggestionsEnabled.toggle()
+        case .toggleStickyModifiers:
+            store.config.modifierStickyMode.toggle()
         case .scanSelect:
             KeyScanner.shared.select()
         case .toggleKeySounds:
             store.config.playKeyClickSound.toggle()
-        case .nextSoundPack:
+        case .togglePhysicalTypingSounds:
+            store.config.keySoundsForPhysicalTyping.toggle()
+            if store.config.keySoundsForPhysicalTyping && !store.config.playKeyClickSound {
+                store.config.playKeyClickSound = true
+            }
+        case .nextSoundPack, .previousSoundPack:
             let packs = SoundPackPicker.cycleOrder(packs: SoundPackLibrary.shared.packs, favorites: store.config.favoriteSoundPacks)
-            guard !packs.isEmpty else { return }
             let current = SoundPackLibrary.shared.pack(id: store.config.keySoundPackId)?.id
-            let index = packs.firstIndex { $0.id == current } ?? -1
-            store.config.keySoundPackId = packs[(index + 1) % packs.count].id
+            guard let pack = Self.cycled(packs, current: packs.firstIndex { $0.id == current }, forward: action == .nextSoundPack) else { return }
+            store.config.keySoundPackId = pack.id
             if !store.config.playKeyClickSound {
                 store.config.playKeyClickSound = true
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                 KeySoundEngine.shared.preview()
             }
-        case .nextTheme:
+        case .keySoundVolumeUp, .keySoundVolumeDown:
+            store.config.keySoundVolume = Self.steppedVolume(store.config.keySoundVolume, up: action == .keySoundVolumeUp)
+            if !store.config.playKeyClickSound {
+                store.config.playKeyClickSound = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                KeySoundEngine.shared.tap(0)
+            }
+        case .nextTheme, .previousTheme:
             let themes = ThemeManager.shared.availableThemes
-            guard !themes.isEmpty else { return }
-            let index = themes.firstIndex { $0.id == ThemeManager.shared.currentTheme.id } ?? -1
-            ThemeManager.shared.selectTheme(themes[(index + 1) % themes.count])
+            let index = themes.firstIndex { $0.id == ThemeManager.shared.currentTheme.id }
+            guard let theme = Self.cycled(themes, current: index, forward: action == .nextTheme) else { return }
+            ThemeManager.shared.selectTheme(theme)
         case .openSettings:
             NotificationCenter.default.post(name: KeyliConstants.NotificationName.openSettings, object: nil)
         case .openThemeStudio:
             NotificationCenter.default.post(name: KeyliConstants.NotificationName.openThemeStudio, object: nil)
+        case .openSetupAssistant:
+            SetupAssistantController.shared.show(from: PermissionsManager.shared.canType ? .welcome : .accessibility)
+        case .openKeyboardSettings:
+            InputSourceService.shared.openInputSourceSettings()
+        case .toggleMenuBarIcon:
+            store.config.showMenuBarIcon.toggle()
         case .checkForUpdates:
             Task { @MainActor in
                 await UpdateChecker.shared.checkForUpdates(isUserInitiated: true)
             }
         }
+    }
+
+    public static func cycled<T>(_ items: [T], current: Int?, forward: Bool) -> T? {
+        guard !items.isEmpty else { return nil }
+        guard let current else { return forward ? items.first : items.last }
+        let step = forward ? 1 : items.count - 1
+        return items[(current + step) % items.count]
+    }
+
+    public static func steppedVolume(_ volume: Double, up: Bool) -> Double {
+        let next = ((volume * 10).rounded() + (up ? 1 : -1)) / 10
+        return min(1, max(0, next))
     }
 
     static let functionKeyCodes: Set<UInt16> = [122, 120, 99, 118, 96, 97, 98, 100, 101, 109, 103, 111, 105, 107, 113, 106, 64, 79, 80, 90]
@@ -413,6 +521,47 @@ public final class ShortcutManager: ObservableObject {
         }
         guard let keyName, let code = keyCodesByName[keyName.uppercased()] else { return nil }
         return (code, modifiers)
+    }
+
+    private static let specialKeyEquivalents: [String: Int] = [
+        "↩": 0x0D, "⇥": 0x09, "SPACE": 0x20, "⌫": 0x08, "⌦": NSDeleteFunctionKey,
+        "↖": NSHomeFunctionKey, "↘": NSEndFunctionKey, "⇞": NSPageUpFunctionKey, "⇟": NSPageDownFunctionKey,
+        "←": NSLeftArrowFunctionKey, "→": NSRightArrowFunctionKey, "↓": NSDownArrowFunctionKey, "↑": NSUpArrowFunctionKey
+    ]
+
+    public static func menuKeyEquivalent(for keys: [String]) -> (key: String, modifiers: NSEvent.ModifierFlags)? {
+        guard keysToCarbon(keys: keys) != nil else { return nil }
+        var modifiers: NSEvent.ModifierFlags = []
+        var name: String?
+        for key in keys {
+            switch key {
+            case "^": modifiers.insert(.control)
+            case "⌥": modifiers.insert(.option)
+            case "⇧": modifiers.insert(.shift)
+            case "⌘": modifiers.insert(.command)
+            default: name = key.uppercased()
+            }
+        }
+        guard let name else { return nil }
+        if let scalar = specialKeyEquivalents[name], let unicode = Unicode.Scalar(scalar) {
+            return (String(Character(unicode)), modifiers)
+        }
+        if name.count > 1, name.hasPrefix("F"), let number = Int(name.dropFirst()), (1...20).contains(number),
+           let unicode = Unicode.Scalar(NSF1FunctionKey + number - 1) {
+            return (String(Character(unicode)), modifiers)
+        }
+        guard name.count == 1 else { return nil }
+        return (name.lowercased(), modifiers)
+    }
+
+    public func menuKeyEquivalent(for action: ShortcutAction) -> (key: String, modifiers: NSEvent.ModifierFlags)? {
+        let binding = binding(for: action)
+        guard binding.isEnabled else { return nil }
+        return Self.menuKeyEquivalent(for: binding.keys)
+    }
+
+    public var actionsWithShortcuts: [ShortcutAction] {
+        ShortcutAction.allCases.filter { menuKeyEquivalent(for: $0) != nil }
     }
 
     public static func keys(keyCode: UInt16, flags: NSEvent.ModifierFlags) -> [String] {
