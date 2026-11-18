@@ -12,7 +12,7 @@ public struct TypingTabView: View {
 
             SettingsToggle(
                 "Release modifier keys after the next key",
-                detail: "Shift, Control, Option, Command and fn switch off after one key press. Double-click or hold Shift, Control, Option or Command to lock it, like holding it down; click it again to unlock. With Hover to Type, switch scanning or VoiceOver, choose it twice to lock. When this is off, every modifier stays on until you click it again.",
+                detail: "Shift, Control, Option, Command and fn switch off after one key press. Double-click or hold Shift, Control, Option or Command to lock it, like holding it down; click it again to unlock. With Hover to Type or VoiceOver, choose it twice to lock. When this is off, every modifier stays on until you click it again.",
                 isOn: $configStore.config.modifierStickyMode
             )
 
@@ -115,43 +115,6 @@ public struct TypingTabView: View {
                     step: 0.1,
                     valueText: String(format: "%.1f s", configStore.config.dwellDuration)
                 )
-            }
-
-            SettingsSectionHeader(title: "Switch Scanning", symbol: "dot.viewfinder")
-
-            SettingsToggle(
-                "Scan the keys for a switch",
-                detail: "A highlight steps through the rows, then through the keys in the chosen row. Use your switch once to pick the row and again to press the key.",
-                isOn: $configStore.config.scanningEnabled
-            )
-
-            if configStore.config.scanningEnabled {
-                SettingsSliderRow(
-                    "Time per step",
-                    value: $configStore.config.scanInterval,
-                    in: 0.4...3.0,
-                    step: 0.1,
-                    valueText: String(format: "%.1f s", configStore.config.scanInterval)
-                )
-
-                SettingsToggle(
-                    "Click anywhere on the keyboard to select",
-                    detail: "Any click on the keyboard acts as your switch. Turn this off to use only the switch shortcut.",
-                    isOn: $configStore.config.scanSelectByClick
-                )
-
-                SettingsRow {
-                    let binding = ShortcutManager.shared.binding(for: .scanSelect)
-                    Text(binding.isEnabled && !binding.keys.isEmpty
-                         ? "Switch shortcut: \(binding.keys.joined(separator: " "))"
-                         : "If your switch sends a key, set it as the switch shortcut, such as F13.")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.secondary)
-                    Button("Shortcuts…") {
-                        SettingsWindowController.shared.showSettings(tab: .shortcuts)
-                    }
-                    .buttonStyle(SettingsSecondaryButtonStyle())
-                }
             }
 
             SettingsInlineNote(

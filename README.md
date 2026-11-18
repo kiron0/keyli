@@ -45,7 +45,7 @@
 - Clipboard history keeps your recent copies, in memory only, ready to paste with a click.
 - Export and import all your settings, or sync them between Macs through iCloud Drive or any synced folder.
 - Remap any key to type text, press another key, send a shortcut or run a snippet, or switch the letters to Dvorak or Colemak.
-- Switch scanning lets you type with a single switch, and VoiceOver reads every key, its state and its accents.
+- VoiceOver reads every key, its state and its accents.
 - The keyboard can show itself when you click into a text field and hide again afterwards.
 - Global shortcuts for every Keyli action: show the keyboard, keep on top, lock position, input source, Emoji & Symbols, key sounds, themes and more.
 - The menu bar icon shows your input source and lists your input sources, Emoji & Symbols and Settings. ⌥-click it to show or hide the keyboard.

@@ -140,7 +140,6 @@ public final class PanelManager: NSObject, NSWindowDelegate {
 
     private func updateMonitorVisibility() {
         PhysicalKeyboardMonitor.shared.hasVisibleKeyboard = isFloatingVisible
-        KeyScanner.shared.isKeyboardVisible = isFloatingVisible
     }
 
     private func keepFloatingPanelOnScreen() {
