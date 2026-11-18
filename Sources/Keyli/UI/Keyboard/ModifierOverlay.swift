@@ -10,7 +10,7 @@ public struct ModifierOverlay: View {
     }
 
     public var body: some View {
-        let text = Color(hex: theme.keycapTextColorHex)
+        let text = theme.chromeTextColor
 
         HStack(spacing: 8) {
             if let issue = state.dispatchIssue {
