@@ -39,6 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         UpdateChecker.shared.stopAutomaticChecks()
         PanelManager.shared.flushPendingFrameSave()
         ThemeManager.shared.flushPendingWrites()
+        PersonalLexicon.shared.flush()
         PhysicalKeyboardMonitor.shared.stop()
     }
 }

@@ -9,14 +9,16 @@ public struct KeyModifierSnapshot: Equatable {
     public var command: Bool
     public var capsLock: Bool
     public var fn: Bool
+    public var locked: Set<ModifierType>
 
-    public init(shift: Bool = false, option: Bool = false, control: Bool = false, command: Bool = false, capsLock: Bool = false, fn: Bool = false) {
+    public init(shift: Bool = false, option: Bool = false, control: Bool = false, command: Bool = false, capsLock: Bool = false, fn: Bool = false, locked: Set<ModifierType> = []) {
         self.shift = shift
         self.option = option
         self.control = control
         self.command = command
         self.capsLock = capsLock
         self.fn = fn
+        self.locked = locked
     }
 }
 
@@ -36,6 +38,8 @@ public final class KeyboardState: ObservableObject {
     @Published public var isCommandActive: Bool = false
     @Published public var isCapsLockActive: Bool = false
     @Published public var isFnActive: Bool = false
+    @Published public private(set) var lockedModifiers: Set<ModifierType> = []
+    private var pressRecords: [ModifierType: ModifierPressRecord] = [:]
 
     public let presses = KeyPressState()
 
@@ -83,7 +87,8 @@ public final class KeyboardState: ObservableObject {
             control: isControlActive,
             command: isCommandActive,
             capsLock: isCapsLockActive,
-            fn: isFnActive
+            fn: isFnActive,
+            locked: lockedModifiers
         )
     }
 
@@ -95,11 +100,16 @@ public final class KeyboardState: ObservableObject {
         copy.isCommandActive = isCommandActive
         copy.isCapsLockActive = isCapsLockActive
         copy.isFnActive = isFnActive
+        copy.lockedModifiers = lockedModifiers
         copy.currentLayout = currentLayout
         return copy
     }
 
     public func setModifiers(shift: Bool, option: Bool, control: Bool, command: Bool, capsLock: Bool) {
+        let shift = shift || lockedModifiers.contains(.shift)
+        let option = option || lockedModifiers.contains(.option)
+        let control = control || lockedModifiers.contains(.control)
+        let command = command || lockedModifiers.contains(.command)
         if isShiftActive != shift { isShiftActive = shift }
         if isOptionActive != option { isOptionActive = option }
         if isControlActive != control { isControlActive = control }
@@ -113,6 +123,8 @@ public final class KeyboardState: ObservableObject {
         isControlActive = false
         isCommandActive = false
         isFnActive = false
+        if !lockedModifiers.isEmpty { lockedModifiers.removeAll() }
+        pressRecords.removeAll()
     }
 
     public func toggleModifier(_ type: ModifierType) {
@@ -130,6 +142,94 @@ public final class KeyboardState: ObservableObject {
         case .fn:
             isFnActive.toggle()
         }
+        if !isActive(type), lockedModifiers.contains(type) {
+            lockedModifiers.remove(type)
+        }
+    }
+
+    public func isActive(_ type: ModifierType) -> Bool {
+        switch type {
+        case .shift: return isShiftActive
+        case .option: return isOptionActive
+        case .control: return isControlActive
+        case .command: return isCommandActive
+        case .capsLock: return isCapsLockActive
+        case .fn: return isFnActive
+        }
+    }
+
+    private func setActive(_ type: ModifierType, _ on: Bool) {
+        switch type {
+        case .shift: if isShiftActive != on { isShiftActive = on }
+        case .option: if isOptionActive != on { isOptionActive = on }
+        case .control: if isControlActive != on { isControlActive = on }
+        case .command: if isCommandActive != on { isCommandActive = on }
+        case .capsLock: if isCapsLockActive != on { isCapsLockActive = on }
+        case .fn: if isFnActive != on { isFnActive = on }
+        }
+    }
+
+    public func level(of type: ModifierType) -> ModifierLevel {
+        if lockedModifiers.contains(type) { return .locked }
+        return isActive(type) ? .once : .off
+    }
+
+    private func apply(_ level: ModifierLevel, to type: ModifierType) {
+        setActive(type, level != .off)
+        if level == .locked {
+            if !lockedModifiers.contains(type) { lockedModifiers.insert(type) }
+        } else if lockedModifiers.contains(type) {
+            lockedModifiers.remove(type)
+        }
+    }
+
+    @discardableResult
+    public func pressModifier(
+        _ type: ModifierType,
+        press: ModifierPress,
+        now: TimeInterval = ProcessInfo.processInfo.systemUptime,
+        doubleClickInterval: TimeInterval = NSEvent.doubleClickInterval,
+        oneShot: Bool? = nil
+    ) -> ModifierLevel {
+        guard ModifierLatch.isLockable(type) else {
+            toggleModifier(type)
+            return level(of: type)
+        }
+        let current = level(of: type)
+        let next = ModifierLatch.next(
+            current: current,
+            press: press,
+            now: now,
+            last: pressRecords[type],
+            doubleClickInterval: doubleClickInterval,
+            oneShot: oneShot ?? ConfigStore.shared.config.modifierStickyMode
+        )
+        apply(next, to: type)
+        pressRecords[type] = ModifierPressRecord(at: now, from: current, to: next)
+        return next
+    }
+
+    public func lockModifier(_ type: ModifierType, now: TimeInterval = ProcessInfo.processInfo.systemUptime) {
+        guard ModifierLatch.isLockable(type) else { return }
+        let current = level(of: type)
+        apply(.locked, to: type)
+        pressRecords[type] = ModifierPressRecord(at: now, from: current, to: .locked)
+    }
+
+    public func releaseOneShotModifiers() {
+        for type in ModifierLatch.lockable where !lockedModifiers.contains(type) {
+            setActive(type, false)
+        }
+        if isFnActive { isFnActive = false }
+    }
+
+    public func releaseAllModifiers() {
+        if !lockedModifiers.isEmpty { lockedModifiers.removeAll() }
+        for type in ModifierLatch.lockable {
+            setActive(type, false)
+        }
+        if isFnActive { isFnActive = false }
+        pressRecords.removeAll()
     }
 
     public func isKeyCurrentlyPressed(keyCode: UInt16, keyId: String) -> Bool {

@@ -61,11 +61,16 @@ public final class KeyboardLayoutManager: ObservableObject {
     }
 
     public func generateLayout(geometry: GeometryType) -> KeyboardLayout {
+        let config = ConfigStore.shared.config
+        return generateLayout(geometry: geometry, numericKeypad: config.showNumericKeypad, remaps: config.keyRemaps, snippets: config.snippets)
+    }
+
+    public func generateLayout(geometry: GeometryType, numericKeypad: Bool, remaps: [KeyRemap] = [], snippets: [Snippet] = []) -> KeyboardLayout {
         CharacterTranslator.shared.refreshInputSource()
         let translator = CharacterTranslator.shared
 
-        let keys: [KeyboardKey]
-        let width: Double = 15.0
+        var keys: [KeyboardKey]
+        var width: Double = 15.0
         let height: Double
 
         switch geometry {
@@ -83,8 +88,16 @@ public final class KeyboardLayoutManager: ObservableObject {
             keys = buildCompactKeys(translator: translator)
         }
 
+        if numericKeypad {
+            let topOffset = geometry == .compact ? 0.85 : 0.0
+            keys += Self.keypadKeys(originX: width + Self.keypadGap, topOffset: topOffset, includesNavigationRow: geometry != .compact)
+            width += Self.keypadGap + Self.keypadWidth
+        }
+
+        keys = KeyRemapper.apply(remaps, to: keys, snippets: snippets)
+
         return KeyboardLayout(
-            id: "\(geometry.rawValue)_\(translator.activeInputSourceID)",
+            id: "\(geometry.rawValue)_\(translator.activeInputSourceID)\(numericKeypad ? "_keypad" : "")",
             name: "\(geometry.displayName) (\(translator.activeInputSourceName))",
             geometryType: geometry,
             inputSourceId: translator.activeInputSourceID,
@@ -279,6 +292,63 @@ public final class KeyboardLayoutManager: ObservableObject {
         list.append(KeyboardKey(id: "k_kana", keyCode: 104, kind: .system,
             unitFrame: KeyUnitFrame(x: 8.5, y: 5.25, width: 1.125, height: 1.0),
             labels: KeyLabels(defaultLabel: "かな")))
+        return list
+    }
+
+    public static let keypadGap: Double = 0.25
+    public static let keypadWidth: Double = 4.0
+    public static let keypadKeyCodes: Set<UInt16> = [65, 67, 69, 71, 75, 76, 78, 81, 82, 83, 84, 85, 86, 87, 88, 89, 91, 92]
+
+    public static func isKeypadKey(_ key: KeyboardKey) -> Bool {
+        key.id.hasPrefix("kp_")
+    }
+
+    public static func keypadKeys(originX x: Double, topOffset: Double, includesNavigationRow: Bool) -> [KeyboardKey] {
+        var list: [KeyboardKey] = []
+        let rows: [Double] = [0.85, 1.95, 3.05, 4.15, 5.25].map { $0 - topOffset }
+
+        if includesNavigationRow {
+            let nav: [(UInt16, String)] = [(115, "home"), (119, "end"), (116, "pg up"), (121, "pg dn")]
+            for (i, (code, label)) in nav.enumerated() {
+                list.append(KeyboardKey(id: "kp_nav_\(code)", keyCode: code, kind: .navigation,
+                    unitFrame: KeyUnitFrame(x: x + Double(i), y: 0, width: 1.0, height: 0.75),
+                    labels: KeyLabels(defaultLabel: label)))
+            }
+        }
+
+        func character(_ code: UInt16, _ label: String, column: Int, row: Int, width: Double = 1.0) {
+            list.append(KeyboardKey(id: "kp_\(code)", keyCode: code, kind: .character,
+                unitFrame: KeyUnitFrame(x: x + Double(column), y: rows[row], width: width, height: 1.0),
+                labels: KeyLabels(defaultLabel: label)))
+        }
+
+        list.append(KeyboardKey(id: "kp_71", keyCode: 71, kind: .system,
+            unitFrame: KeyUnitFrame(x: x, y: rows[0], width: 1.0, height: 1.0),
+            labels: KeyLabels(defaultLabel: "clear")))
+        character(81, "=", column: 1, row: 0)
+        character(75, "/", column: 2, row: 0)
+        character(67, "*", column: 3, row: 0)
+
+        character(89, "7", column: 0, row: 1)
+        character(91, "8", column: 1, row: 1)
+        character(92, "9", column: 2, row: 1)
+        character(78, "-", column: 3, row: 1)
+
+        character(86, "4", column: 0, row: 2)
+        character(87, "5", column: 1, row: 2)
+        character(88, "6", column: 2, row: 2)
+        character(69, "+", column: 3, row: 2)
+
+        character(83, "1", column: 0, row: 3)
+        character(84, "2", column: 1, row: 3)
+        character(85, "3", column: 2, row: 3)
+        list.append(KeyboardKey(id: "kp_76", keyCode: 76, kind: .system,
+            unitFrame: KeyUnitFrame(x: x + 3, y: rows[3], width: 1.0, height: rows[4] - rows[3] + 1.0),
+            labels: KeyLabels(defaultLabel: "enter")))
+
+        character(82, "0", column: 0, row: 4, width: 2.0)
+        character(65, ".", column: 2, row: 4)
+
         return list
     }
 

@@ -11,6 +11,7 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
     case typing = "Typing"
     case sounds = "Sounds"
     case shortcuts = "Shortcuts"
+    case remap = "Remap"
     case themes = "Themes"
     case general = "General"
     case permissions = "Permissions"
@@ -20,7 +21,7 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
 
     public var category: SettingsCategory {
         switch self {
-        case .keyboard, .typing, .themes, .sounds, .shortcuts: return .keyboard
+        case .keyboard, .typing, .themes, .sounds, .shortcuts, .remap: return .keyboard
         case .general, .permissions: return .app
         case .about: return .info
         }
@@ -38,6 +39,7 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
         case .typing: return "character.cursor.ibeam"
         case .sounds: return "speaker.wave.2"
         case .shortcuts: return "command"
+        case .remap: return "arrow.left.arrow.right"
         case .themes: return "paintpalette"
         case .general: return "gearshape"
         case .permissions: return "lock.shield"
@@ -51,6 +53,7 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
         case .typing: return ("#F2B552", "#D9891F")
         case .sounds: return ("#E987A8", "#C2557C")
         case .shortcuts: return ("#A884D8", "#7552B0")
+        case .remap: return ("#5FB8A6", "#2E8B78")
         case .themes: return ("#F07A62", "#D2493A")
         case .general: return ("#A3A6AC", "#7B7E85")
         case .permissions: return ("#5BC27A", "#2F9150")
@@ -64,6 +67,7 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
         case .typing: return "How clicked keys are sent to the app you’re using."
         case .sounds: return "Keycap sounds, sound packs and the community catalog."
         case .shortcuts: return "Global shortcuts for every Keyli action."
+        case .remap: return "Change what any key types or does, or switch layouts."
         case .themes: return "Pick a look for every keyboard, or design your own."
         case .general: return "Startup, menu bar and reset."
         case .permissions: return "What macOS lets Keyli do, and why. Updates live."

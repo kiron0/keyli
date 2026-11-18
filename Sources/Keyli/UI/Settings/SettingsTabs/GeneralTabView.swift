@@ -94,6 +94,8 @@ public struct GeneralTabView: View {
                     .foregroundStyle(Color.secondary)
             }
 
+            BackupSettingsSection()
+
             SettingsSectionHeader(title: "Reset", symbol: "arrow.counterclockwise")
 
             SettingsRow {

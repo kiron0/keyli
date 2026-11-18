@@ -109,6 +109,7 @@ public struct SettingsRootView: View {
         case .typing: TypingTabView()
         case .sounds: SoundsTabView()
         case .shortcuts: ShortcutsTabView()
+        case .remap: RemapTabView()
         case .themes: ThemesTabView()
         case .general: GeneralTabView()
         case .permissions: PermissionsTabView()
