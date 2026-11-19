@@ -2,6 +2,13 @@
 
 All notable changes to Keyli will be documented in this file.
 
+## 1.0.4
+
+### Changed
+
+- **Instant input source switching**: input source change notifications now use CoreFoundation's distributed notification center with immediate delivery (`kTISNotifySelectedKeyboardInputSourceChanged`), eliminating run loop scheduling delays so layout and language changes reflect instantly.
+- **Optimized menu bar icon updates**: status bar icon updates now receive the latest input source ID and source list directly through Combine, avoiding redundant queries to the input source service and preventing unnecessary icon reloads.
+
 ## 1.0.3
 
 ### Added
