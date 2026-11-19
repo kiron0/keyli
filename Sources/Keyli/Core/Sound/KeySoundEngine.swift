@@ -245,8 +245,9 @@ public final class KeySoundEngine {
     private func setupGraphIfNeeded() {
         guard !graphReady else { return }
         let hardware = engine.outputNode.outputFormat(forBus: 0)
-        let rate = hardware.sampleRate > 0 ? hardware.sampleRate : 48_000
-        format = AVAudioFormat(standardFormatWithSampleRate: rate, channels: 2)!
+        guard Self.isUsableOutput(hardware) else { return }
+        let previous = format
+        format = AVAudioFormat(standardFormatWithSampleRate: hardware.sampleRate, channels: 2)!
         for _ in 0..<Self.voiceCount {
             let node = AVAudioPlayerNode()
             let pitch = AVAudioUnitVarispeed()
@@ -270,6 +271,19 @@ public final class KeySoundEngine {
         engine.mainMixerNode.outputVolume = 1
         engine.prepare()
         graphReady = true
+        if format != previous, !clips.isEmpty {
+            clips = [:]
+            clipsPackId = nil
+            loadedPackId = nil
+            previewCache = nil
+            DispatchQueue.main.async { [weak self] in
+                self?.apply(ConfigStore.shared.config)
+            }
+        }
+    }
+
+    static func isUsableOutput(_ format: AVAudioFormat) -> Bool {
+        format.sampleRate > 0 && format.channelCount > 0
     }
 
     private func makeKeepAliveNode() -> AVAudioSourceNode {
@@ -329,6 +343,7 @@ public final class KeySoundEngine {
 
     private func ensureRunning() -> Bool {
         setupGraphIfNeeded()
+        guard graphReady, Self.isUsableOutput(engine.outputNode.outputFormat(forBus: 0)) else { return false }
         if !engine.isRunning {
             setLowLatencyBuffer()
             do {
@@ -374,7 +389,7 @@ public final class KeySoundEngine {
     }
 
     private func play(_ buffer: AVAudioPCMBuffer, source: Source, gain: Double? = nil, randomPitch: Bool? = nil) {
-        guard buffer.format == format, ensureRunning() else { return }
+        guard ensureRunning(), buffer.format == format else { return }
         let variation = ConfigStore.shared.config.keySoundVariation
             ? Variation.random(wide: randomPitch ?? packRandomPitch, using: &generator)
             : .none
@@ -403,10 +418,18 @@ public final class KeySoundEngine {
 
     @objc private func handleConfigurationChange(_ notification: Notification) {
         DispatchQueue.main.async { [weak self] in
-            guard let self, self.graphReady else { return }
+            guard let self else { return }
+            guard self.graphReady else {
+                self.apply(ConfigStore.shared.config)
+                return
+            }
             self.keepAliveState.active = Self.outputNeedsKeepAlive()
             let hardware = self.engine.outputNode.outputFormat(forBus: 0)
-            let rate = hardware.sampleRate > 0 ? hardware.sampleRate : self.format.sampleRate
+            guard Self.isUsableOutput(hardware) else {
+                self.stopEngine()
+                return
+            }
+            let rate = hardware.sampleRate
             for index in self.voiceFreeAt.indices { self.voiceFreeAt[index] = 0 }
             guard rate != self.format.sampleRate else {
                 if self.isEnabled, !self.clips.isEmpty {
@@ -415,6 +438,7 @@ public final class KeySoundEngine {
                 }
                 return
             }
+            self.stopEngine()
             self.format = AVAudioFormat(standardFormatWithSampleRate: rate, channels: 2)!
             for index in self.voices.indices {
                 let node = self.voices[index], pitch = self.pitchUnits[index], mixer = self.voiceGains[index]
