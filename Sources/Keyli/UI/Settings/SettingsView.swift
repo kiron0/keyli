@@ -84,7 +84,6 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
 
 public enum KeyliChrome {
     public static let accent = Color(hex: "#E8A33D")
-    public static let accentNSColor = NSColor(srgbRed: 232 / 255, green: 163 / 255, blue: 61 / 255, alpha: 1)
     public static let onAccent = Color(hex: "#1F1A12")
     public static let cardBackground = Color.primary.opacity(0.035)
 
@@ -93,10 +92,6 @@ public enum KeyliChrome {
             return true
         }
         return false
-    }
-
-    public static var usesGlass: Bool {
-        supportsGlass && ConfigStore.shared.config.liquidGlassEnabled
     }
 }
 

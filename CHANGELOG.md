@@ -4,10 +4,18 @@ All notable changes to Keyli will be documented in this file.
 
 ## 1.0.4
 
+### Added
+
+- **Lock Physical Keyboard**: a new **Lock Physical Keyboard** / **Unlock Physical Keyboard** option in the menu bar menu (and an assignable global shortcut in Settings › Shortcuts) blocks physical keyboard typing, modifiers, and media keys while keeping mouse clicks and on-screen typing working. Requires Accessibility permission and always starts unlocked on launch.
+
 ### Changed
 
 - **Instant input source switching**: input source change notifications now use CoreFoundation's distributed notification center with immediate delivery (`kTISNotifySelectedKeyboardInputSourceChanged`), eliminating run loop scheduling delays so layout and language changes reflect instantly.
 - **Optimized menu bar icon updates**: status bar icon updates now receive the latest input source ID and source list directly through Combine, avoiding redundant queries to the input source service and preventing unnecessary icon reloads.
+
+### Fixed
+
+- **Audio device and sample rate handling**: validated output hardware formats before configuring the sound engine and properly reloaded audio clips across sample rate or device configuration changes.
 
 ## 1.0.3
 

@@ -120,6 +120,12 @@ case "sounds":
 case "shortcuts":
     kicker("06", "SHORTCUTS", top: 822)
     headline("Every action, one keystroke.", top: 866)
+case "remap":
+    kicker("07", "REMAP", top: 822)
+    headline("Every key, your way.", top: 866)
+case "menubar":
+    kicker("08", "MENU BAR", top: 822)
+    headline("Right in your menu bar.", top: 866)
 default:
     break
 }

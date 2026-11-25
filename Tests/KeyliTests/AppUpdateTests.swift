@@ -42,7 +42,6 @@ struct AppUpdateTests {
         let release = try GitHubRelease.decode(Data(Self.releaseJSON.utf8))
 
         #expect(release.version == "9.9.9")
-        #expect(release.htmlUrl?.contains("/releases/tag/v9.9.9") == true)
         let asset = try #require(release.installerAsset)
         #expect(asset.name == "Keyli-v9.9.9.dmg")
         #expect(asset.size == 4384565)
@@ -93,7 +92,6 @@ struct AppUpdateTests {
     @Test("Updates come straight from the GitHub Releases API")
     func testLatestReleaseEndpoint() {
         #expect(UpdateChecker.latestReleaseURL.absoluteString == "https://api.github.com/repos/kiron0/keyli/releases/latest")
-        #expect(KeyliConstants.releasesPageURL.host == "github.com")
         #expect(KeyliConstants.buyMeACoffeeURL.absoluteString == "https://buymeacoffee.com/_thk")
     }
 

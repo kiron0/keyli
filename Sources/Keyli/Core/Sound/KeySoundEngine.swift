@@ -79,7 +79,6 @@ public final class KeySoundEngine {
     private let keepAliveState = KeepAliveState()
     private var packGain: Double = 1
     private var packRandomPitch = false
-    private var previewGain: Double = 1
     private var generator = SystemRandomNumberGenerator()
     private var voiceFreeAt: [CFTimeInterval] = []
     private var nextVoice = 0

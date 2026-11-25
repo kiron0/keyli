@@ -192,10 +192,6 @@ public final class PermissionsManager: ObservableObject {
         PermissionKind.allCases.filter { needsAttention($0) }.count
     }
 
-    public var grantedCount: Int {
-        PermissionKind.allCases.filter { status(of: $0) == .granted }.count
-    }
-
     private func grantedKey(_ kind: PermissionKind) -> String {
         "io.coreify.keyli.permission.\(kind.rawValue).wasGranted"
     }
@@ -308,14 +304,6 @@ public final class PermissionsManager: ObservableObject {
         waiting.insert(kind)
         checkPermissions()
         startPollingForPermissions()
-    }
-
-    public func openAccessibilityPreferences() {
-        openSettings(.accessibility)
-    }
-
-    public func openInputMonitoringPreferences() {
-        openSettings(.inputMonitoring)
     }
 
     public func repair(_ kind: PermissionKind) {
