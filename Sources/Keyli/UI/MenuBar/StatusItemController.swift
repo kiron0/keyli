@@ -41,9 +41,8 @@ public final class StatusItemController: NSObject {
     private func observeUpdates() {
         InputSourceService.shared.$currentId
             .combineLatest(InputSourceService.shared.$sources)
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.updateIcon(isKeyboardVisible: PanelManager.shared.isFloatingVisible)
+            .sink { [weak self] currentId, sources in
+                self?.updateIcon(isKeyboardVisible: PanelManager.shared.isFloatingVisible, currentId: currentId, sources: sources)
             }
             .store(in: &updateObservers)
         UpdateChecker.shared.$availableUpdate
@@ -57,6 +56,13 @@ public final class StatusItemController: NSObject {
             .receive(on: RunLoop.main)
             .sink { [weak self] show in
                 self?.updateBadge(show: show)
+            }
+            .store(in: &updateObservers)
+        PhysicalKeyboardLockService.shared.$isLocked
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.applyVisibility(ConfigStore.shared.config.showMenuBarIcon)
+                self?.updateIcon(isKeyboardVisible: PanelManager.shared.isFloatingVisible)
             }
             .store(in: &updateObservers)
     }
@@ -106,17 +112,31 @@ public final class StatusItemController: NSObject {
         return image
     }
 
-    public func applyVisibility(_ isVisible: Bool) {
-        statusItem?.isVisible = isVisible
+    static func shouldShowStatusItem(showInConfig: Bool, isPhysicalLocked: Bool) -> Bool {
+        showInConfig || isPhysicalLocked
     }
 
-    private func updateIcon(isKeyboardVisible: Bool) {
+    public func applyVisibility(_ isVisible: Bool) {
+        statusItem?.isVisible = Self.shouldShowStatusItem(
+            showInConfig: isVisible,
+            isPhysicalLocked: PhysicalKeyboardLockService.shared.isLocked
+        )
+    }
+
+    private func updateIcon(isKeyboardVisible: Bool, currentId: String? = nil, sources: [InputSourceOption]? = nil) {
         guard let button = statusItem?.button else { return }
         let service = InputSourceService.shared
-        let current = service.sources.first { $0.id == service.currentId }
-        if let current {
-            if iconCacheSources != service.sources {
-                iconCacheSources = service.sources
+        let sources = sources ?? service.sources
+        let currentId = currentId ?? service.currentId
+        let current = sources.first { $0.id == currentId }
+        let isPhysicalLocked = PhysicalKeyboardLockService.shared.isLocked
+        if isPhysicalLocked {
+            let image = NSImage(systemSymbolName: "lock.fill", accessibilityDescription: "Physical keyboard locked")
+            image?.isTemplate = true
+            button.image = image
+        } else if let current {
+            if iconCacheSources != sources {
+                iconCacheSources = sources
                 iconCache.removeAll()
             }
             let image = iconCache[current.id] ?? service.icon(for: current.id) ?? Self.letterBadge(current.name)
@@ -127,7 +147,17 @@ public final class StatusItemController: NSObject {
             image?.isTemplate = true
             button.image = image
         }
-        guard !showsUpdateBadge else { return }
+        if isPhysicalLocked {
+            let suffix = showsUpdateBadge ? " (update available)" : ""
+            button.toolTip = "\(KeyliConstants.appName) — Physical Keyboard Locked\(suffix)"
+            button.setAccessibilityLabel("Physical keyboard locked, \(KeyliConstants.appName) menu")
+            return
+        }
+        guard !showsUpdateBadge else {
+            button.setAccessibilityLabel("\(KeyliConstants.appName), update available")
+            button.toolTip = "\(KeyliConstants.appName) — update available"
+            return
+        }
         let sourceName = current?.name ?? KeyliConstants.appName
         button.toolTip = sourceName
         button.setAccessibilityLabel("\(sourceName), \(KeyliConstants.appName) input menu")
@@ -207,6 +237,8 @@ public final class StatusItemController: NSObject {
         keyboardItem.toolTip = "Tip: ⌥-click the menu bar icon to toggle the keyboard directly."
         Self.applyShortcut(.toggleKeyboard, to: keyboardItem)
         menu.addItem(keyboardItem)
+
+        menu.addItem(Self.physicalLockMenuItem(isLocked: PhysicalKeyboardLockService.shared.isLocked))
         menu.addItem(NSMenuItem.separator())
 
         let shortcutItems = Self.shortcutMenuItems(excluding: Self.actionsShownElsewhere)
@@ -255,9 +287,24 @@ public final class StatusItemController: NSObject {
     }
 
     static let actionsShownElsewhere: Set<ShortcutAction> = [
-        .showEmojiAndSymbols, .toggleKeyboard, .openThemeStudio, .openSettings,
+        .showEmojiAndSymbols, .toggleKeyboard, .togglePhysicalKeyboardLock, .openThemeStudio, .openSettings,
         .openSetupAssistant, .checkForUpdates, .openKeyboardSettings
     ]
+
+    static func physicalLockMenuItem(
+        isLocked: Bool,
+        manager: ShortcutManager = .shared
+    ) -> NSMenuItem {
+        let item = NSMenuItem(
+            title: isLocked ? "Unlock Physical Keyboard" : "Lock Physical Keyboard",
+            action: #selector(togglePhysicalKeyboardLock),
+            keyEquivalent: ""
+        )
+        item.image = symbol(isLocked ? "lock.fill" : "lock.open")
+        item.toolTip = "Ignore input from your Mac's physical keyboard until unlocked. On-screen typing and mouse clicks continue to work."
+        applyShortcut(.togglePhysicalKeyboardLock, to: item, manager: manager)
+        return item
+    }
 
     static func applyShortcut(_ action: ShortcutAction, to item: NSMenuItem, manager: ShortcutManager = .shared) {
         guard let equivalent = manager.menuKeyEquivalent(for: action) else { return }
@@ -305,6 +352,10 @@ public final class StatusItemController: NSObject {
 
     @objc private func toggleFloating() {
         PanelManager.shared.toggleFloatingKeyboard()
+    }
+
+    @objc private func togglePhysicalKeyboardLock() {
+        PhysicalKeyboardLockService.shared.toggleWithPermissionCheck()
     }
 
     @objc private func openThemeStudio() {

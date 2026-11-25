@@ -40,6 +40,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PanelManager.shared.flushPendingFrameSave()
         ThemeManager.shared.flushPendingWrites()
         PersonalLexicon.shared.flush()
+        PhysicalKeyboardLockService.shared.unlock()
         PhysicalKeyboardMonitor.shared.stop()
     }
 }

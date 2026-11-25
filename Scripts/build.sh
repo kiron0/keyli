@@ -22,7 +22,7 @@ mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 cp "$ROOT_DIR/.build/release/$APP_NAME" "$MACOS_DIR/$APP_NAME"
 chmod +x "$MACOS_DIR/$APP_NAME"
 cp "$ROOT_DIR/Support/Info.plist" "$CONTENTS/Info.plist"
-cp "$ROOT_DIR"/Support/Icons/*.png "$ROOT_DIR"/Support/Icons/*.icns "$RESOURCES_DIR"/ 2>/dev/null || true
+cp "$ROOT_DIR/Support/Icons/AppIcon.icns" "$RESOURCES_DIR"/
 cp "$ROOT_DIR"/Support/Sounds/*.aiff "$RESOURCES_DIR"/ 2>/dev/null || true
 if [[ -d "$ROOT_DIR/Support/SoundPacks" ]]; then
     ditto "$ROOT_DIR/Support/SoundPacks" "$RESOURCES_DIR/SoundPacks"

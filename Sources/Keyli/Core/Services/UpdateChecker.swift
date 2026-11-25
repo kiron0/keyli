@@ -12,7 +12,6 @@ struct GitHubRelease: Decodable, Equatable {
     let tagName: String
     let name: String?
     let body: String?
-    let htmlUrl: String?
     let publishedAt: String?
     let draft: Bool?
     let prerelease: Bool?
@@ -39,7 +38,6 @@ struct AvailableUpdate: Equatable {
     let downloadURL: URL
     let digest: String?
     let notes: String?
-    let releasePage: URL?
 }
 
 enum UpdateCheckState: Equatable {
@@ -69,8 +67,6 @@ final class UpdateChecker: ObservableObject {
     var currentVersion: String {
         KeyliConstants.appVersion
     }
-
-    var releaseNotes: String? { availableUpdate?.notes }
 
     func resetState() {
         checkState = .idle
@@ -203,8 +199,7 @@ final class UpdateChecker: ObservableObject {
             version: latest,
             downloadURL: url,
             digest: asset.digest,
-            notes: release.body,
-            releasePage: release.htmlUrl.flatMap(secureDownloadURL(from:))
+            notes: release.body
         ))
     }
 
@@ -308,14 +303,6 @@ final class UpdateChecker: ObservableObject {
               url.scheme?.lowercased() == "https",
               url.host != nil else { return nil }
         return url
-    }
-
-    func isVersion(_ v1: String, greaterThan v2: String) -> Bool {
-        VersionComparator.isGreaterThan(v1, v2)
-    }
-
-    func openReleasesPage() {
-        NSWorkspace.shared.open(availableUpdate?.releasePage ?? KeyliConstants.releasesPageURL)
     }
 }
 

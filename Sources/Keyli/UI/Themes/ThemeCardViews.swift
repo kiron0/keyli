@@ -85,27 +85,3 @@ public struct ThemeCardView: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
-
-public struct ThemePickerView: View {
-    @ObservedObject public var themeManager: ThemeManager = .shared
-
-    public init() {}
-
-    public var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(themeManager.availableThemes) { theme in
-                    ThemeCardView(
-                        theme: themeManager.resolved(theme),
-                        isSelected: themeManager.currentTheme.id == theme.id,
-                        onSelect: {
-                            themeManager.selectTheme(theme)
-                        }
-                    )
-                }
-            }
-            .padding(.horizontal, 4)
-            .padding(.vertical, 4)
-        }
-    }
-}

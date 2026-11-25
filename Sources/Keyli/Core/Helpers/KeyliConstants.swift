@@ -13,16 +13,11 @@ public enum KeyliConstants {
     public static let websiteURL = URL(string: "https://keyli.kiron.dev")!
     public static let authorURL = URL(string: "https://kiron.dev")!
     public static let repositoryURL = URL(string: "https://github.com/\(githubRepository)")!
-    public static let releasesPageURL = URL(string: "https://github.com/\(githubRepository)/releases/latest")!
     public static let issuesURL = URL(string: "https://github.com/\(githubRepository)/issues/new")!
     public static let buyMeACoffeeURL = URL(string: "https://buymeacoffee.com/_thk")!
 
     public static var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
-    }
-
-    public static var buildNumber: String {
-        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
     }
 
     public static var copyright: String {
@@ -37,9 +32,6 @@ public enum KeyliConstants {
     public static let defaultFloatingHeight: CGFloat = 340
     public static let minFloatingWidth: CGFloat = 620
     public static let minFloatingHeight: CGFloat = 250
-
-    public static let defaultMenuWidth: CGFloat = 720
-    public static let defaultMenuHeight: CGFloat = 300
 
     public static let keyboardHorizontalPadding: CGFloat = 20
     public static let baseChromeHeight: CGFloat = 64

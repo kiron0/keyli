@@ -297,7 +297,6 @@ public final class KeyboardLayoutManager: ObservableObject {
 
     public static let keypadGap: Double = 0.25
     public static let keypadWidth: Double = 4.0
-    public static let keypadKeyCodes: Set<UInt16> = [65, 67, 69, 71, 75, 76, 78, 81, 82, 83, 84, 85, 86, 87, 88, 89, 91, 92]
 
     public static func isKeypadKey(_ key: KeyboardKey) -> Bool {
         key.id.hasPrefix("kp_")

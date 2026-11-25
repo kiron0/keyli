@@ -74,8 +74,6 @@ enum ProcessRunner {
             }
         }
     }
-
-    static let cLocaleEnvironment: [String: String] = ["LC_ALL": "C", "LANG": "C"]
 }
 
 private final class TimeoutFlag: @unchecked Sendable {

@@ -40,7 +40,7 @@ public enum PermissionKind: String, CaseIterable, Identifiable {
 
     public var usedBy: String {
         switch self {
-        case .accessibility: return "Typing, shortcuts, function and media keys"
+        case .accessibility: return "Typing, shortcuts, function, media keys, and locking the physical keyboard"
         case .inputMonitoring: return "Highlight physical keys"
         case .loginItem: return "Launch Keyli at login"
         }
@@ -192,10 +192,6 @@ public final class PermissionsManager: ObservableObject {
         PermissionKind.allCases.filter { needsAttention($0) }.count
     }
 
-    public var grantedCount: Int {
-        PermissionKind.allCases.filter { status(of: $0) == .granted }.count
-    }
-
     private func grantedKey(_ kind: PermissionKind) -> String {
         "io.coreify.keyli.permission.\(kind.rawValue).wasGranted"
     }
@@ -211,6 +207,8 @@ public final class PermissionsManager: ObservableObject {
             if KeyboardState.shared.dispatchIssue == .missingPermission {
                 KeyboardState.shared.dispatchIssue = nil
             }
+        } else if PhysicalKeyboardLockService.shared.isLocked {
+            PhysicalKeyboardLockService.shared.unlock()
         }
         let accessibilityStatus = PermissionStatus.accessibility(
             trusted: trusted,
@@ -306,14 +304,6 @@ public final class PermissionsManager: ObservableObject {
         waiting.insert(kind)
         checkPermissions()
         startPollingForPermissions()
-    }
-
-    public func openAccessibilityPreferences() {
-        openSettings(.accessibility)
-    }
-
-    public func openInputMonitoringPreferences() {
-        openSettings(.inputMonitoring)
     }
 
     public func repair(_ kind: PermissionKind) {

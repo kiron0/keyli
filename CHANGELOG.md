@@ -2,6 +2,25 @@
 
 All notable changes to Keyli will be documented in this file.
 
+## 1.0.4
+
+### Added
+
+- **Lock Physical Keyboard**: a new **Lock Physical Keyboard** / **Unlock Physical Keyboard** option in the menu bar menu (and an assignable global shortcut in Settings › Shortcuts) blocks physical keyboard typing, modifiers, and media keys while keeping mouse clicks and on-screen typing working. Requires Accessibility permission and always starts unlocked on launch.
+
+### Changed
+
+- **Instant input source switching**: input source change notifications now use CoreFoundation's distributed notification center with immediate delivery (`kTISNotifySelectedKeyboardInputSourceChanged`), eliminating run loop scheduling delays so layout and language changes reflect instantly.
+- **Optimized menu bar icon updates**: status bar icon updates now receive the latest input source ID and source list directly through Combine, avoiding redundant queries to the input source service and preventing unnecessary icon reloads.
+
+### Fixed
+
+- **Audio device and sample rate handling**: validated output hardware formats before configuring the sound engine and properly reloaded audio clips across sample rate or device configuration changes.
+
+### Removed
+
+- **Built-in community sound packs**: Keyli now bundles only its own packs, Slate Thock and Quartz Tick. WOB Rainy 75 PRO, Zoom TKL morandi, amazin keychron q3 bluex, Orange deluxe and Creamy Legendary are no longer included. Community packs come only from Mechvibes through **Browse Packs**, where you can still install any of these. If one of them was your selected pack, Keyli switches to Slate Thock.
+
 ## 1.0.3
 
 ### Added
