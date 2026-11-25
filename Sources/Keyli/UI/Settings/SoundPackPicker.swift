@@ -3,6 +3,7 @@ import SwiftUI
 final class SoundPackPickerState: ObservableObject {
     @Published var isOpen = false
     @Published var query = ""
+    @Published var listHeight: CGFloat = 0
 }
 
 public struct SoundPackPicker: View {
@@ -25,6 +26,12 @@ public struct SoundPackPicker: View {
     public static func cycleOrder(packs: [SoundPackInfo], favorites: [String]) -> [SoundPackInfo] {
         let favoritePacks = favorites.compactMap { id in packs.first { $0.id == id } }
         return favoritePacks.count >= 2 ? favoritePacks : packs
+    }
+
+    public static let maxListHeight: CGFloat = 300
+
+    public static func listHeight(content: CGFloat) -> CGFloat {
+        min(max(content, 0), maxListHeight)
     }
 
     public static func toggling(_ id: String, in favorites: [String]) -> [String] {
@@ -116,8 +123,11 @@ public struct SoundPackPicker: View {
                             .padding(8)
                     }
                 }
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                    state.listHeight = height
+                }
             }
-            .frame(height: 300)
+            .frame(height: Self.listHeight(content: state.listHeight))
         }
         .padding(10)
         .frame(width: 320)

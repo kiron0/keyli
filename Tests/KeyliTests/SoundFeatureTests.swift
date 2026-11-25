@@ -140,4 +140,11 @@ struct PackFavoriteTests {
         #expect(SoundPackPicker.cycleOrder(packs: Self.packs, favorites: ["d"]).count == 4)
         #expect(KeyliConfig().favoriteSoundPacks.isEmpty)
     }
+
+    @Test func pickerListHugsContentUpToMaxHeight() {
+        #expect(SoundPackPicker.listHeight(content: 0) == 0)
+        #expect(SoundPackPicker.listHeight(content: 84) == 84)
+        #expect(SoundPackPicker.listHeight(content: 900) == SoundPackPicker.maxListHeight)
+        #expect(SoundPackPicker.maxListHeight == 300)
+    }
 }
