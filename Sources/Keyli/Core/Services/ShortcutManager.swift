@@ -6,6 +6,7 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
     case togglePin
     case togglePositionLock
     case togglePhysicalHighlight
+    case togglePhysicalKeyboardLock
     case toggleKeystrokeOverlay
     case toggleNumericKeypad
     case nextInputSource
@@ -51,7 +52,7 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
 
     public var group: Group {
         switch self {
-        case .toggleKeyboard, .togglePin, .togglePositionLock, .togglePhysicalHighlight, .toggleKeystrokeOverlay, .toggleNumericKeypad: return .window
+        case .toggleKeyboard, .togglePin, .togglePositionLock, .togglePhysicalHighlight, .togglePhysicalKeyboardLock, .toggleKeystrokeOverlay, .toggleNumericKeypad: return .window
         case .nextInputSource, .previousInputSource, .showEmojiAndSymbols, .toggleSnippets, .toggleClipboard, .clearClipboardHistory, .toggleWordSuggestions, .toggleStickyModifiers: return .typing
         case .toggleKeySounds, .togglePhysicalTypingSounds, .nextSoundPack, .previousSoundPack, .keySoundVolumeUp, .keySoundVolumeDown: return .sounds
         case .nextTheme, .previousTheme, .openSettings, .openThemeStudio, .openSetupAssistant, .openKeyboardSettings, .toggleMenuBarIcon, .checkForUpdates: return .app
@@ -64,6 +65,7 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
         case .togglePin: return "Keep Keyboard on Top"
         case .togglePositionLock: return "Lock Keyboard Position"
         case .togglePhysicalHighlight: return "Highlight Physical Keys"
+        case .togglePhysicalKeyboardLock: return "Lock Physical Keyboard"
         case .toggleKeystrokeOverlay: return "Show Keystrokes on Screen"
         case .toggleNumericKeypad: return "Show or Hide Numeric Keypad"
         case .nextInputSource: return "Next Input Source"
@@ -97,6 +99,7 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
         case .togglePin: return "Switch between floating above windows and normal."
         case .togglePositionLock: return "Stop or allow moving and resizing the keyboard."
         case .togglePhysicalHighlight: return "Light up keys as you type on your Mac's keyboard."
+        case .togglePhysicalKeyboardLock: return "Ignore typing from your Mac's keyboard while on-screen typing stays active."
         case .toggleKeystrokeOverlay: return "Show pressed shortcuts in a large overlay."
         case .toggleNumericKeypad: return "Add or remove the number pad on the keyboard."
         case .nextInputSource: return "Cycle through your keyboard input sources."
@@ -130,6 +133,7 @@ public enum ShortcutAction: String, CaseIterable, Codable, Identifiable {
         case .togglePin: return "macwindow.on.rectangle"
         case .togglePositionLock: return "lock"
         case .togglePhysicalHighlight: return "light.max"
+        case .togglePhysicalKeyboardLock: return "lock.laptopcomputer"
         case .toggleKeystrokeOverlay: return "rectangle.and.text.magnifyingglass"
         case .toggleNumericKeypad: return "number"
         case .nextInputSource: return "globe"
@@ -392,6 +396,8 @@ public final class ShortcutManager: ObservableObject {
             store.config.isFloatingPositionLocked.toggle()
         case .togglePhysicalHighlight:
             store.config.isPhysicalMonitoringEnabled.toggle()
+        case .togglePhysicalKeyboardLock:
+            PhysicalKeyboardLockService.shared.toggleWithPermissionCheck()
         case .toggleKeystrokeOverlay:
             store.config.keystrokeOverlayEnabled.toggle()
         case .toggleNumericKeypad:

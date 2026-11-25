@@ -118,11 +118,11 @@ public final class KeyboardState: ObservableObject {
     }
 
     public func resetModifiers() {
-        isShiftActive = false
-        isOptionActive = false
-        isControlActive = false
-        isCommandActive = false
-        isFnActive = false
+        if isShiftActive { isShiftActive = false }
+        if isOptionActive { isOptionActive = false }
+        if isControlActive { isControlActive = false }
+        if isCommandActive { isCommandActive = false }
+        if isFnActive { isFnActive = false }
         if !lockedModifiers.isEmpty { lockedModifiers.removeAll() }
         pressRecords.removeAll()
     }

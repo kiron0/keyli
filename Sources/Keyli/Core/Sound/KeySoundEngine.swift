@@ -7,6 +7,11 @@ import QuartzCore
 public final class KeySoundEngine {
     public static let shared = KeySoundEngine()
 
+    private struct SoundConfigKey: Equatable {
+        let enabled: Bool
+        let packId: String
+    }
+
     public enum Source: Int {
         case onScreen = 1
         case physical = 2
@@ -113,9 +118,11 @@ public final class KeySoundEngine {
             object: engine
         )
         ConfigStore.shared.$config
+            .map { SoundConfigKey(enabled: $0.playKeyClickSound, packId: $0.keySoundPackId) }
+            .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] config in
-                self?.apply(config)
+            .sink { [weak self] _ in
+                self?.apply(ConfigStore.shared.config)
             }
             .store(in: &cancellables)
         SoundPackLibrary.shared.$packs
@@ -322,10 +329,12 @@ public final class KeySoundEngine {
         return source != 0x6973_706B
     }
 
-    private static func readProperty<T>(_ object: AudioObjectID, _ selector: AudioObjectPropertySelector, _ scope: AudioObjectPropertyScope, _ value: inout T) -> Bool {
+    private static func readProperty<T: BitwiseCopyable>(_ object: AudioObjectID, _ selector: AudioObjectPropertySelector, _ scope: AudioObjectPropertyScope, _ value: inout T) -> Bool {
         var address = AudioObjectPropertyAddress(mSelector: selector, mScope: scope, mElement: kAudioObjectPropertyElementMain)
         var size = UInt32(MemoryLayout<T>.size)
-        return AudioObjectGetPropertyData(object, &address, 0, nil, &size, &value) == noErr
+        return withUnsafeMutablePointer(to: &value) { pointer in
+            AudioObjectGetPropertyData(object, &address, 0, nil, &size, pointer) == noErr
+        }
     }
 
     private func setLowLatencyBuffer() {

@@ -426,7 +426,10 @@ public final class KeyboardInputDispatcher {
                 data1: (keyType << 16) | (stateBits << 8),
                 data2: -1
             )
-            event?.cgEvent?.post(tap: .cghidEventTap)
+            if let cgEvent = event?.cgEvent {
+                cgEvent.setIntegerValueField(.eventSourceUserData, value: KeyliConstants.syntheticEventUserData)
+                cgEvent.post(tap: .cghidEventTap)
+            }
         }
     }
 

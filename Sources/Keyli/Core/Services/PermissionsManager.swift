@@ -40,7 +40,7 @@ public enum PermissionKind: String, CaseIterable, Identifiable {
 
     public var usedBy: String {
         switch self {
-        case .accessibility: return "Typing, shortcuts, function and media keys"
+        case .accessibility: return "Typing, shortcuts, function, media keys, and locking the physical keyboard"
         case .inputMonitoring: return "Highlight physical keys"
         case .loginItem: return "Launch Keyli at login"
         }
@@ -211,6 +211,8 @@ public final class PermissionsManager: ObservableObject {
             if KeyboardState.shared.dispatchIssue == .missingPermission {
                 KeyboardState.shared.dispatchIssue = nil
             }
+        } else if PhysicalKeyboardLockService.shared.isLocked {
+            PhysicalKeyboardLockService.shared.unlock()
         }
         let accessibilityStatus = PermissionStatus.accessibility(
             trusted: trusted,

@@ -153,6 +153,9 @@ public final class PhysicalKeyboardMonitor: ObservableObject {
         if event.getIntegerValueField(.eventSourceUserData) == KeyliConstants.syntheticEventUserData {
             return
         }
+        if isRunning && PhysicalKeyboardLockService.shared.isLocked {
+            return
+        }
 
         let available = state.availableKeyCodes
         let config = ConfigStore.shared.config
