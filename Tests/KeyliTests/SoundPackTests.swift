@@ -115,7 +115,7 @@ struct SoundPackTests {
     @Test func bundledPacksLoadAndSlice() throws {
         let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 2)!
         let ids = try FileManager.default.contentsOfDirectory(atPath: Self.packsRoot.path).filter { !$0.hasPrefix(".") }
-        #expect(ids.count == 7)
+        #expect(ids.count == 2)
         for id in ids {
             let folder = Self.packsRoot.appendingPathComponent(id)
             _ = try SoundPackLibrary.loadManifest(in: folder)
@@ -144,6 +144,41 @@ struct SoundPackTests {
         #expect(slice.floatChannelData![0][0] == 0)
         #expect(slice.floatChannelData![0][25] == 1)
         #expect(KeySoundEngine.makeSlice(of: buffer, segment: SoundSegment(startMs: 200, endMs: 300)) == nil)
+    }
+
+    static let removedBundledPackIds = [
+        "mv-7c8b0d78b8e64ac8a51b6b826edc91b0",
+        "mv-db386766332040438b7985b75eb73736",
+        "mv-02742ecb10204a3794e99d58ca6b9231",
+        "mv-29262f2ca2114279a6d6ab372da3f2d7",
+        "mv-3b7b7417fe8a4dc88a56b47e15d0d3cc",
+    ]
+
+    @Test func onlyKeyliPacksAreBundled() {
+        let library = SoundPackLibrary(bundledRoot: Self.packsRoot, userRoot: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString))
+        #expect(Set(library.packs.map(\.id)) == ["keyli-slate-thock", "keyli-quartz-tick"])
+        #expect(library.packs.allSatisfy { $0.author == "Keyli" })
+    }
+
+    @Test func savedRemovedBundledPackFallsBackToDefault() throws {
+        let temp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: temp) }
+        let library = SoundPackLibrary(bundledRoot: Self.packsRoot, userRoot: temp.appendingPathComponent("user"))
+        for id in Self.removedBundledPackIds {
+            var config = KeyliConfig()
+            config.keySoundPackId = id
+            let decoded = try JSONDecoder().decode(KeyliConfig.self, from: JSONEncoder().encode(config))
+            #expect(decoded.keySoundPackId == id)
+            #expect(library.pack(id: decoded.keySoundPackId)?.id == SoundPackLibrary.defaultPackId)
+        }
+
+        let source = temp.appendingPathComponent("Reinstalled")
+        try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
+        try Data(#"{"id": "\#(Self.removedBundledPackIds[0])", "name": "Reinstalled", "sound": "s.wav", "defines": {"30": [0, 10]}}"#.utf8)
+            .write(to: source.appendingPathComponent("config.json"))
+        try Self.writeTone(to: source.appendingPathComponent("s.wav"))
+        try library.importPack(from: source)
+        #expect(library.pack(id: Self.removedBundledPackIds[0])?.name == "Reinstalled")
     }
 
     @Test func importCopiesPackAndAvoidsBundledIds() throws {

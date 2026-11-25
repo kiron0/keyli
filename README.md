@@ -66,9 +66,9 @@
 
 ## Sounds
 
-Turn on keycap sounds in **Settings › Sounds**. Every key plays its own press and release sound, overlapping sounds never cut each other off, and held keys don't repeat. Pick one of the built-in packs (two original synthesized packs, Slate Thock and Quartz Tick, plus five community packs), star favorites, adjust volume (with an optional separate volume for your Mac's keyboard), enable **Vary each key slightly**, or mute automatically during calls and in chosen apps with **Quiet Times**.
+Turn on keycap sounds in **Settings › Sounds**. Every key plays its own press and release sound, overlapping sounds never cut each other off, and held keys don't repeat. Pick one of Keyli's two original built-in packs, Slate Thock and Quartz Tick, star favorites, adjust volume (with an optional separate volume for your Mac's keyboard), enable **Vary each key slightly**, or mute automatically during calls and in chosen apps with **Quiet Times**.
 
-**Browse Packs** searches the community catalog at [mechvibes.com](https://mechvibes.com) and installs a pack in one click, with checksum verification. Each community pack keeps its maker's license.
+**Browse Packs** searches the community catalog at [mechvibes.com](https://mechvibes.com) and installs a pack in one click, with checksum verification. Keyli doesn't bundle any third-party packs: community packs are only installed from Mechvibes when you choose them, and each keeps its maker's license.
 
 <p align="center">
   <img src="Support/Screenshots/sounds.jpg" width="100%" alt="Keyli Settings on the Sounds page with a sound pack selected, volume, physical keyboard sounds and Browse Packs" />
