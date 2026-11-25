@@ -2,12 +2,6 @@
 
 All notable changes to Keyli will be documented in this file.
 
-## Unreleased
-
-### Removed
-
-- **Built-in community sound packs**: Keyli now bundles only its own packs, Slate Thock and Quartz Tick. WOB Rainy 75 PRO, Zoom TKL morandi, amazin keychron q3 bluex, Orange deluxe and Creamy Legendary are no longer included. Community packs come only from Mechvibes through **Browse Packs**, where you can still install any of these. If one of them was your selected pack, Keyli switches to Slate Thock.
-
 ## 1.0.4
 
 ### Added
@@ -22,6 +16,10 @@ All notable changes to Keyli will be documented in this file.
 ### Fixed
 
 - **Audio device and sample rate handling**: validated output hardware formats before configuring the sound engine and properly reloaded audio clips across sample rate or device configuration changes.
+
+### Removed
+
+- **Built-in community sound packs**: Keyli now bundles only its own packs, Slate Thock and Quartz Tick. WOB Rainy 75 PRO, Zoom TKL morandi, amazin keychron q3 bluex, Orange deluxe and Creamy Legendary are no longer included. Community packs come only from Mechvibes through **Browse Packs**, where you can still install any of these. If one of them was your selected pack, Keyli switches to Slate Thock.
 
 ## 1.0.3
 
